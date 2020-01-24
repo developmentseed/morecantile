@@ -24,7 +24,6 @@ common: &common
           fi
         when: always
 
-
 jobs:
   "python-3.6":
     <<: *common

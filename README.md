@@ -14,15 +14,10 @@ The name is an homage to [mercantile](https://github.com/mapbox/mercantile), a g
 ```bash
 $ pip install -U pip
 $ pip install morecantile
-```
 
-Or install from source:
+# Or install from source:
 
-```
-$ git clone https://github.com/developmentseed/morecantile.git
-$ cd morecantile
-$ pip install -U pip
-$ pip install -e .
+$ pip install git+https://github.com/developmentseed/morecantile.git
 ```
 
 ## How To
