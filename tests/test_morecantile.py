@@ -9,10 +9,10 @@ from rasterio.crs import CRS
 
 def test_default_grids():
     """Morecantile.default_grids should return the correct crs and metadata."""
-    crs, _ = morecantile.default_grids.get(4326)
-    assert crs == CRS.from_epsg(4326)
+    grid_info = morecantile.default_grids.get("WorldCRS84Quad")
+    assert grid_info["crs"] == CRS.from_epsg(4326)
     with pytest.raises(Exception):
-        morecantile.default_grids.get(3000)
+        morecantile.default_grids.get("WorldCRS84")
 
 
 def test_tileschema():
@@ -21,8 +21,8 @@ def test_tileschema():
     assert ts.crs == CRS.from_epsg(3857)
     assert ts.meters_per_unit == 1.0
 
-    crs, args = morecantile.default_grids.get(4326)
-    ts = morecantile.TileSchema(crs, **args)
+    args = morecantile.default_grids.get("WorldCRS84Quad")
+    ts = morecantile.TileSchema(**args)
     assert ts.crs == CRS.from_epsg(4326)
     assert ts.matrix_scale == [2, 1]
     assert ts.meters_per_unit == 111319.49079327358
@@ -52,8 +52,8 @@ def test_tilematrix():
         "matrixHeight": 1,
     }
 
-    crs, args = morecantile.default_grids.get(4326)
-    ts = morecantile.TileSchema(crs, **args)
+    args = morecantile.default_grids.get("WorldCRS84Quad")
+    ts = morecantile.TileSchema(**args)
     matrix = ts.get_ogc_tilematrix(0)
     assert matrix == {
         "type": "TileMatrixType",
@@ -76,8 +76,8 @@ def test_tile_coordinates():
     # wlon, wlat = mercantile.xy(20.0, 15.0)
     assert ts.tile(20.0, 15.0, 5) == mercantile.tile(20.0, 15.0, 5)
 
-    crs, args = morecantile.default_grids.get(4326)
-    ts = morecantile.TileSchema(crs, **args)
+    args = morecantile.default_grids.get("WorldCRS84Quad")
+    ts = morecantile.TileSchema(**args)
     assert ts.tile(10.0, 10.0, 5) == morecantile.Tile(16, 14, 5)
 
 

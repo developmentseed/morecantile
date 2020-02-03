@@ -14,7 +14,7 @@ extra_reqs = {
 
 setup(
     name="morecantile",
-    version="0.0.1",
+    version="0.1.0",
     python_requires=">=3",
     description=u"""Custom map grid utilities""",
     long_description=long_description,

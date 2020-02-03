@@ -51,11 +51,23 @@ ts = morecantile.TileSchema(CRS.from_epsg(epsg), extent)
 
 # Or
 
-# epsg:3031 is one of the default grids available in morecantile
+# "NSIDCAntarcticPolarQuad" (EPSG:3031) is one of the default grids available in morecantile
 # see https://github.com/developmentseed/morecantile/blob/master/__init__.py#L94-L99
-crs, args = morecantile.default_grids.get(3031)
-ts = morecantile.TileSchema(crs, **args)
+grid_info = morecantile.default_grids.get("NSIDCAntarcticPolarQuad")
+ts = morecantile.TileSchema(**grid_info)
 ```
+
+### Defaults Grids
+
+- **WorldCRS84Quad**: WGS84 - EPGS:4326
+- **WorldMercatorWGS84Quad**: Elliptical Mercator projection - EPGS:3395
+- **WebMercatorQuad**: Spherical Mercator - EPGS:3857 (default grid for Web Mercator based maps)
+- **NSIDCSeaIcePolarQuad**:  WGS 84 / NSIDC Sea Ice Polar Stereographic North - EPGS:3413
+- **NSIDCAntarcticPolarQuad**: WGS 84 / Antarctic Polar Stereographic - EPGS:3031
+- **EuropeanETRS89_LAEAQuad**: ETRS89-extended / LAEA Europe - EPGS:3035
+
+ref: http://schemas.opengis.net/tms/1.0/xml/examples/
+
 
 ### Create tile and get bounds
 ```python

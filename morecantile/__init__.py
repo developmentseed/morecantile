@@ -62,32 +62,53 @@ class _grids(object):
     """Default Grids info."""
 
     _default_grids = {
-        4326: {"extent": [-180, -90, 180, 90], "matrix_scale": [2, 1]},
-        # Elliptical Mercator projection
-        3395: {
-            "extent": [-20037508.34279, -15496570.73972, 20037508.34279, 18764656.23138]
+        # WGS84 - EPGS:4326
+        "WorldCRS84Quad": {
+            "crs": CRS({"init": "EPSG:4326"}),
+            "extent": [-180, -90, 180, 90],
+            "matrix_scale": [2, 1],
         },
-        # Spherical Mercator
-        3857: {
+        # Elliptical Mercator projection - EPGS:3395
+        "WorldMercatorWGS84Quad": {
+            "crs": CRS({"init": "EPSG:3395"}),
+            "extent": [
+                -20037508.34279,
+                -15496570.73972,
+                20037508.34279,
+                18764656.23138,
+            ],
+        },
+        # Spherical Mercator - EPGS:3857
+        "WebMercatorQuad": {
+            "crs": CRS({"init": "EPSG:3857"}),
             "extent": [
                 -20037508.342789244,
                 -20037508.342789244,
                 20037508.342789244,
                 20037508.342789244,
-            ]
+            ],
         },
-        # WGS 84 / NSIDC Sea Ice Polar Stereographic North
-        3413: {"extent": [-2353926.81, 2345724.36, -382558.89, 383896.60]},
-        # WGS 84 / Antarctic Polar Stereographic
-        3031: {"extent": [-948.75, -543592.47, 5817.41, -3333128.95]},
-        # ETRS89-extended / LAEA Europe
-        3035: {"extent": [1896628.62, 1507846.05, 4662111.45, 6829874.45]},
+        # WGS 84 / NSIDC Sea Ice Polar Stereographic North - EPGS:3413
+        "NSIDCSeaIcePolarQuad": {
+            "crs": CRS({"init": "EPSG:3413"}),
+            "extent": [-2353926.81, 2345724.36, -382558.89, 383896.60],
+        },
+        # WGS 84 / Antarctic Polar Stereographic - EPGS:3031
+        "NSIDCAntarcticPolarQuad": {
+            "crs": CRS({"init": "EPSG:3031"}),
+            "extent": [-948.75, -543592.47, 5817.41, -3333128.95],
+        },
+        # ETRS89-extended / LAEA Europe - EPGS:3035
+        "EuropeanETRS89_LAEAQuad": {
+            "crs": CRS({"init": "EPSG:3035"}),
+            "extent": [1896628.62, 1507846.05, 4662111.45, 6829874.45],
+        },
     }
 
-    def get(self, key: int) -> Tuple[CRS, Dict]:
+    def get(self, key: int) -> Dict:
         """Return default grid meta."""
         try:
-            return CRS.from_epsg(key), self._default_grids[key]
+            return self._default_grids[key]
         except KeyError:
             raise Exception(f"{key} is not a defaults grids")
 
