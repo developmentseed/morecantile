@@ -24,9 +24,15 @@ version = pkg_resources.get_distribution(__package__).version
 
 qk_regex = re.compile(r"[0-3]+$")
 
-Tile = mercantile.Tile
+
+Tile = namedtuple("Tile", ["x", "y", "z"])
 """
-From https://github.com/mapbox/mercantile
+An XYZ tile
+
+Attributes
+----------
+x, y, z : int
+    x and y indexes of the tile and zoom level z.
 """
 
 Coords = namedtuple("Coords", ["x", "y"])
@@ -35,8 +41,8 @@ A X,Y Coordinates pair.
 
 Attributes
 ----------
-    X, Y : float
-        X, Y coordinates in input projection unit.
+X, Y : float
+    X, Y coordinates in input projection unit.
 """
 
 CoordsBbox = namedtuple("CoordsBbox", ["xmin", "ymin", "xmax", "ymax"])
@@ -45,8 +51,8 @@ A geographic bounding box.
 
 Attributes
 ----------
-    xmin, ymin, xmax, ymax : float
-        Bounding values in input projection unit.
+xmin, ymin, xmax, ymax : float
+    Bounding values in input projection unit.
 """
 
 quadkey = mercantile.quadkey
