@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["rasterio>=1.1", "mercantile"]
+inst_reqs = ["rasterio>=1.1", "mercantile", "pydantic"]
 
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
