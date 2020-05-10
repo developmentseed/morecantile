@@ -153,16 +153,14 @@ class TileMatrixSet(BaseModel):
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
-        zoom_str = str(zoom)
-        for matrix in self.tileMatrix:
-            if matrix.identifier == zoom_str:
-                return matrix
-
-        raise Exception(f"TileMatrix not found for level: {zoom}")
+        try:
+            return list(filter(lambda m: m.identifier == str(zoom), self.tileMatrix))[0]
+        except IndexError:
+            raise Exception(f"TileMatrix not found for level: {zoom}")
 
     def _resolution(self, matrix: TileMatrix) -> float:
         """
-        Tile resolution for a zoom level.
+        Tile resolution for a TileMatrix.
 
         From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
           The pixel size of the tile can be obtained from the scaleDenominator
