@@ -265,9 +265,8 @@ class TileMatrixSet(BaseModel):
 
         """
         tile = _parse_tile_arg(*tile)
-        xtile, ytile, zoom = tile
-        left, top = self._ul(xtile, ytile, zoom)
-        right, bottom = self._ul(xtile + 1, ytile + 1, zoom)
+        left, top = self._ul(*tile)
+        right, bottom = self._ul(tile.x + 1, tile.y + 1, tile.z)
         return CoordsBbox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
