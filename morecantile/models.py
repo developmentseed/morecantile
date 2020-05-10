@@ -2,7 +2,7 @@
 from typing import List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
-
+from rasterio.crs import CRS
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
@@ -36,7 +36,12 @@ class TileMatrixSet(BaseModel):
     type: str = Field("TileMatrixSetType", const=True)
     title: str
     identifier: str
-    supportedCRS: str = Field(..., regex=r"^http")
+    supportedCRS: str = Field(..., regex=r"^http://www.opengis.net/def/crs/EPSG")
     wellKnownScaleSet: Optional[str] = Field(None, regex=r"^http")
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
+
+    @property
+    def crs(self) -> CRS:
+        """Fetch CRS from epsg"""
+        return CRS.from_epsg(self.supportedCRS.split("/")[-1])
