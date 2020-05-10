@@ -1,5 +1,5 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import os
 import math
@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from collections import namedtuple
 
 from rasterio.crs import CRS
-from rasterio.warp import transform
+from rasterio.warp import transform, transform_bounds
 
 data_dir = os.path.join(os.path.dirname(__file__), "data")
 
@@ -56,6 +56,21 @@ def _parse_tile_arg(*args) -> Tile:
         )
 
 
+def meters_per_unit(crs: CRS) -> float:
+    """
+    coefficient to convert the coordinate reference system (CRS)
+    units into meters (metersPerUnit).
+
+    From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
+        If the CRS uses meters as units of measure for the horizontal dimensions,
+        then metersPerUnit=1; if it has degrees, then metersPerUnit=2pa/360
+        (a is the Earth maximum radius of the ellipsoid).
+
+    """
+    # crs.linear_units_factor[1]  GDAL 3.0
+    return 1.0 if crs.linear_units == "metre" else 2 * math.pi * 6378137 / 360.0
+
+
 class BoundingBox(BaseModel):
     """Bounding box"""
 
@@ -94,23 +109,6 @@ class TileMatrixSet(BaseModel):
         """Fetch CRS from epsg"""
         return CRS.from_user_input(self.supportedCRS)
 
-    @property
-    def meters_per_unit(self) -> float:
-        """
-        coefficient to convert the coordinate reference system (CRS)
-        units into meters (metersPerUnit).
-
-        From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
-          If the CRS uses meters as units of measure for the horizontal dimensions,
-          then metersPerUnit=1; if it has degrees, then metersPerUnit=2pa/360
-          (a is the Earth maximum radius of the ellipsoid).
-
-        """
-        # self.crs.linear_units_factor[1]  GDAL 3.0
-        return (
-            1.0 if self.crs.linear_units == "metre" else 2 * math.pi * 6378137 / 360.0
-        )
-
     @classmethod
     def load(cls, name: str):
         """Load default TileMatrixSet."""
@@ -124,10 +122,14 @@ class TileMatrixSet(BaseModel):
         cls,
         extent: List[float],
         crs: CRS,
-        resolution: float,
         tile_width: int = 256,
         tile_height: int = 256,
         matrix_scale: List = [1, 1],
+        extent_crs: Optional[CRS] = None,
+        minzoom: int = 0,
+        maxzoom: int = 24,
+        title: str = "Custom TileMatrixSet",
+        identifier: str = "Custom",
     ):
         """
         Construct a custom TileMatrixSet.
@@ -137,19 +139,73 @@ class TileMatrixSet(BaseModel):
         crs: rasterio.crs.CRS
             TileMatrixSet coordinate reference system
         extent: list
-            Bounding box of the TileMatrixSet
-        resolution: float
+            Bounding box of the TileMatrixSet, (left, bottom, right, top).
+        tile_width: int
+        tile_height: int
         matrix_scale: list
             Tiling schema coalescence coefficient (default: [1, 1] for EPSG:3857).
             Should be set to [2, 1] for EPSG:4326.
             see: http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#14
+        extent_crs: rasterio.crs.CRS
+            Extent's coordinate reference system, as a rasterio CRS object.
+            (default: assuming same as input crs)
+        minzoom: int
+        maxzoom: int
+        title: str
+        identifier: str
 
         Returns:
         --------
         TileMatrixSet
 
         """
-        raise NotImplementedError
+        epsg_number = crs.to_epsg()
+        tms: Dict[str, Any] = {
+            "title": title,
+            "identifier": identifier,
+            "supportedCRS": f"http://www.opengis.net/def/crs/EPSG/0/{epsg_number}",
+            "tileMatrix": [],
+        }
+
+        bbox_epsg = extent_crs.to_epsg() if extent_crs else epsg_number
+        tms["boundingBox"] = BoundingBox(
+            **dict(
+                crs=f"http://www.opengis.net/def/crs/EPSG/0/{bbox_epsg}",
+                lowerCorner=[extent[0], extent[1]],
+                upperCorner=[extent[2], extent[3]],
+            )
+        )
+
+        bbox = CoordsBbox(
+            *(
+                transform_bounds(extent_crs, crs, *extent, densify_pts=21)
+                if extent_crs
+                else extent
+            )
+        )
+        width = abs(bbox.xmax - bbox.xmin)
+        height = abs(bbox.ymax - bbox.ymin)
+        mpu = meters_per_unit(crs)
+        for zoom in range(minzoom, maxzoom + 1):
+            res = max(
+                width / (tile_width * matrix_scale[0]) / 2.0 ** zoom,
+                height / (tile_height * matrix_scale[1]) / 2.0 ** zoom,
+            )
+            tms["tileMatrix"].append(
+                TileMatrix(
+                    **dict(
+                        identifier=str(zoom),
+                        scaleDenominator=res * mpu / 0.00028,
+                        topLeftCorner=[bbox.xmin, bbox.ymax],
+                        tileWidth=tile_width,
+                        tileHeight=tile_height,
+                        matrixWidth=matrix_scale[0] * 2 ** zoom,
+                        matrixHeight=matrix_scale[1] * 2 ** zoom,
+                    )
+                )
+            )
+
+        return cls(**tms)
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
@@ -167,7 +223,7 @@ class TileMatrixSet(BaseModel):
           by multiplying the later by 0.28 10-3 / metersPerUnit.
 
         """
-        return matrix.scaleDenominator * 0.28e-3 / self.meters_per_unit
+        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
     def point_towgs84(self, x: float, y: float) -> Tuple[float, float]:
         """Transform point(x,y) to lat lon coordinates."""

@@ -4,6 +4,7 @@ import pytest
 
 import mercantile
 import morecantile
+from morecantile.models import meters_per_unit
 from rasterio.crs import CRS
 
 
@@ -16,11 +17,11 @@ def test_TMSproperties():
     """Test TileSchema()."""
     tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
     assert tms.crs == CRS.from_epsg(3857)
-    assert tms.meters_per_unit == 1.0
+    assert meters_per_unit(tms.crs) == 1.0
 
     tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
     assert tms.crs == CRS.from_epsg(4326)
-    assert tms.meters_per_unit == 111319.49079327358
+    assert meters_per_unit(tms.crs) == 111319.49079327358
 
 
 def test_tile_coordinates():
