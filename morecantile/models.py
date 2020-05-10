@@ -6,7 +6,6 @@ import math
 from pydantic import BaseModel, Field
 from collections import namedtuple
 
-import mercantile
 from rasterio.crs import CRS
 from rasterio.warp import transform
 
@@ -23,6 +22,38 @@ CoordsBbox = namedtuple("CoordsBbox", ["xmin", "ymin", "xmax", "ymax"])
 
 class NotAValidName(Exception):
     """Invalid TileMatrixSet name."""
+
+
+class TileArgParsingError(Exception):
+    """Raised when errors occur in parsing a function's tile arg(s)"""
+
+
+def _parse_tile_arg(*args) -> Tile:
+    """
+    parse the *tile arg of module functions
+
+    Parameters
+    ----------
+    tile : Tile or sequence of int
+        May be be either an instance of Tile or 3 ints, X, Y, Z.
+
+    Returns
+    -------
+    Tile
+
+    Raises
+    ------
+    TileArgParsingError
+
+    """
+    if len(args) == 1:
+        args = args[0]
+    if len(args) == 3:
+        return Tile(*args)
+    else:
+        raise TileArgParsingError(
+            "the tile argument may have 1 or 3 values. Note that zoom is a keyword-only argument"
+        )
 
 
 class BoundingBox(BaseModel):
@@ -65,8 +96,15 @@ class TileMatrixSet(BaseModel):
 
     @property
     def meters_per_unit(self) -> float:
-        """coefficient to convert the coordinate reference system (CRS)
-        units into meters (metersPerUnit)
+        """
+        coefficient to convert the coordinate reference system (CRS)
+        units into meters (metersPerUnit).
+
+        From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
+          If the CRS uses meters as units of measure for the horizontal dimensions,
+          then metersPerUnit=1; if it has degrees, then metersPerUnit=2pa/360
+          (a is the Earth maximum radius of the ellipsoid).
+
         """
         # self.crs.linear_units_factor[1]  GDAL 3.0
         return (
@@ -109,6 +147,7 @@ class TileMatrixSet(BaseModel):
         Returns:
         --------
         TileMatrixSet
+
         """
         raise NotImplementedError
 
@@ -122,14 +161,15 @@ class TileMatrixSet(BaseModel):
         raise Exception(f"TileMatrix not found for level: {zoom}")
 
     def _resolution(self, matrix: TileMatrix) -> float:
-        """Tile resolution for a zoom level."""
-        # TODO
-        # width = abs(self.extent.xmax - self.extent.xmin)
-        # height = abs(self.extent.ymax - self.extent.ymin)
-        # return max(
-        #     width / (self.tile_size[0] * self.matrix_scale[0]) / 2.0 ** zoom,
-        #     height / (self.tile_size[1] * self.matrix_scale[1]) / 2.0 ** zoom,
-        # )
+        """
+        Tile resolution for a zoom level.
+
+        From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
+          The pixel size of the tile can be obtained from the scaleDenominator
+          by multiplying the later by 0.28 10-3 / metersPerUnit.
+
+        """
+        return matrix.scaleDenominator * 0.28e-3 / self.meters_per_unit
 
     def point_towgs84(self, x: float, y: float) -> Tuple[float, float]:
         """Transform point(x,y) to lat lon coordinates."""
@@ -157,22 +197,22 @@ class TileMatrixSet(BaseModel):
         Tile
 
         """
-        # TODO
-        # matrix = self.matrix(zoom)
-        # res = self._resolution(zoom)
-        # xtile = int(
-        #     math.floor(
-        #         (xcoord - self.extent.xmin)
-        #         / float(res * self.tile_size[0] * self.matrix_scale[0])
-        #     )
-        # )
-        # ytile = int(
-        #     math.floor(
-        #         (self.extent.ymax - ycoord)
-        #         / float(res * self.tile_size[1] * self.matrix_scale[1])
-        #     )
-        # )
-        # return Tile(x=xtile, y=ytile, z=zoom)
+        matrix = self.matrix(zoom)
+
+        res = self._resolution(matrix)
+        xtile = int(
+            math.floor(
+                (xcoord - matrix.topLeftCorner[0])
+                / float(res * matrix.tileWidth * (matrix.matrixWidth / (2 ** zoom)))
+            )
+        )
+        ytile = int(
+            math.floor(
+                (matrix.topLeftCorner[1] - ycoord)
+                / float(res * matrix.tileHeight * (matrix.matrixHeight / (2 ** zoom)))
+            )
+        )
+        return Tile(x=xtile, y=ytile, z=zoom)
 
     def tile(self, lng: float, lat: float, zoom: int) -> Tile:
         """
@@ -206,14 +246,12 @@ class TileMatrixSet(BaseModel):
             The upper left geospatial coordiantes of the input tile.
 
         """
-        # TODO
-        # tile = mercantile._parse_tile_arg(*tile)
-        # xtile, ytile, zoom = tile
-        # matrix = self.matrix(zoom)
-        # res = self._resolution(zoom)
-        # xcoord = self.extent.xmin + xtile * res * self.tile_size[0]
-        # ycoord = self.extent.ymax - ytile * res * self.tile_size[1]
-        # return xcoord, ycoord
+        tile = _parse_tile_arg(*tile)
+        matrix = self.matrix(tile.z)
+        res = self._resolution(matrix)
+        xcoord = matrix.topLeftCorner[0] + tile.x * res * matrix.tileWidth
+        ycoord = matrix.topLeftCorner[1] - tile.y * res * matrix.tileHeight
+        return Coords(xcoord, ycoord)
 
     def xy_bounds(self, *tile: Tile) -> CoordsBbox:
         """
@@ -228,7 +266,7 @@ class TileMatrixSet(BaseModel):
             The bounding box of the input tile.
 
         """
-        tile = mercantile._parse_tile_arg(*tile)
+        tile = _parse_tile_arg(*tile)
         xtile, ytile, zoom = tile
         left, top = self._ul(xtile, ytile, zoom)
         right, bottom = self._ul(xtile + 1, ytile + 1, zoom)
@@ -263,10 +301,9 @@ class TileMatrixSet(BaseModel):
             The bounding box of the input tile.
 
         """
-        tile = mercantile._parse_tile_arg(*tile)
-        xtile, ytile, zoom = tile
-        left, top = self.ul(xtile, ytile, zoom)
-        right, bottom = self.ul(xtile + 1, ytile + 1, zoom)
+        tile = _parse_tile_arg(*tile)
+        left, top = self.ul(tile.x, tile.y, tile.z)
+        right, bottom = self.ul(tile.x + 1, tile.y + 1, tile.z)
         return CoordsBbox(left, bottom, right, top)
 
     def feature(
