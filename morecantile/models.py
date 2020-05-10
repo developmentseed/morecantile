@@ -84,7 +84,7 @@ class TileMatrixSet(BaseModel):
     type: str = Field("TileMatrixSetType", const=True)
     title: str
     identifier: str
-    supportedCRS: str = Field(..., regex=r"^http://www.opengis.net/def/crs/EPSG")
+    supportedCRS: str = Field(..., regex=r"^http://www.opengis.net/")
     wellKnownScaleSet: Optional[str] = Field(None, regex=r"^http")
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
@@ -92,7 +92,7 @@ class TileMatrixSet(BaseModel):
     @property
     def crs(self) -> CRS:
         """Fetch CRS from epsg"""
-        return CRS.from_epsg(self.supportedCRS.split("/")[-1])
+        return CRS.from_user_input(self.supportedCRS)
 
     @property
     def meters_per_unit(self) -> float:
