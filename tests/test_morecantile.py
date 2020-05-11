@@ -1,11 +1,11 @@
 """Tests for morecantile."""
 
-import pytest
-
 import mercantile
+import pytest
+from rasterio.crs import CRS
+
 import morecantile
 from morecantile.models import meters_per_unit
-from rasterio.crs import CRS
 
 
 def test_default_grids():
