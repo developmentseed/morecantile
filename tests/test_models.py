@@ -1,13 +1,12 @@
 """Test TileMatrixSet model."""
 
 import os
+
 import pytest
-
 from pydantic import ValidationError
-
-
-from morecantile.models import TileMatrix, TileMatrixSet, NotAValidName
 from rasterio.crs import CRS
+
+from morecantile.models import NotAValidName, TileMatrix, TileMatrixSet
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [

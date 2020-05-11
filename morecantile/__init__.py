@@ -9,9 +9,10 @@ Refs:
 """
 
 import os
+
 import pkg_resources
 
-from .models import TileMatrixSet, Tile  # noqa
+from .models import Tile, TileMatrixSet  # noqa
 
 version = pkg_resources.get_distribution(__package__).version
 

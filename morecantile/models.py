@@ -1,11 +1,10 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
+import math
+import os
+from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import os
-import math
 from pydantic import BaseModel, Field
-from collections import namedtuple
-
 from rasterio.crs import CRS
 from rasterio.warp import transform, transform_bounds
 
@@ -376,7 +375,11 @@ class TileMatrixSet(BaseModel):
         return CoordsBbox(left, bottom, right, top)
 
     def feature(
-        self, tile: Tile, fid: str = None, props: Dict = None, precision: float = None
+        self,
+        tile: Tile,
+        fid: Optional[str] = None,
+        props: Optional[Dict] = None,
+        precision: Optional[int] = None,
     ) -> Dict:
         """
         Get the GeoJSON feature corresponding to a tile.
@@ -405,6 +408,7 @@ class TileMatrixSet(BaseModel):
             west, south, east, north = (
                 round(v, precision) for v in (west, south, east, north)
             )
+
         bbox = [min(west, east), min(south, north), max(west, east), max(south, north)]
         geom = {
             "type": "Polygon",
@@ -419,7 +423,7 @@ class TileMatrixSet(BaseModel):
             ],
         }
         xyz = str(tile)
-        feat = {
+        feat: Dict[str, Any] = {
             "type": "Feature",
             "bbox": bbox,
             "id": xyz,
