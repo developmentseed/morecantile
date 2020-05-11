@@ -1,10 +1,9 @@
-1.0.0 (TBD)
+1.0.0 (2020-05-11)
 ------------------
 Major refactor of Morecantile, which is now based on OGC TileMatrixSet JSON documents.
 
 - use pydantic model to validate TMS JSON documents (#6, author @geospatial-jeff)
 - morecantile methods are part of the TMS model (#7)
-
 
 0.1.0 (2020-02-03)
 ------------------

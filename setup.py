@@ -14,9 +14,9 @@ extra_reqs = {
 
 setup(
     name="morecantile",
-    version="0.1.0",
+    version="1.0.0",
     python_requires=">=3",
-    description=u"""Custom map grid utilities""",
+    description=u"""Construct and use map tile grids (a.k.a TileMatrixSet / TMS).""",
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
@@ -34,6 +34,7 @@ setup(
     license="MIT",
     packages=find_packages(exclude=["ez_setup", "examples", "tests"]),
     include_package_data=True,
+    package_data={"morecantile": ["data/*.json"]},
     zip_safe=False,
     install_requires=inst_reqs,
     extras_require=extra_reqs,
