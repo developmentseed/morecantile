@@ -37,3 +37,35 @@ def test_findMatrix():
 
     with pytest.raises(Exception):
         tms.matrix(26)
+
+
+def test_Custom():
+    """Create custom TMS grid."""
+    tms = TileMatrixSet.load("WebMercatorQuad")
+
+    # Web Mercator Extent
+    extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
+    custom_tms = TileMatrixSet.custom(extent, CRS.from_epsg(3857))
+
+    assert tms.tile(20.0, 15.0, 5) == custom_tms.tile(20.0, 15.0, 5)
+
+    wmMat = tms.matrix(5)
+    cusMat = custom_tms.matrix(5)
+    assert wmMat.matrixWidth == cusMat.matrixWidth
+    assert wmMat.matrixHeight == cusMat.matrixHeight
+    assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
+    assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
+
+    extent = (-180.0, -85.051128779806, 180.0, 85.051128779806)
+    custom_tms = TileMatrixSet.custom(
+        extent, CRS.from_epsg(3857), extent_crs=CRS.from_epsg(4326)
+    )
+
+    assert tms.tile(20.0, 15.0, 5) == custom_tms.tile(20.0, 15.0, 5)
+
+    wmMat = tms.matrix(5)
+    cusMat = custom_tms.matrix(5)
+    assert wmMat.matrixWidth == cusMat.matrixWidth
+    assert wmMat.matrixHeight == cusMat.matrixHeight
+    assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
+    assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
