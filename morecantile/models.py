@@ -84,6 +84,9 @@ class TileMatrix(BaseModel):
     """Tile matrix"""
 
     type: str = Field("TileMatrixType", const=True)
+    title: Optional[str]
+    abstract: Optional[str]
+    keywords: Optional[List[str]]
     identifier: str
     scaleDenominator: float
     topLeftCorner: BoundsType
@@ -92,12 +95,19 @@ class TileMatrix(BaseModel):
     matrixWidth: int
     matrixHeight: int
 
+    class Config:
+        """Forbid additional items like variableMatrixWidth."""
+
+        extra = "forbid"
+
 
 class TileMatrixSet(BaseModel):
     """Tile matrix set"""
 
     type: str = Field("TileMatrixSetType", const=True)
     title: str
+    abstract: Optional[str]
+    keywords: Optional[List[str]]
     identifier: str
     supportedCRS: str = Field(..., regex=r"^http://www.opengis.net/")
     wellKnownScaleSet: Optional[str] = Field(None, regex=r"^http")

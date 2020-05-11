@@ -10,7 +10,7 @@ from rasterio.crs import CRS
 
 def test_default_grids():
     """Morecantile.default_grids should return the correct list of grids."""
-    assert len(morecantile.default_grids) == 12
+    assert len(morecantile.default_grids) == 10
 
 
 def test_TMSproperties():
