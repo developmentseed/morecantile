@@ -137,22 +137,28 @@ class TileMatrixSet(BaseModel):
         Attributes
         ----------
         crs: rasterio.crs.CRS
-            TileMatrixSet coordinate reference system
+            Tile Matrix Set coordinate reference system
         extent: list
-            Bounding box of the TileMatrixSet, (left, bottom, right, top).
+            Bounding box of the Tile Matrix Set, (left, bottom, right, top).
         tile_width: int
+            Width of each tile of this tile matrix in pixels (default is 256).
         tile_height: int
+            Height of each tile of this tile matrix in pixels (default is 256).
         matrix_scale: list
             Tiling schema coalescence coefficient (default: [1, 1] for EPSG:3857).
             Should be set to [2, 1] for EPSG:4326.
             see: http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#14
         extent_crs: rasterio.crs.CRS
             Extent's coordinate reference system, as a rasterio CRS object.
-            (default: assuming same as input crs)
+            (default: same as input crs)
         minzoom: int
+            Tile Matrix Set minimum zoom level (default is 0).
         maxzoom: int
+            Tile Matrix Set maximum zoom level (default is 24).
         title: str
+            Tile Matrix Set title (default is 'Custom TileMatrixSet')
         identifier: str
+            Tile Matrix Set identifier (default is 'Custom')
 
         Returns:
         --------
