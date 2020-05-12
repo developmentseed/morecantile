@@ -1,6 +1,7 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 import math
 import os
+import warnings
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -25,6 +26,10 @@ class NotAValidName(Exception):
 
 class TileArgParsingError(Exception):
     """Raised when errors occur in parsing a function's tile arg(s)"""
+
+
+class DeprecationWarning(UserWarning):
+    """morecantile module deprecations warning."""
 
 
 def _parse_tile_arg(*args) -> Tile:
@@ -121,6 +126,10 @@ class TileMatrixSet(BaseModel):
     @classmethod
     def load(cls, name: str):
         """Load default TileMatrixSet."""
+        warnings.warn(
+            "TileMatrixSet.load will be deprecated in version 1.1.0",
+            DeprecationWarning,
+        )
         try:
             return cls.parse_file(os.path.join(data_dir, f"{name}.json"))
         except FileNotFoundError:
@@ -441,3 +450,36 @@ class TileMatrixSet(BaseModel):
             feat["id"] = fid
 
         return feat
+
+
+class default_TileMatrixSet(object):
+    """Default TileMatrixSets holder."""
+
+    def __init__(self):
+        """Load default TMS in a dict."""
+        default_grids = [
+            os.path.splitext(f)[0] for f in os.listdir(data_dir) if f.endswith(".json")
+        ]
+
+        self._data = {
+            grid: TileMatrixSet.parse_file(os.path.join(data_dir, f"{grid}.json"))
+            for grid in default_grids
+        }
+
+    def get(self, identifier: str) -> TileMatrixSet:
+        """Fetch a TMS."""
+        try:
+            return self._data[identifier]
+        except KeyError:
+            raise Exception("Invalid identifier")
+
+    def list(self) -> List[str]:
+        """List registered TMS."""
+        return list(self._data.keys())
+
+    def register(self, custom_tms: TileMatrixSet):
+        """Register a custom TileMatrixSet."""
+        self._data[custom_tms.identifier] = custom_tms
+
+
+tms = default_TileMatrixSet()  # noqa
