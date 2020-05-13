@@ -1,73 +1,20 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 import math
 import os
-from collections import namedtuple
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 from rasterio.crs import CRS
 from rasterio.warp import transform, transform_bounds
 
-data_dir = os.path.join(os.path.dirname(__file__), "data")
+from .commons import Coords, CoordsBbox, Tile
+from .errors import DeprecationWarning, InvalidIdentifier
+from .utils import _parse_tile_arg, meters_per_unit
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 WGS84_CRS = CRS.from_epsg(4326)
-
-Tile = namedtuple("Tile", ["x", "y", "z"])
-Coords = namedtuple("Coords", ["x", "y"])
-CoordsBbox = namedtuple("CoordsBbox", ["xmin", "ymin", "xmax", "ymax"])
-
-
-class NotAValidName(Exception):
-    """Invalid TileMatrixSet name."""
-
-
-class TileArgParsingError(Exception):
-    """Raised when errors occur in parsing a function's tile arg(s)"""
-
-
-def _parse_tile_arg(*args) -> Tile:
-    """
-    parse the *tile arg of module functions
-
-    Parameters
-    ----------
-    tile : Tile or sequence of int
-        May be be either an instance of Tile or 3 ints, X, Y, Z.
-
-    Returns
-    -------
-    Tile
-
-    Raises
-    ------
-    TileArgParsingError
-
-    """
-    if len(args) == 1:
-        args = args[0]
-    if len(args) == 3:
-        return Tile(*args)
-    else:
-        raise TileArgParsingError(
-            "the tile argument may have 1 or 3 values. Note that zoom is a keyword-only argument"
-        )
-
-
-def meters_per_unit(crs: CRS) -> float:
-    """
-    coefficient to convert the coordinate reference system (CRS)
-    units into meters (metersPerUnit).
-
-    From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
-        If the CRS uses meters as units of measure for the horizontal dimensions,
-        then metersPerUnit=1; if it has degrees, then metersPerUnit=2pa/360
-        (a is the Earth maximum radius of the ellipsoid).
-
-    """
-    # crs.linear_units_factor[1]  GDAL 3.0
-    return 1.0 if crs.linear_units == "metre" else 2 * math.pi * 6378137 / 360.0
 
 
 class BoundingBox(BaseModel):
@@ -121,10 +68,14 @@ class TileMatrixSet(BaseModel):
     @classmethod
     def load(cls, name: str):
         """Load default TileMatrixSet."""
+        warnings.warn(
+            "TileMatrixSet.load will be deprecated in version 2.0.0", DeprecationWarning
+        )
         try:
+            data_dir = os.path.join(os.path.dirname(__file__), "data")
             return cls.parse_file(os.path.join(data_dir, f"{name}.json"))
         except FileNotFoundError:
-            raise NotAValidName(f"'{name}' is not a valid default TileMatrixSet.")
+            raise InvalidIdentifier(f"'{name}' is not a valid default TileMatrixSet.")
 
     @classmethod
     def custom(
@@ -289,14 +240,14 @@ class TileMatrixSet(BaseModel):
 
         Parameters
         ----------
-            lng, lat : float
-                A longitude and latitude pair in decimal degrees.
-            zoom : int
-                The web mercator zoom level.
+        lng, lat : float
+            A longitude and latitude pair in decimal degrees.
+        zoom : int
+            The web mercator zoom level.
 
         Returns
         -------
-            Tile
+        Tile
 
         """
         x, y = self.point_fromwgs84(lng, lat)
@@ -308,11 +259,11 @@ class TileMatrixSet(BaseModel):
 
         Attributes
         ----------
-            tile: (x, y, z) tile coordinates or a Tile object we want the upper left geospatial coordinates of.
+        tile: (x, y, z) tile coordinates or a Tile object we want the upper left geospatial coordinates of.
 
         Returns
         -------
-            The upper left geospatial coordiantes of the input tile.
+        The upper left geospatial coordiantes of the input tile.
 
         """
         tile = _parse_tile_arg(*tile)
@@ -328,11 +279,11 @@ class TileMatrixSet(BaseModel):
 
         Attributes
         ----------
-            tile: A tuple of (x, y, z) tile coordinates or a Tile object we want the bounding box of.
+        tile: A tuple of (x, y, z) tile coordinates or a Tile object we want the bounding box of.
 
         Returns
         -------
-            The bounding box of the input tile.
+        The bounding box of the input tile.
 
         """
         tile = _parse_tile_arg(*tile)
@@ -346,11 +297,11 @@ class TileMatrixSet(BaseModel):
 
         Attributes
         ----------
-            tile: (x, y, z) tile coordinates or a Tile object we want the upper left geospatial coordinates of.
+        tile: (x, y, z) tile coordinates or a Tile object we want the upper left geospatial coordinates of.
 
         Returns
         -------
-            The upper left geospatial coordiantes of the input tile.
+        The upper left geospatial coordiantes of the input tile.
 
         """
         x, y = self._ul(*tile)
@@ -362,11 +313,11 @@ class TileMatrixSet(BaseModel):
 
         Attributes
         ----------
-            tile: A tuple of (x, y, z) tile coordinates or a Tile object we want the bounding box of.
+        tile: A tuple of (x, y, z) tile coordinates or a Tile object we want the bounding box of.
 
         Returns
         -------
-            The bounding box of the input tile.
+        The bounding box of the input tile.
 
         """
         tile = _parse_tile_arg(*tile)
@@ -388,18 +339,19 @@ class TileMatrixSet(BaseModel):
 
         Parameters
         ----------
-            tile : Tile or sequence of int
-                May be be either an instance of Tile or 3 ints, X, Y, Z.
-            fid : str, optional
-                A feature id.
-            props : dict, optional
-                Optional extra feature properties.
-            precision : int, optional
-                GeoJSON coordinates will be truncated to this number of decimal
-                places.
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+        fid : str, optional
+            A feature id.
+        props : dict, optional
+            Optional extra feature properties.
+        precision : int, optional
+            GeoJSON coordinates will be truncated to this number of decimal
+            places.
+
         Returns
         -------
-            dict
+        dict
 
         """
         west, south, east, north = self.bounds(tile)

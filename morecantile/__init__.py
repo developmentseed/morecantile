@@ -8,15 +8,10 @@ Refs:
 
 """
 
-import os
-
 import pkg_resources
 
-from .models import Tile, TileMatrixSet  # noqa
+from .commons import Coords, CoordsBbox, Tile  # noqa
+from .defaults import tms  # noqa
+from .models import TileMatrixSet  # noqa
 
 version = pkg_resources.get_distribution(__package__).version
-
-data_dir = os.path.join(os.path.dirname(__file__), "data")
-default_grids = [
-    os.path.splitext(f)[0] for f in os.listdir(data_dir) if f.endswith(".json")
-]

@@ -5,35 +5,52 @@ import pytest
 from rasterio.crs import CRS
 
 import morecantile
-from morecantile.models import meters_per_unit
+from morecantile.errors import InvalidIdentifier
+from morecantile.utils import meters_per_unit
 
 
 def test_default_grids():
     """Morecantile.default_grids should return the correct list of grids."""
-    assert len(morecantile.default_grids) == 10
+    assert len(morecantile.tms.list()) == 10
+
+    with pytest.raises(InvalidIdentifier):
+        morecantile.tms.get("ANotValidName")
+
+
+def test_register():
+    """Test register a new grid."""
+    assert len(morecantile.tms.list()) == 10
+
+    crs = CRS.from_epsg(3031)
+    extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
+    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomGrid3031")
+
+    morecantile.tms.register(tms)
+    assert len(morecantile.tms.list()) == 11
+    assert "MyCustomGrid3031" in morecantile.tms.list()
 
 
 def test_TMSproperties():
     """Test TileSchema()."""
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     assert tms.crs == CRS.from_epsg(3857)
     assert meters_per_unit(tms.crs) == 1.0
 
-    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    tms = morecantile.tms.get("WorldCRS84Quad")
     assert tms.crs == CRS.from_epsg(4326)
     assert meters_per_unit(tms.crs) == 111319.49079327358
 
 
 def test_tile_coordinates():
     """Test coordinates to tile index utils."""
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     assert tms.tile(-179, 85, 5) == (0, 0, 5)
 
     # Check equivalence between mercantile and morecantile
     # wlon, wlat = mercantile.xy(20.0, 15.0)
     assert tms.tile(20.0, 15.0, 5) == mercantile.tile(20.0, 15.0, 5)
 
-    tms = morecantile.TileMatrixSet.load("WorldCRS84Quad")
+    tms = morecantile.tms.get("WorldCRS84Quad")
     assert tms.tile(10.0, 10.0, 5) == morecantile.Tile(16, 14, 5)
 
 
@@ -47,7 +64,7 @@ def test_bounds(args):
     test form https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
     """
     expected = (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705)
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     bbox = tms.bounds(*args)
     for a, b in zip(expected, bbox):
         assert round(a - b, 7) == 0
@@ -72,7 +89,7 @@ def test_xy_bounds(args):
         -978393.962050256,
         7044436.526761846,
     )
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     bounds = tms.xy_bounds(*args)
     for a, b in zip(expected, bounds):
         assert round(a - b, 7) == 0
@@ -84,7 +101,7 @@ def test_ul_tile():
 
     test form https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
     """
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     xy = tms.ul(486, 332, 10)
     expected = (-9.140625, 53.33087298301705)
     for a, b in zip(expected, xy):
@@ -97,7 +114,7 @@ def test_projul_tile():
 
     test form https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
     """
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     xy = tms._ul(486, 332, 10)
     expected = (-1017529.7205322663, 7044436.526761846)
     for a, b in zip(expected, xy):
@@ -106,13 +123,13 @@ def test_projul_tile():
 
 def test_projtile():
     """TileSchema._tile should return the correct tile."""
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     assert tms._tile(1000, 1000, 1) == morecantile.Tile(1, 0, 1)
 
 
 def test_feature():
     """TileSchema.feature should create proper geojson feature."""
-    tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     feat = tms.feature(morecantile.Tile(1, 0, 1))
     assert feat["bbox"]
     assert feat["id"]
