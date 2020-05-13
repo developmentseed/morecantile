@@ -10,6 +10,8 @@ Refs:
 
 import pkg_resources
 
-from .models import Tile, TileMatrixSet, tms  # noqa
+from .commons import Coords, CoordsBbox, Tile  # noqa
+from .defaults import tms  # noqa
+from .models import TileMatrixSet  # noqa
 
 version = pkg_resources.get_distribution(__package__).version

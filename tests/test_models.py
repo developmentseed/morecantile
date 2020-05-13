@@ -6,7 +6,9 @@ import pytest
 from pydantic import ValidationError
 from rasterio.crs import CRS
 
-from morecantile.models import NotAValidName, TileMatrix, TileMatrixSet
+import morecantile
+from morecantile.errors import DeprecationWarning, InvalidIdentifier
+from morecantile.models import TileMatrix, TileMatrixSet
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
@@ -55,14 +57,16 @@ def test_tile_matrix():
 
 def test_load():
     """Should raise an error when file not found."""
-    TileMatrixSet.load("WebMercatorQuad")
-    with pytest.raises(NotAValidName):
+    with pytest.warns(DeprecationWarning):
+        TileMatrixSet.load("WebMercatorQuad")
+
+    with pytest.raises(InvalidIdentifier):
         TileMatrixSet.load("ANotValidName")
 
 
 def test_findMatrix():
     """Should raise an error when TileMatrix is not found."""
-    tms = TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
     m = tms.matrix(0)
     assert m.identifier == "0"
 
@@ -72,7 +76,7 @@ def test_findMatrix():
 
 def test_Custom():
     """Create custom TMS grid."""
-    tms = TileMatrixSet.load("WebMercatorQuad")
+    tms = morecantile.tms.get("WebMercatorQuad")
 
     # Web Mercator Extent
     extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)

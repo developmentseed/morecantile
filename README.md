@@ -58,11 +58,29 @@ xmin                            xmax
 
 ref: http://schemas.opengis.net/tms/1.0/json/examples/
 
+```python
+import morecantile
+
+print(morecantile.tms.list())
+>> [
+    'LINZAntarticaMapTilegrid',
+    'EuropeanETRS89_LAEAQuad',
+    'CanadianNAD83_LCC',
+    'UPSArcticWGS84Quad',
+    'NZTM2000',
+    'UTM31WGS84Quad',
+    'UPSAntarcticWGS84Quad',
+    'WorldMercatorWGS84Quad',
+    'WorldCRS84Quad',
+    'WebMercatorQuad'
+]
+```
+
 ### Load default grid
 ```python
 import morecantile
 
-tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+tms = morecantile.tms.get("WebMercatorQuad")
 ```
 
 ### Define custom grid
@@ -72,7 +90,7 @@ from rasterio.crs import CRS
 
 crs = CRS.from_epsg(3031)
 extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-tms = morecantile.TileMatrixSet.custom(extent, crs)
+tms = morecantile.TileMatrixSet.custom(extent, crs, indentifier="MyCustomTmsEPSG3031")
 
 print(tms.matrix(0).dict(exclude_none=True))
 {
@@ -87,12 +105,18 @@ print(tms.matrix(0).dict(exclude_none=True))
 }
 ```
 
+And register the TMS
+```python
+morecantile.tms.register(tms)
+tms = morecantile.tms.get("MyCustomTmsEPSG3031")
+assert "MyCustomTmsEPSG3031" in morecantile.tms.list()
+```
 
 ### Create tile and get bounds
 ```python
 import morecantile
 
-tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+tms = morecantile.tms.get("WebMercatorQuad")
 
 # Get the bounds for tile Z=4, X=10, Y=10 in the input projection
 tms.xy_bounds(morecantile.Tile(10, 10, 4))
@@ -107,7 +131,7 @@ tms.bounds(morecantile.Tile(10, 10, 4))
 ```python
 import morecantile
 
-tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+tms = morecantile.tms.get("WebMercatorQuad")
 
 tms.tile(159.31, -42, 4) 
 >> Tile(x=15, y=10, z=4)
@@ -123,7 +147,7 @@ ts._tile(x, y, 4)
 ```python
 import morecantile
 
-tms = morecantile.TileMatrixSet.load("WebMercatorQuad")
+tms = morecantile.tms.get("WebMercatorQuad")
 
 tms.feature(morecantile.Tile(10, 10, 4))
 
