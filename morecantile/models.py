@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field
 from rasterio.crs import CRS
 from rasterio.warp import transform, transform_bounds
 
@@ -21,7 +21,7 @@ class BoundingBox(BaseModel):
     """Bounding box"""
 
     type: str = Field("BoundingBoxType", const=True)
-    crs: str = Field(..., regex=r"^http")
+    crs: AnyHttpUrl
     lowerCorner: BoundsType
     upperCorner: BoundsType
 
@@ -33,7 +33,7 @@ class TileMatrix(BaseModel):
     title: Optional[str]
     abstract: Optional[str]
     keywords: Optional[List[str]]
-    identifier: str
+    identifier: str = Field(..., regex=r"^[0-9]+$")
     scaleDenominator: float
     topLeftCorner: BoundsType
     tileWidth: int
@@ -54,9 +54,9 @@ class TileMatrixSet(BaseModel):
     title: str
     abstract: Optional[str]
     keywords: Optional[List[str]]
-    identifier: str
+    identifier: str = Field(..., regex=r"^[\w\d_\-]+$")
     supportedCRS: str = Field(..., regex=r"^http://www.opengis.net/")
-    wellKnownScaleSet: Optional[str] = Field(None, regex=r"^http")
+    wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
 
