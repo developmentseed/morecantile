@@ -60,6 +60,11 @@ class TileMatrixSet(BaseModel):
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
 
+    def __iter__(self):
+        """Iterate over matrices"""
+        for matrix in self.tileMatrix:
+            yield matrix
+
     @property
     def crs(self) -> CRS:
         """Fetch CRS from epsg"""

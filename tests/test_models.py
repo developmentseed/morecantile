@@ -1,6 +1,7 @@
 """Test TileMatrixSet model."""
 
 import os
+from collections.abc import Iterable
 
 import pytest
 from pydantic import ValidationError
@@ -24,6 +25,14 @@ def test_tile_matrix_set(tileset):
     # This would fail if `supportedCRS` isn't supported by GDAL/Rasterio
     epsg = ts.crs
     isinstance(epsg, CRS)
+
+
+def test_tile_matrix_iter():
+    """Test iterator"""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert isinstance(tms, Iterable)
+    for matrix in tms:
+        assert isinstance(matrix, TileMatrix)
 
 
 def test_tile_matrix():
