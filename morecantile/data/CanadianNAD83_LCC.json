@@ -1,7 +1,7 @@
 {
     "type": "TileMatrixSetType",
     "title": "Lambert conformal conic NAD83 for Canada",
-    "identifier": "CanadianNAD83_LCC ",
+    "identifier": "CanadianNAD83_LCC",
     "boundingBox": {
         "type": "BoundingBoxType",
         "crs": "http://www.opengis.net/def/crs/EPSG/0/3978",
