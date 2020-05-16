@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, Field, validator
 from rasterio.crs import CRS
 from rasterio.warp import transform, transform_bounds
 
@@ -59,6 +59,11 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
+
+    @validator("tileMatrix")
+    def sort_tile_matrices(cls, v):
+        """Sort matrices by identifier"""
+        return sorted(v, key=lambda m: int(m.identifier))
 
     def __iter__(self):
         """Iterate over matrices"""
