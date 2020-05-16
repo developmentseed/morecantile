@@ -53,7 +53,9 @@ def test_tile_matrix_order():
     ]
 
     # Confirm sort direction
-    assert tms_ordered.tileMatrix[-1].identifier > tms_ordered.tileMatrix[0].identifier
+    assert int(tms_ordered.tileMatrix[-1].identifier) > int(
+        tms_ordered.tileMatrix[0].identifier
+    )
 
 
 def test_tile_matrix():
