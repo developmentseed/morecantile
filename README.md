@@ -83,6 +83,12 @@ import morecantile
 tms = morecantile.tms.get("WebMercatorQuad")
 ```
 
+### Iterate through matrices
+```python
+for matrix in tms:
+    assert isinstance(matrix, morecantile.models.TileMatrix)
+```
+
 ### Define custom grid
 ```python
 import morecantile

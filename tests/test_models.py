@@ -1,6 +1,8 @@
 """Test TileMatrixSet model."""
 
 import os
+import random
+from collections.abc import Iterable
 
 import pytest
 from pydantic import ValidationError
@@ -24,6 +26,36 @@ def test_tile_matrix_set(tileset):
     # This would fail if `supportedCRS` isn't supported by GDAL/Rasterio
     epsg = ts.crs
     isinstance(epsg, CRS)
+
+
+def test_tile_matrix_iter():
+    """Test iterator"""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert isinstance(tms, Iterable)
+    for matrix in tms:
+        assert isinstance(matrix, TileMatrix)
+
+
+def test_tile_matrix_order():
+    """Test matrix order"""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    matrices = tms.tileMatrix[:]
+    random.shuffle(matrices)
+    tms_ordered = TileMatrixSet(
+        title=tms.title,
+        identifier=tms.identifier,
+        supportedCRS=tms.supportedCRS,
+        tileMatrix=matrices,
+    )
+    # Confirm sort
+    assert [matrix.identifier for matrix in tms.tileMatrix] == [
+        matrix.identifier for matrix in tms_ordered.tileMatrix
+    ]
+
+    # Confirm sort direction
+    assert int(tms_ordered.tileMatrix[-1].identifier) > int(
+        tms_ordered.tileMatrix[0].identifier
+    )
 
 
 def test_tile_matrix():
