@@ -2,18 +2,20 @@
 import math
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, validator
 from rasterio.crs import CRS
-from rasterio.warp import transform, transform_bounds
+from rasterio.features import bounds as feature_bounds
+from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import Coords, CoordsBbox, Tile
 from .errors import DeprecationWarning, InvalidIdentifier
-from .utils import _parse_tile_arg, meters_per_unit
+from .utils import _parse_tile_arg, bbox_to_feature, meters_per_unit, truncate_lnglat
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
+LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
 
 
@@ -74,6 +76,16 @@ class TileMatrixSet(BaseModel):
     def crs(self) -> CRS:
         """Fetch CRS from epsg"""
         return CRS.from_user_input(self.supportedCRS)
+
+    @property
+    def minzoom(self) -> int:
+        """TileMatrixSet minimum TileMatrix identifier"""
+        return int(self.tileMatrix[0].identifier)
+
+    @property
+    def maxzoom(self) -> int:
+        """TileMatrixSet maximum TileMatrix identifier"""
+        return int(self.tileMatrix[-1].identifier)
 
     @classmethod
     def load(cls, name: str):
@@ -189,6 +201,21 @@ class TileMatrixSet(BaseModel):
             return list(filter(lambda m: m.identifier == str(zoom), self.tileMatrix))[0]
         except IndexError:
             raise Exception(f"TileMatrix not found for level: {zoom}")
+
+    def bbox(self, zoom: int) -> CoordsBbox:
+        """TileMatrix bounds."""
+        matrix = self.matrix(zoom)
+
+        x_res = self._resolution(matrix)
+        y_res = -x_res
+
+        left, top = matrix.topLeftCorner
+        tile_x_size = x_res * matrix.tileWidth
+        tile_y_size = y_res * matrix.tileHeight
+
+        right = left + tile_x_size * matrix.matrixWidth
+        bottom = top + tile_y_size * matrix.matrixHeight
+        return CoordsBbox(left, bottom, right, top)
 
     def _resolution(self, matrix: TileMatrix) -> float:
         """
@@ -335,12 +362,74 @@ class TileMatrixSet(BaseModel):
         right, bottom = self.ul(tile.x + 1, tile.y + 1, tile.z)
         return CoordsBbox(left, bottom, right, top)
 
+    def tiles(
+        self,
+        west: float,
+        south: float,
+        east: float,
+        north: float,
+        zooms: Sequence[int],
+        truncate: bool = False,
+    ):
+        """
+        Get the tiles overlapped by a geographic bounding box
+
+        Parameters
+        ----------
+        west, south, east, north : sequence of float
+            Bounding values in decimal degrees.
+        zooms : int or sequence of int
+            One or more zoom levels.
+        truncate : bool, optional
+            Whether or not to truncate inputs to web mercator limits.
+
+        Yields
+        ------
+        Tile
+
+        Notes
+        -----
+        A small epsilon is used on the south and east parameters so that this
+        function yields exactly one tile when given the bounds of that same tile.
+
+        """
+        if isinstance(zooms, int):
+            zooms = (zooms,)
+
+        if truncate:
+            west, south = truncate_lnglat(west, south)
+            east, north = truncate_lnglat(east, north)
+
+        if west > east:
+            bbox_west = (-180.0, south, east, north)
+            bbox_east = (west, south, 180.0, north)
+            bboxes = [bbox_west, bbox_east]
+        else:
+            bboxes = [(west, south, east, north)]
+
+        for w, s, e, n in bboxes:
+            # TODO: should we clamp to the min/max bounds of the matrix
+            # Clamp bounding values.
+            # w = max(-180.0, w)
+            # s = max(-85.051129, s)
+            # e = min(180.0, e)
+            # n = min(85.051129, n)
+            for z in zooms:
+                ul_tile = self.tile(w, n, z)
+                lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
+
+                for i in range(ul_tile.x, lr_tile.x + 1):
+                    for j in range(ul_tile.y, lr_tile.y + 1):
+                        yield Tile(i, j, z)
+
     def feature(
         self,
         tile: Tile,
         fid: Optional[str] = None,
-        props: Optional[Dict] = None,
+        props: Dict = {},
+        buffer: Optional[NumType] = None,
         precision: Optional[int] = None,
+        projected: bool = False,
     ) -> Dict:
         """
         Get the GeoJSON feature corresponding to a tile.
@@ -355,39 +444,37 @@ class TileMatrixSet(BaseModel):
             A feature id.
         props : dict, optional
             Optional extra feature properties.
-        precision : int, optional
-            GeoJSON coordinates will be truncated to this number of decimal
-            places.
+        buffer : float, optional
+            Optional buffer distance for the GeoJSON polygon.
+        precision: float
+            If >= 0, geometry coordinates will be rounded to this number of decimal,
+            otherwise original coordinate values will be preserved (default).
+        projected : bool, optional
+            Return coordinates in TMS projection. Default is false.
 
         Returns
         -------
         dict
 
         """
-        west, south, east, north = self.bounds(tile)
+        west, south, east, north = self.xy_bounds(tile)
 
-        if precision and precision >= 0:
-            west, south, east, north = (
-                round(v, precision) for v in (west, south, east, north)
-            )
+        if buffer:
+            west -= buffer
+            south -= buffer
+            east += buffer
+            north += buffer
 
-        bbox = [min(west, east), min(south, north), max(west, east), max(south, north)]
-        geom = {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [west, south],
-                    [west, north],
-                    [east, north],
-                    [east, south],
-                    [west, south],
-                ]
-            ],
-        }
+        geom = bbox_to_feature(west, south, east, north)
+
+        precision = precision or -1
+        if not projected:
+            geom = transform_geom(self.crs, WGS84_CRS, geom, precision=precision)
+
         xyz = str(tile)
         feat: Dict[str, Any] = {
             "type": "Feature",
-            "bbox": bbox,
+            "bbox": feature_bounds(geom),
             "id": xyz,
             "geometry": geom,
             "properties": {
@@ -396,6 +483,17 @@ class TileMatrixSet(BaseModel):
                 "grid_crs": self.crs.to_string(),
             },
         }
+
+        if projected:
+            warnings.warn(
+                "CRS is no longer part of the GeoJSON specification."
+                "Other projection than EPSG:4326 might not be supported.",
+                UserWarning,
+            )
+            feat.update(
+                {"crs": {"type": "EPSG", "properties": {"code": self.crs.to_epsg()}}}
+            )
+
         if props:
             feat["properties"].update(props)
 

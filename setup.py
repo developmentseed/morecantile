@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["rasterio>=1.1", "mercantile", "pydantic"]
+inst_reqs = ["rasterio>=1.1", "pydantic"]
 
 extra_reqs = {
     "test": ["pytest", "pytest-cov"],
@@ -38,4 +38,8 @@ setup(
     zip_safe=False,
     install_requires=inst_reqs,
     extras_require=extra_reqs,
+    entry_points="""
+      [console_scripts]
+      morecantile=morecantile.scripts.cli:cli
+      """,
 )
