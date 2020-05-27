@@ -96,7 +96,7 @@ from rasterio.crs import CRS
 
 crs = CRS.from_epsg(3031)
 extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-tms = morecantile.TileMatrixSet.custom(extent, crs, indentifier="MyCustomTmsEPSG3031")
+tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomTmsEPSG3031")
 
 print(tms.matrix(0).dict(exclude_none=True))
 {
