@@ -51,7 +51,7 @@ def test_tile_coordinates():
     assert tms.tile(20.0, 15.0, 5) == mercantile.tile(20.0, 15.0, 5)
 
     tms = morecantile.tms.get("WorldCRS84Quad")
-    assert tms.tile(10.0, 10.0, 5) == morecantile.Tile(16, 14, 5)
+    assert tms.tile(-39.8, 74.2, 4) == morecantile.Tile(12, 1, 4)
 
 
 @pytest.mark.parametrize(

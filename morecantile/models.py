@@ -255,19 +255,12 @@ class TileMatrixSet(BaseModel):
 
         """
         matrix = self.matrix(zoom)
-
         res = self._resolution(matrix)
-        xtile = int(
-            math.floor(
-                (xcoord - matrix.topLeftCorner[0])
-                / float(res * matrix.tileWidth * (matrix.matrixWidth / (2 ** zoom)))
-            )
+        xtile = math.floor(
+            (xcoord - matrix.topLeftCorner[0]) / float(res * matrix.tileWidth)
         )
-        ytile = int(
-            math.floor(
-                (matrix.topLeftCorner[1] - ycoord)
-                / float(res * matrix.tileHeight * (matrix.matrixHeight / (2 ** zoom)))
-            )
+        ytile = math.floor(
+            (matrix.topLeftCorner[1] - ycoord) / float(res * matrix.tileHeight)
         )
         return Tile(x=xtile, y=ytile, z=zoom)
 
