@@ -90,6 +90,9 @@ for matrix in tms:
 ```
 
 ### Define custom grid
+
+Note: TMS CRS must be defined by a EPSG number.
+
 ```python
 import morecantile
 from rasterio.crs import CRS
@@ -202,6 +205,34 @@ my_tms_doc = "~/a_tms_doc.json"
 
 tms = morecantile.TileMatrixSet.parse_file(my_tms_doc)
 ```
+
+## Morecantile CLI
+
+The CLI is heavily inspired from mercantile's CLI.
+
+```
+morecantile --help
+Usage: morecantile [OPTIONS] COMMAND [ARGS]...
+
+  Command line interface for the Morecantile Python package.
+
+Options:
+  -v, --verbose  Increase verbosity.
+  -q, --quiet    Decrease verbosity.
+  --version      Show the version and exit.
+  --help         Show this message and exit.
+
+Commands:
+  custom          Create Custom TileMatrixSet
+  shapes          Print the shapes of tiles as GeoJSON.
+  tiles           Print tiles that overlap or contain a lng/lat point, bounding box, or GeoJSON objects.
+
+  tms             Print TileMatrixSet JSON document.
+  tms-to-geojson  Print TileMatrixSet MatrixSet as GeoJSON.
+```
+
+See [docs/cli.md](docs/cli.md) for more about the morcantile program.
+
 
 ## Contribution & Development
 
