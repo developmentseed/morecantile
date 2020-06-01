@@ -49,16 +49,14 @@ def normalize_source(input):
 @click.version_option(version=morecantile.version, message="%(version)s")
 @click.pass_context
 def cli(ctx, verbose, quiet):
-    """Execute the main mercantile command"""
+    """Execute the main morecantile command"""
     verbosity = verbose - quiet
     configure_logging(verbosity)
     ctx.obj = {}
     ctx.obj["verbosity"] = verbosity
 
 
-# Commands are below.
-
-
+################################################################################
 # The shapes command.
 @cli.command(short_help="Print the shapes of tiles as GeoJSON.")
 # This input is either a filename, stdin, or a string.
@@ -223,6 +221,7 @@ def shapes(
         )
 
 
+################################################################################
 # The tiles command.
 @cli.command(
     short_help=(
@@ -315,6 +314,7 @@ def tiles(ctx, zoom, input, identifier, seq):
             click.echo(output)
 
 
+################################################################################
 # The tms command.
 @cli.command(short_help="Print TileMatrixSet JSON document.")
 @click.option(
@@ -329,6 +329,7 @@ def tms(identifier):
     click.echo(json.dumps(tms.dict(exclude_none=True)))
 
 
+################################################################################
 # The custom command.
 @cli.command(short_help="Create Custom TileMatrixSet")
 @click.option(
@@ -371,6 +372,7 @@ def custom(epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent
     click.echo(json.dumps(tms.dict(exclude_none=True)))
 
 
+################################################################################
 # The tms_to_geojson command.
 @cli.command(short_help="Print TileMatrixSet MatrixSet as GeoJSON.")
 @click.argument("input", type=click.File(mode="r"), default="-", required=False)

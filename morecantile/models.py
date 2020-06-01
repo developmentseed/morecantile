@@ -2,7 +2,7 @@
 import math
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, validator
 from rasterio.crs import CRS
@@ -202,21 +202,6 @@ class TileMatrixSet(BaseModel):
         except IndexError:
             raise Exception(f"TileMatrix not found for level: {zoom}")
 
-    def bbox(self, zoom: int) -> CoordsBbox:
-        """TileMatrix bounds."""
-        matrix = self.matrix(zoom)
-
-        x_res = self._resolution(matrix)
-        y_res = -x_res
-
-        left, top = matrix.topLeftCorner
-        tile_x_size = x_res * matrix.tileWidth
-        tile_y_size = y_res * matrix.tileHeight
-
-        right = left + tile_x_size * matrix.matrixWidth
-        bottom = top + tile_y_size * matrix.matrixHeight
-        return CoordsBbox(left, bottom, right, top)
-
     def _resolution(self, matrix: TileMatrix) -> float:
         """
         Tile resolution for a TileMatrix.
@@ -228,15 +213,75 @@ class TileMatrixSet(BaseModel):
         """
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
-    def point_towgs84(self, x: float, y: float) -> Tuple[float, float]:
-        """Transform point(x,y) to lat lon coordinates."""
-        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
-        return xs[0], ys[0]
+    def point_towgs84(self, x: float, y: float, truncate=False) -> Coords:
+        """
+        Transform point(x,y) to lat lon coordinates.
 
-    def point_fromwgs84(self, x: float, y: float) -> Tuple[float, float]:
-        """Transform point(x,y) from lat lon coordinates."""
-        xs, ys = transform(WGS84_CRS, self.crs, [x], [y])
-        return xs[0], ys[0]
+        Equivalent of mercantile.xy.
+
+        """
+        warnings.warn(
+            "'point_towgs84' has been rename 'lnglat' and will be deprecated in version 2.0.0",
+            DeprecationWarning,
+        )
+        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
+        lng, lat = xs[0], ys[0]
+
+        if truncate:
+            lng, lat = truncate_lnglat(lng, lat)
+
+        return Coords(lng, lat)
+
+    def point_fromwgs84(self, lng: float, lat: float, truncate=False) -> Coords:
+        """
+        Transform point(x,y) from lat lon coordinates.
+
+        Equivalent of mercantile.xy.
+
+        """
+        warnings.warn(
+            "'point_fromwgs84' has been rename 'xy' and will be deprecated in version 2.0.0",
+            DeprecationWarning,
+        )
+        if truncate:
+            lng, lat = truncate_lnglat(lng, lat)
+
+        xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
+        x, y = xs[0], ys[0]
+
+        # https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L232-L237
+        if lat <= -90:
+            y = float("-inf")
+        elif lat >= 90:
+            y = float("inf")
+
+        return Coords(x, y)
+
+    def lnglat(self, x: float, y: float, truncate=False) -> Coords:
+        """Transform point(x,y) to longitude and latitude."""
+        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
+        lng, lat = xs[0], ys[0]
+
+        if truncate:
+            lng, lat = truncate_lnglat(lng, lat)
+
+        return Coords(lng, lat)
+
+    def xy(self, lng: float, lat: float, truncate=False) -> Coords:
+        """Transform longitude and latitude coordinates to TMS CRS."""
+        if truncate:
+            lng, lat = truncate_lnglat(lng, lat)
+
+        xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
+        x, y = xs[0], ys[0]
+
+        # https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L232-L237
+        if lat <= -90:
+            y = float("-inf")
+        elif lat >= 90:
+            y = float("inf")
+
+        return Coords(x, y)
 
     def _tile(self, xcoord: float, ycoord: float, zoom: int) -> Tile:
         """
@@ -264,7 +309,7 @@ class TileMatrixSet(BaseModel):
         )
         return Tile(x=xtile, y=ytile, z=zoom)
 
-    def tile(self, lng: float, lat: float, zoom: int) -> Tile:
+    def tile(self, lng: float, lat: float, zoom: int, truncate=False) -> Tile:
         """
         Get the tile containing a longitude and latitude.
 
@@ -274,13 +319,15 @@ class TileMatrixSet(BaseModel):
             A longitude and latitude pair in decimal degrees.
         zoom : int
             The web mercator zoom level.
+        truncate : bool
+            Whether or not to truncate inputs to limits of WGS84 bounds.
 
         Returns
         -------
         Tile
 
         """
-        x, y = self.point_fromwgs84(lng, lat)
+        x, y = self.xy(lng, lat, truncate=truncate)
         return self._tile(x, y, zoom)
 
     def _ul(self, *tile: Tile) -> Coords:
@@ -335,7 +382,7 @@ class TileMatrixSet(BaseModel):
 
         """
         x, y = self._ul(*tile)
-        return Coords(*self.point_towgs84(x, y))
+        return Coords(*self.lnglat(x, y))
 
     def bounds(self, *tile: Tile) -> CoordsBbox:
         """
@@ -363,9 +410,11 @@ class TileMatrixSet(BaseModel):
         north: float,
         zooms: Sequence[int],
         truncate: bool = False,
-    ):
+    ) -> Iterator[Tile]:
         """
         Get the tiles overlapped by a geographic bounding box
+
+        Original code from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L424
 
         Parameters
         ----------
@@ -400,13 +449,12 @@ class TileMatrixSet(BaseModel):
         else:
             bboxes = [(west, south, east, north)]
 
+        tms_bounds = self.bounds(Tile(0, 0, 0))
         for w, s, e, n in bboxes:
-            # TODO: should we clamp to the min/max bounds of the matrix
-            # Clamp bounding values.
-            # w = max(-180.0, w)
-            # s = max(-85.051129, s)
-            # e = min(180.0, e)
-            # n = min(85.051129, n)
+            w = max(tms_bounds[0], w)
+            s = max(tms_bounds[1], s)
+            e = min(tms_bounds[2], e)
+            n = min(tms_bounds[3], n)
             for z in zooms:
                 ul_tile = self.tile(w, n, z)
                 lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
@@ -452,22 +500,29 @@ class TileMatrixSet(BaseModel):
         """
         west, south, east, north = self.xy_bounds(tile)
 
+        if not projected:
+            geom = bbox_to_feature(west, south, east, north)
+            geom = transform_geom(self.crs, WGS84_CRS, geom)
+            west, south, east, north = feature_bounds(geom)
+
         if buffer:
             west -= buffer
             south -= buffer
             east += buffer
             north += buffer
 
-        geom = bbox_to_feature(west, south, east, north)
+        if precision and precision >= 0:
+            west, south, east, north = (
+                round(v, precision) for v in (west, south, east, north)
+            )
 
-        precision = precision or -1
-        if not projected:
-            geom = transform_geom(self.crs, WGS84_CRS, geom, precision=precision)
+        bbox = [min(west, east), min(south, north), max(west, east), max(south, north)]
+        geom = bbox_to_feature(west, south, east, north)
 
         xyz = str(tile)
         feat: Dict[str, Any] = {
             "type": "Feature",
-            "bbox": feature_bounds(geom),
+            "bbox": bbox,
             "id": xyz,
             "geometry": geom,
             "properties": {

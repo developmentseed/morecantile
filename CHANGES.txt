@@ -1,3 +1,12 @@
+1.2.0 TBD
+------------------
+- add TileMatrixSet minzoom/maxzoom properties
+- fix TileMatrixSet.tile calculation
+- add TileMatrixSet.tiles function (replicat from mercantile)
+- add buffer and projected options to TileMatrixSet.feature method
+- removes mercantile as dependencies
+- add CLI 
+
 1.1.1 (2020-05-15)
 ------------------
 - Fix bad default TMS files (#13)
