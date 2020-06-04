@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-from pydantic import AnyHttpUrl, BaseModel, Field, root_validator, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, validator
 from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
 from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
@@ -25,8 +25,8 @@ def CRS_to_uri(crs: CRS) -> str:
     return f"http://www.opengis.net/def/crs/EPSG/0/{epsg_code}"
 
 
-def is_axis_inverted(crs: CRS) -> bool:
-    """Does CRS has inverted AXIS (lat,lon) or (lon,lat)."""
+def crs_axis_inverted(crs: CRS) -> bool:
+    """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
     return epsg_treats_as_latlong(crs) or epsg_treats_as_northingeasting(crs)
 
 
@@ -45,6 +45,13 @@ class BoundingBox(BaseModel):
         json_encoders = {
             CRS: lambda v: CRS_to_uri(v),
         }
+
+    @validator("crs")
+    def validate_crs(cls, crs):
+        """Translate URI to rasterio CRS Object."""
+        if not isinstance(crs, CRS):
+            crs = CRS.from_user_input(crs)
+        return crs
 
 
 class TileMatrix(BaseModel):
@@ -80,7 +87,6 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
-    _inverted_axis: Optional[bool] = None
 
     class Config:
         """Configure TileMatrixSet."""
@@ -97,17 +103,10 @@ class TileMatrixSet(BaseModel):
 
     @validator("supportedCRS")
     def validate_crs(cls, crs):
-        """Store Rasterio CRS Object in a private variable. """
+        """Translate URI to rasterio CRS Object."""
         if not isinstance(crs, CRS):
             crs = CRS.from_user_input(crs)
-
         return crs
-
-    @root_validator
-    def check_axis(cls, values):
-        """Check if CRS axis are inverted."""
-        values["_inverted_axis"] = is_axis_inverted(values["supportedCRS"])
-        return values
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -128,6 +127,11 @@ class TileMatrixSet(BaseModel):
     def maxzoom(self) -> int:
         """TileMatrixSet maximum TileMatrix identifier"""
         return int(self.tileMatrix[-1].identifier)
+
+    @property
+    def _invert_axis(self) -> bool:
+        """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
+        return crs_axis_inverted(self.crs)
 
     @classmethod
     def load(cls, name: str):
@@ -196,11 +200,21 @@ class TileMatrixSet(BaseModel):
             "tileMatrix": [],
         }
 
+        is_inverted = False
+        if crs.to_epsg():
+            # We use URI because with EPSG code it doesn't work in GDAL 2
+            crs_uri = CRS_to_uri(crs)
+            is_inverted = crs_axis_inverted(CRS.from_user_input(crs_uri))
+
         tms["boundingBox"] = BoundingBox(
             **dict(
                 crs=extent_crs or crs,
-                lowerCorner=[extent[0], extent[1]],
-                upperCorner=[extent[2], extent[3]],
+                lowerCorner=[extent[0], extent[1]]
+                if not is_inverted
+                else [extent[1], extent[0]],
+                upperCorner=[extent[2], extent[3]]
+                if not is_inverted
+                else [extent[2], extent[3]],
             )
         )
 
@@ -211,6 +225,9 @@ class TileMatrixSet(BaseModel):
                 else extent
             )
         )
+        x_origin = bbox.xmin if not is_inverted else bbox.ymax
+        y_origin = bbox.ymax if not is_inverted else bbox.xmin
+
         width = abs(bbox.xmax - bbox.xmin)
         height = abs(bbox.ymax - bbox.ymin)
         mpu = meters_per_unit(crs)
@@ -224,7 +241,7 @@ class TileMatrixSet(BaseModel):
                     **dict(
                         identifier=str(zoom),
                         scaleDenominator=res * mpu / 0.00028,
-                        topLeftCorner=[bbox.xmin, bbox.ymax],
+                        topLeftCorner=[x_origin, y_origin],
                         tileWidth=tile_width,
                         tileHeight=tile_height,
                         matrixWidth=matrix_scale[0] * 2 ** zoom,
@@ -343,10 +360,10 @@ class TileMatrixSet(BaseModel):
         res = self._resolution(matrix)
 
         origin_x = (
-            matrix.topLeftCorner[1] if self._inverted_axis else matrix.topLeftCorner[0]
+            matrix.topLeftCorner[1] if self._invert_axis else matrix.topLeftCorner[0]
         )
         origin_y = (
-            matrix.topLeftCorner[0] if self._inverted_axis else matrix.topLeftCorner[1]
+            matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
         )
 
         xtile = math.floor((xcoord - origin_x) / float(res * matrix.tileWidth))
@@ -392,10 +409,10 @@ class TileMatrixSet(BaseModel):
         res = self._resolution(matrix)
 
         origin_x = (
-            matrix.topLeftCorner[1] if self._inverted_axis else matrix.topLeftCorner[0]
+            matrix.topLeftCorner[1] if self._invert_axis else matrix.topLeftCorner[0]
         )
         origin_y = (
-            matrix.topLeftCorner[0] if self._inverted_axis else matrix.topLeftCorner[1]
+            matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
         )
 
         xcoord = origin_x + tile.x * res * matrix.tileWidth
@@ -455,16 +472,48 @@ class TileMatrixSet(BaseModel):
         return CoordsBbox(left, bottom, right, top)
 
     @property
-    def _tms_bounds(self):
-        zoom = self.minzoom
-        matrix = self.matrix(zoom)
-        left, top = self.ul(0, 0, zoom)
-        right, bottom = self.ul(matrix.matrixWidth, matrix.matrixHeight, zoom)
+    def tms_xy_bounds(self):
+        """Return TMS bounds in TileMatrixSet's CRS."""
+        if self.boundingBox:
+            left = (
+                self.boundingBox.lowerCorner[1]
+                if self._invert_axis
+                else self.boundingBox.lowerCorner[0]
+            )
+            bottom = (
+                self.boundingBox.lowerCorner[0]
+                if self._invert_axis
+                else self.boundingBox.lowerCorner[1]
+            )
+            right = (
+                self.boundingBox.upperCorner[1]
+                if self._invert_axis
+                else self.boundingBox.upperCorner[0]
+            )
+            top = (
+                self.boundingBox.upperCorner[0]
+                if self._invert_axis
+                else self.boundingBox.upperCorner[1]
+            )
+        else:
+            zoom = self.minzoom
+            matrix = self.matrix(zoom)
+            left, top = self._ul(0, 0, zoom)
+            right, bottom = self._ul(matrix.matrixWidth, matrix.matrixHeight, zoom)
+
+        return CoordsBbox(left, bottom, right, top)
+
+    @property
+    def tms_bounds(self):
+        """Return TMS bounds in WGS84."""
+        left, bottom, right, top = transform_bounds(
+            self.crs, WGS84_CRS, *self.tms_xy_bounds, densify_pts=21
+        )
         return CoordsBbox(left, bottom, right, top)
 
     def intersect_tms(self, bbox: CoordsBbox) -> bool:
         """Check if a bounds intersects with the TMS bounds."""
-        tms_bounds = self._tms_bounds
+        tms_bounds = self.tms_xy_bounds
         return (
             (bbox[0] < tms_bounds[2])
             and (bbox[2] > tms_bounds[0])
@@ -521,8 +570,10 @@ class TileMatrixSet(BaseModel):
 
         # tms_bounds = self._tms_bounds
         for w, s, e, n in bboxes:
-            if not self.intersect_tms(CoordsBbox(w, s, e, n)):
-                continue
+            # w, s, e, n = transform_bounds(WGS84_CRS, self.crs, w, s, e, n, densify_pts=21)
+            # if not self.intersect_tms(w, s, e, n):
+            #     continue
+
             # w = max(tms_bounds[0], w)
             # s = max(tms_bounds[1], s)
             # e = min(tms_bounds[2], e)

@@ -326,7 +326,7 @@ def tiles(ctx, zoom, input, identifier, seq):
 def tms(identifier):
     """Print TMS JSON."""
     tms = morecantile.tms.get(identifier)
-    click.echo(json.dumps(tms.dict(exclude_none=True)))
+    click.echo(tms.json(exclude_none=True))
 
 
 ################################################################################
@@ -369,7 +369,7 @@ def custom(epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent
         tile_height=tile_height,
         extent_crs=extent_crs,
     )
-    click.echo(json.dumps(tms.dict(exclude_none=True)))
+    click.echo(tms.json(exclude_none=True))
 
 
 ################################################################################
