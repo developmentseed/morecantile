@@ -1,3 +1,7 @@
+1.2.1 (2020-06-02)
+------------------
+- Truncate `morecantile.TileMatrixSet.tiles` to the maximum TMS bounds.
+
 1.2.0 (2020-06-01)
 ------------------
 - add TileMatrixSet minzoom/maxzoom properties

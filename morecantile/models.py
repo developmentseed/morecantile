@@ -5,7 +5,7 @@ import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, validator
-from rasterio.crs import CRS
+from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
 from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
 
@@ -19,13 +19,32 @@ LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
 
 
+def CRS_to_uri(crs: CRS) -> str:
+    """Convert CRS to URI."""
+    epsg_code = crs.to_epsg()
+    return f"http://www.opengis.net/def/crs/EPSG/0/{epsg_code}"
+
+
+def is_axis_inverted(crs: CRS) -> bool:
+    """Does CRS has inverted AXIS (lat,lon) or (lon,lat)."""
+    return epsg_treats_as_latlong(crs) or epsg_treats_as_northingeasting(crs)
+
+
 class BoundingBox(BaseModel):
     """Bounding box"""
 
     type: str = Field("BoundingBoxType", const=True)
-    crs: AnyHttpUrl
+    crs: Union[CRS, AnyHttpUrl]
     lowerCorner: BoundsType
     upperCorner: BoundsType
+
+    class Config:
+        """Configure BoundingBox."""
+
+        arbitrary_types_allowed = True
+        json_encoders = {
+            CRS: lambda v: CRS_to_uri(v),
+        }
 
 
 class TileMatrix(BaseModel):
@@ -57,15 +76,33 @@ class TileMatrixSet(BaseModel):
     abstract: Optional[str]
     keywords: Optional[List[str]]
     identifier: str = Field(..., regex=r"^[\w\d_\-]+$")
-    supportedCRS: str = Field(..., regex=r"^http://www.opengis.net/")
+    supportedCRS: Union[CRS, AnyHttpUrl]
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
+
+    class Config:
+        """Configure TileMatrixSet."""
+
+        arbitrary_types_allowed = True
+        json_encoders = {
+            CRS: lambda v: CRS_to_uri(v),
+        }
 
     @validator("tileMatrix")
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.identifier))
+
+    @validator("supportedCRS")
+    def validate_crs(cls, crs):
+        """Store Rasterio CRS Object in a private variable. """
+        if not isinstance(crs, CRS):
+            crs = CRS.from_user_input(crs)
+
+        cls._interted_axis = is_axis_inverted(crs)
+        print(cls._interted_axis)
+        return crs
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -75,7 +112,7 @@ class TileMatrixSet(BaseModel):
     @property
     def crs(self) -> CRS:
         """Fetch CRS from epsg"""
-        return CRS.from_user_input(self.supportedCRS)
+        return self.supportedCRS
 
     @property
     def minzoom(self) -> int:
@@ -147,18 +184,16 @@ class TileMatrixSet(BaseModel):
         TileMatrixSet
 
         """
-        epsg_number = crs.to_epsg()
         tms: Dict[str, Any] = {
             "title": title,
             "identifier": identifier,
-            "supportedCRS": f"http://www.opengis.net/def/crs/EPSG/0/{epsg_number}",
+            "supportedCRS": crs,
             "tileMatrix": [],
         }
 
-        bbox_epsg = extent_crs.to_epsg() if extent_crs else epsg_number
         tms["boundingBox"] = BoundingBox(
             **dict(
-                crs=f"http://www.opengis.net/def/crs/EPSG/0/{bbox_epsg}",
+                crs=extent_crs or crs,
                 lowerCorner=[extent[0], extent[1]],
                 upperCorner=[extent[2], extent[3]],
             )
@@ -402,6 +437,24 @@ class TileMatrixSet(BaseModel):
         right, bottom = self.ul(tile.x + 1, tile.y + 1, tile.z)
         return CoordsBbox(left, bottom, right, top)
 
+    @property
+    def _tms_bounds(self):
+        zoom = self.minzoom
+        matrix = self.matrix(zoom)
+        left, top = self.ul(0, 0, zoom)
+        right, bottom = self.ul(matrix.matrixWidth, matrix.matrixHeight, zoom)
+        return CoordsBbox(left, bottom, right, top)
+
+    def intersect_tms(self, bbox: CoordsBbox) -> bool:
+        """Check if a bounds intersects with the TMS bounds."""
+        tms_bounds = self._tms_bounds
+        return (
+            (bbox[0] < tms_bounds[2])
+            and (bbox[2] > tms_bounds[0])
+            and (bbox[3] > tms_bounds[1])
+            and (bbox[1] < tms_bounds[3])
+        )
+
     def tiles(
         self,
         west: float,
@@ -449,12 +502,14 @@ class TileMatrixSet(BaseModel):
         else:
             bboxes = [(west, south, east, north)]
 
-        tms_bounds = self.bounds(Tile(0, 0, 0))
+        # tms_bounds = self._tms_bounds
         for w, s, e, n in bboxes:
-            w = max(tms_bounds[0], w)
-            s = max(tms_bounds[1], s)
-            e = min(tms_bounds[2], e)
-            n = min(tms_bounds[3], n)
+            if not self.intersect_tms(CoordsBbox(w, s, e, n)):
+                continue
+            # w = max(tms_bounds[0], w)
+            # s = max(tms_bounds[1], s)
+            # e = min(tms_bounds[2], e)
+            # n = min(tms_bounds[3], n)
             for z in zooms:
                 ul_tile = self.tile(w, n, z)
                 lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
