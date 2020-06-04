@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, root_validator, validator
 from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
 from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
@@ -80,6 +80,7 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
+    _inverted_axis: Optional[bool] = None
 
     class Config:
         """Configure TileMatrixSet."""
@@ -100,9 +101,13 @@ class TileMatrixSet(BaseModel):
         if not isinstance(crs, CRS):
             crs = CRS.from_user_input(crs)
 
-        cls._interted_axis = is_axis_inverted(crs)
-        print(cls._interted_axis)
         return crs
+
+    @root_validator
+    def check_axis(cls, values):
+        """Check if CRS axis are inverted."""
+        values["_inverted_axis"] = is_axis_inverted(values["supportedCRS"])
+        return values
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -336,12 +341,16 @@ class TileMatrixSet(BaseModel):
         """
         matrix = self.matrix(zoom)
         res = self._resolution(matrix)
-        xtile = math.floor(
-            (xcoord - matrix.topLeftCorner[0]) / float(res * matrix.tileWidth)
+
+        origin_x = (
+            matrix.topLeftCorner[1] if self._inverted_axis else matrix.topLeftCorner[0]
         )
-        ytile = math.floor(
-            (matrix.topLeftCorner[1] - ycoord) / float(res * matrix.tileHeight)
+        origin_y = (
+            matrix.topLeftCorner[0] if self._inverted_axis else matrix.topLeftCorner[1]
         )
+
+        xtile = math.floor((xcoord - origin_x) / float(res * matrix.tileWidth))
+        ytile = math.floor((origin_y - ycoord) / float(res * matrix.tileHeight))
         return Tile(x=xtile, y=ytile, z=zoom)
 
     def tile(self, lng: float, lat: float, zoom: int, truncate=False) -> Tile:
@@ -381,8 +390,16 @@ class TileMatrixSet(BaseModel):
         tile = _parse_tile_arg(*tile)
         matrix = self.matrix(tile.z)
         res = self._resolution(matrix)
-        xcoord = matrix.topLeftCorner[0] + tile.x * res * matrix.tileWidth
-        ycoord = matrix.topLeftCorner[1] - tile.y * res * matrix.tileHeight
+
+        origin_x = (
+            matrix.topLeftCorner[1] if self._inverted_axis else matrix.topLeftCorner[0]
+        )
+        origin_y = (
+            matrix.topLeftCorner[0] if self._inverted_axis else matrix.topLeftCorner[1]
+        )
+
+        xcoord = origin_x + tile.x * res * matrix.tileWidth
+        ycoord = origin_y - tile.y * res * matrix.tileHeight
         return Coords(xcoord, ycoord)
 
     def xy_bounds(self, *tile: Tile) -> CoordsBbox:
