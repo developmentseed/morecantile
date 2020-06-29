@@ -198,9 +198,46 @@ class TileMatrixSet(BaseModel):
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
         try:
-            return list(filter(lambda m: m.identifier == str(zoom), self.tileMatrix))[0]
+            tile_matrix = list(
+                filter(lambda m: m.identifier == str(zoom), self.tileMatrix)
+            )[0]
         except IndexError:
-            raise Exception(f"TileMatrix not found for level: {zoom}")
+            matrix_scale = list(
+                {
+                    round(
+                        self.tileMatrix[idx].scaleDenominator
+                        / self.tileMatrix[idx - 1].scaleDenominator,
+                        2,
+                    )
+                    for idx in range(1, len(self.tileMatrix))
+                }
+            )
+            if len(matrix_scale) > 1:
+                raise Exception(
+                    f"TileMatrix not found for level: {zoom} - Unable to construct tileMatrix for TMS with variable scale"
+                )
+
+            warnings.warn(
+                f"TileMatrix not found for level: {zoom} - Creating values from TMS Scale.",
+                UserWarning,
+            )
+
+            tile_matrix = self.tileMatrix[-1]
+            factor = 1 / matrix_scale[0]
+            while not str(zoom) == tile_matrix.identifier:
+                tile_matrix = TileMatrix(
+                    **dict(
+                        identifier=str(int(tile_matrix.identifier) + 1),
+                        scaleDenominator=tile_matrix.scaleDenominator / factor,
+                        topLeftCorner=tile_matrix.topLeftCorner,
+                        tileWidth=tile_matrix.tileWidth,
+                        tileHeight=tile_matrix.tileHeight,
+                        matrixWidth=int(tile_matrix.matrixWidth * factor),
+                        matrixHeight=int(tile_matrix.matrixHeight * factor),
+                    )
+                )
+
+        return tile_matrix
 
     def _resolution(self, matrix: TileMatrix) -> float:
         """

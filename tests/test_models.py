@@ -102,7 +102,7 @@ def test_findMatrix():
     m = tms.matrix(0)
     assert m.identifier == "0"
 
-    with pytest.raises(Exception):
+    with pytest.warns(UserWarning):
         tms.matrix(26)
 
 
