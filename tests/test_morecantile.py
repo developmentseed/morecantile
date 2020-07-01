@@ -384,3 +384,31 @@ def test_tiles_roundtrip(t):
     assert val.x == t.x
     assert val.y == t.y
     assert val.z == t.z
+
+
+def test_extend_zoom():
+    """TileMatrixSet.ul should return the correct coordinates."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    merc = mercantile.xy_bounds(1000, 1000, 25)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(1000, 1000, 25)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
+
+    merc = mercantile.xy_bounds(2000, 2000, 26)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(2000, 2000, 26)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
+
+    merc = mercantile.xy_bounds(2000, 2000, 27)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(2000, 2000, 27)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
+
+    merc = mercantile.xy_bounds(2000, 2000, 30)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(2000, 2000, 30)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
