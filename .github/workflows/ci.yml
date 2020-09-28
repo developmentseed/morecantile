@@ -52,7 +52,7 @@ jobs:
         run: |
           apt-get update -y
           apt-get install python3-pip -y
-          python3 -m pip install -e .["dev"] --no-binary rasterio
+          python3 -m pip install -e .["test"] --no-binary rasterio
         env:
           LANG: en_US.UTF-8
           LC_ALL: en_US.UTF-8
