@@ -10,6 +10,7 @@ inst_reqs = ["rasterio>=1.1", "pydantic"]
 extra_reqs = {
     "test": ["mercantile", "pytest", "pytest-cov"],
     "dev": ["pytest", "pytest-cov", "pre-commit"],
+    "docs": ["mkdocs", "mkdocs-material", "pygments"],
 }
 
 setup(
@@ -25,6 +26,7 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Topic :: Scientific/Engineering :: GIS",
     ],
     keywords="GIS",
