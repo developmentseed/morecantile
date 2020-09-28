@@ -52,12 +52,13 @@ jobs:
         run: |
           apt-get update -y
           apt-get install python3-pip -y
-          python3 -m pip install rasterio --no-binary rasterio
-          python3 -m pip install tox
+          python3 -m pip install -e .["dev"] --no-binary rasterio
+        env:
+          LANG: en_US.UTF-8
+          LC_ALL: en_US.UTF-8
 
-      # Run tox using the version of Python in `PATH`
-      - name: Run Tox
-        run: tox -e py
+      - name: Run Test
+        run: python3 -m pytest --cov morecantile --cov-report term-missing --ignore=venv
 
   publish:
     needs: [tests]
