@@ -42,16 +42,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gdal-image: ["osgeo/gdal:ubuntu-small-latest", "osgeo/gdal:ubuntu-small-3.1.3", "geographica/gdal2:2.4.3"]
+        gdal-image: ["osgeo/gdal:ubuntu-small-latest", "osgeo/gdal:ubuntu-small-3.1.3"]
 
     container: ${{ matrix.gdal-image }}
-
+    fail-fast: False
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
         run: |
           apt-get install python3-pip -y
-          python3 -m pip install numpy --no-binary numpy
           python3 -m pip install rasterio --no-binary rasterio
           python3 -m pip install tox
 
