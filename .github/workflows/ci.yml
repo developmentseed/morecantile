@@ -54,8 +54,8 @@ jobs:
           apt-get install python3-pip -y
           python3 -m pip install -e .["test"] --no-binary rasterio
         env:
-          LANG: en_US.UTF-8
-          LC_ALL: en_US.UTF-8
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
 
       - name: Run Test
         run: python3 -m pytest --cov morecantile --cov-report term-missing --ignore=venv

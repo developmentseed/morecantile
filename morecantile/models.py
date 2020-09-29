@@ -11,7 +11,13 @@ from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import Coords, CoordsBbox, Tile
 from .errors import DeprecationWarning, InvalidIdentifier
-from .utils import _parse_tile_arg, bbox_to_feature, meters_per_unit, truncate_lnglat
+from .utils import (
+    _parse_tile_arg,
+    bbox_to_feature,
+    meters_per_unit,
+    point_in_bbox,
+    truncate_lnglat,
+)
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
@@ -250,52 +256,34 @@ class TileMatrixSet(BaseModel):
         """
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
-    def point_towgs84(self, x: float, y: float, truncate=False) -> Coords:
-        """
-        Transform point(x,y) to lat lon coordinates.
+    @property
+    def bbox(self) -> CoordsBbox:
+        """Return TMS bounds in TileMatrixSet's CRS."""
 
-        Equivalent of mercantile.xy.
-
-        """
-        warnings.warn(
-            "'point_towgs84' has been rename 'lnglat' and will be deprecated in version 2.0.0",
-            DeprecationWarning,
-        )
-        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
-        lng, lat = xs[0], ys[0]
-
-        if truncate:
-            lng, lat = truncate_lnglat(lng, lat)
-
-        return Coords(lng, lat)
-
-    def point_fromwgs84(self, lng: float, lat: float, truncate=False) -> Coords:
-        """
-        Transform point(x,y) from lat lon coordinates.
-
-        Equivalent of mercantile.xy.
-
-        """
-        warnings.warn(
-            "'point_fromwgs84' has been rename 'xy' and will be deprecated in version 2.0.0",
-            DeprecationWarning,
-        )
-        if truncate:
-            lng, lat = truncate_lnglat(lng, lat)
-
-        xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
-        x, y = xs[0], ys[0]
-
-        # https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L232-L237
-        if lat <= -90:
-            y = float("-inf")
-        elif lat >= 90:
-            y = float("inf")
-
-        return Coords(x, y)
+        if self.boundingBox:
+            left, bottom = (
+                self.boundingBox.lowerCorner[0],
+                self.boundingBox.lowerCorner[1],
+            )
+            right, top = (
+                self.boundingBox.upperCorner[0],
+                self.boundingBox.upperCorner[1],
+            )
+        else:
+            zoom = self.minzoom
+            matrix = self.matrix(zoom)
+            left, top = self._ul(*Tile(0, 0, zoom))
+            right, bottom = self._ul(
+                *Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
+            )
+        return CoordsBbox(left, bottom, right, top)
 
     def lnglat(self, x: float, y: float, truncate=False) -> Coords:
         """Transform point(x,y) to longitude and latitude."""
+        inside = point_in_bbox(Coords(x, y), self.bbox)
+        if not inside:
+            warnings.warn("Point is outside TMS bounds.", UserWarning)
+
         xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
         lng, lat = xs[0], ys[0]
 
@@ -320,7 +308,7 @@ class TileMatrixSet(BaseModel):
 
         return Coords(x, y)
 
-    def _tile(self, xcoord: float, ycoord: float, zoom: int) -> Tile:
+    def _tile(self, xcoord: float, ycoord: float, zoom: int,) -> Tile:
         """
         Get the tile containing a Point (in input projection).
 
@@ -344,6 +332,20 @@ class TileMatrixSet(BaseModel):
         ytile = math.floor(
             (matrix.topLeftCorner[1] - ycoord) / float(res * matrix.tileHeight)
         )
+
+        # avoid out-of-rage tiles
+        if xtile < 0:
+            xtile = 0
+
+        if ytile < 0:
+            ytile = 0
+
+        if xtile > matrix.matrixWidth:
+            xtile = matrix.matrixWidth
+
+        if ytile > matrix.matrixHeight:
+            ytile = matrix.matrixHeight
+
         return Tile(x=xtile, y=ytile, z=zoom)
 
     def tile(self, lng: float, lat: float, zoom: int, truncate=False) -> Tile:

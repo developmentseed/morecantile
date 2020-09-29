@@ -5,7 +5,7 @@ from typing import Dict, Tuple
 
 from rasterio.crs import CRS
 
-from .commons import Tile
+from .commons import Coords, CoordsBbox, Tile
 from .errors import TileArgParsingError
 
 
@@ -82,3 +82,13 @@ def bbox_to_feature(west: float, south: float, east: float, north: float) -> Dic
             [[west, south], [west, north], [east, north], [east, south], [west, south]]
         ],
     }
+
+
+def point_in_bbox(point: Coords, bbox: CoordsBbox, precision: int = 5) -> bool:
+    """Check if a point is in a bounding box."""
+    return (
+        round(point.x, precision) >= round(bbox.xmin, precision)
+        and round(point.x, precision) <= round(bbox.xmax, precision)
+        and round(point.y, precision) >= round(bbox.ymin, precision)
+        and round(point.y, precision) <= round(bbox.ymax, precision)
+    )
