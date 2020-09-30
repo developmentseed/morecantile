@@ -11,7 +11,13 @@ from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import Coords, CoordsBbox, Tile
 from .errors import DeprecationWarning, InvalidIdentifier
-from .utils import _parse_tile_arg, bbox_to_feature, meters_per_unit, truncate_lnglat
+from .utils import (
+    _parse_tile_arg,
+    bbox_to_feature,
+    meters_per_unit,
+    point_in_bbox,
+    truncate_lnglat,
+)
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
@@ -42,9 +48,7 @@ class BoundingBox(BaseModel):
         """Configure BoundingBox."""
 
         arbitrary_types_allowed = True
-        json_encoders = {
-            CRS: lambda v: CRS_to_uri(v),
-        }
+        json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
     @validator("crs")
     def validate_crs(cls, crs):
@@ -92,9 +96,7 @@ class TileMatrixSet(BaseModel):
         """Configure TileMatrixSet."""
 
         arbitrary_types_allowed = True
-        json_encoders = {
-            CRS: lambda v: CRS_to_uri(v),
-        }
+        json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
     @validator("tileMatrix")
     def sort_tile_matrices(cls, v):
@@ -255,9 +257,46 @@ class TileMatrixSet(BaseModel):
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
         try:
-            return list(filter(lambda m: m.identifier == str(zoom), self.tileMatrix))[0]
+            tile_matrix = list(
+                filter(lambda m: m.identifier == str(zoom), self.tileMatrix)
+            )[0]
         except IndexError:
-            raise Exception(f"TileMatrix not found for level: {zoom}")
+            matrix_scale = list(
+                {
+                    round(
+                        self.tileMatrix[idx].scaleDenominator
+                        / self.tileMatrix[idx - 1].scaleDenominator,
+                        2,
+                    )
+                    for idx in range(1, len(self.tileMatrix))
+                }
+            )
+            if len(matrix_scale) > 1:
+                raise Exception(
+                    f"TileMatrix not found for level: {zoom} - Unable to construct tileMatrix for TMS with variable scale"
+                )
+
+            warnings.warn(
+                f"TileMatrix not found for level: {zoom} - Creating values from TMS Scale.",
+                UserWarning,
+            )
+
+            tile_matrix = self.tileMatrix[-1]
+            factor = 1 / matrix_scale[0]
+            while not str(zoom) == tile_matrix.identifier:
+                tile_matrix = TileMatrix(
+                    **dict(
+                        identifier=str(int(tile_matrix.identifier) + 1),
+                        scaleDenominator=tile_matrix.scaleDenominator / factor,
+                        topLeftCorner=tile_matrix.topLeftCorner,
+                        tileWidth=tile_matrix.tileWidth,
+                        tileHeight=tile_matrix.tileHeight,
+                        matrixWidth=int(tile_matrix.matrixWidth * factor),
+                        matrixHeight=int(tile_matrix.matrixHeight * factor),
+                    )
+                )
+
+        return tile_matrix
 
     def _resolution(self, matrix: TileMatrix) -> float:
         """
@@ -270,52 +309,12 @@ class TileMatrixSet(BaseModel):
         """
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
-    def point_towgs84(self, x: float, y: float, truncate=False) -> Coords:
-        """
-        Transform point(x,y) to lat lon coordinates.
-
-        Equivalent of mercantile.xy.
-
-        """
-        warnings.warn(
-            "'point_towgs84' has been rename 'lnglat' and will be deprecated in version 2.0.0",
-            DeprecationWarning,
-        )
-        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
-        lng, lat = xs[0], ys[0]
-
-        if truncate:
-            lng, lat = truncate_lnglat(lng, lat)
-
-        return Coords(lng, lat)
-
-    def point_fromwgs84(self, lng: float, lat: float, truncate=False) -> Coords:
-        """
-        Transform point(x,y) from lat lon coordinates.
-
-        Equivalent of mercantile.xy.
-
-        """
-        warnings.warn(
-            "'point_fromwgs84' has been rename 'xy' and will be deprecated in version 2.0.0",
-            DeprecationWarning,
-        )
-        if truncate:
-            lng, lat = truncate_lnglat(lng, lat)
-
-        xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
-        x, y = xs[0], ys[0]
-
-        # https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L232-L237
-        if lat <= -90:
-            y = float("-inf")
-        elif lat >= 90:
-            y = float("inf")
-
-        return Coords(x, y)
-
     def lnglat(self, x: float, y: float, truncate=False) -> Coords:
         """Transform point(x,y) to longitude and latitude."""
+        inside = point_in_bbox(Coords(x, y), self.bbox)
+        if not inside:
+            warnings.warn("Point is outside TMS bounds.", UserWarning)
+
         xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
         lng, lat = xs[0], ys[0]
 
@@ -366,8 +365,30 @@ class TileMatrixSet(BaseModel):
             matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
         )
 
-        xtile = math.floor((xcoord - origin_x) / float(res * matrix.tileWidth))
-        ytile = math.floor((origin_y - ycoord) / float(res * matrix.tileHeight))
+        xtile = (
+            math.floor((xcoord - origin_x) / float(res * matrix.tileWidth))
+            if not math.isinf(xcoord)
+            else 0
+        )
+        ytile = (
+            math.floor((origin_y - ycoord) / float(res * matrix.tileHeight))
+            if not math.isinf(ycoord)
+            else 0
+        )
+
+        # # avoid out-of-rage tiles
+        if xtile < 0:
+            xtile = 0
+
+        if ytile < 0:
+            ytile = 0
+
+        if xtile > matrix.matrixWidth:
+            xtile = matrix.matrixWidth
+
+        if ytile > matrix.matrixHeight:
+            ytile = matrix.matrixHeight
+
         return Tile(x=xtile, y=ytile, z=zoom)
 
     def tile(self, lng: float, lat: float, zoom: int, truncate=False) -> Tile:
@@ -472,8 +493,8 @@ class TileMatrixSet(BaseModel):
         return CoordsBbox(left, bottom, right, top)
 
     @property
-    def tms_xy_bounds(self):
-        """Return TMS bounds in TileMatrixSet's CRS."""
+    def xy_bbox(self):
+        """Return TMS bounding box in TileMatrixSet's CRS."""
         if self.boundingBox:
             left = (
                 self.boundingBox.lowerCorner[1]
@@ -504,16 +525,16 @@ class TileMatrixSet(BaseModel):
         return CoordsBbox(left, bottom, right, top)
 
     @property
-    def tms_bounds(self):
-        """Return TMS bounds in WGS84."""
+    def bbox(self):
+        """Return TMS bounding box in WGS84."""
         left, bottom, right, top = transform_bounds(
-            self.crs, WGS84_CRS, *self.tms_xy_bounds, densify_pts=21
+            self.crs, WGS84_CRS, *self.xy_bbox, densify_pts=21
         )
         return CoordsBbox(left, bottom, right, top)
 
     def intersect_tms(self, bbox: CoordsBbox) -> bool:
         """Check if a bounds intersects with the TMS bounds."""
-        tms_bounds = self.tms_xy_bounds
+        tms_bounds = self.xy_bbox
         return (
             (bbox[0] < tms_bounds[2])
             and (bbox[2] > tms_bounds[0])

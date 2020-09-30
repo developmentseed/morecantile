@@ -5,7 +5,7 @@ import pytest
 from rasterio.crs import CRS
 
 import morecantile
-from morecantile.errors import DeprecationWarning, InvalidIdentifier
+from morecantile.errors import InvalidIdentifier
 from morecantile.utils import meters_per_unit
 
 
@@ -160,36 +160,6 @@ def test_feature():
     assert len(feat["properties"].keys()) == 4
 
 
-def test_point_fromwgs84():
-    """x, y for the 486-332-10 tile is correctly calculated."""
-    tms = morecantile.tms.get("WebMercatorQuad")
-    ul = tms.ul(486, 332, 10)
-    with pytest.warns(DeprecationWarning):
-        xy = tms.point_fromwgs84(*ul)
-    expected = (-1017529.7205322663, 7044436.526761846)
-    for a, b in zip(expected, xy):
-        assert round(a - b, 7) == 0
-
-
-def test_point_towgs84():
-    """test point_towgs84."""
-    tms = morecantile.tms.get("WebMercatorQuad")
-    xy = (-8366731.739810849, -1655181.9927159143)
-    with pytest.warns(DeprecationWarning):
-        lnglat = tms.point_towgs84(*xy)
-    assert round(lnglat.x, 5) == -75.15963
-    assert round(lnglat.y, 5) == -14.70462
-
-    xy = (-28366731.739810849, -1655181.9927159143)
-    with pytest.warns(DeprecationWarning):
-        lnglat = tms.point_towgs84(*xy, truncate=True)
-    # GDAL returns ('inf', 'inf') and then inf is translated to 180,90 by truncate_lnglat
-    # assert round(lnglat.x, 5) == -180.0  # in Mercantile
-    # assert round(lnglat.y, 5) == -14.70462  # in Mercantile
-    assert round(lnglat.x, 5) == 180.0
-    assert round(lnglat.y, 5) == 90
-
-
 ################################################################################
 # replicate mercantile tests
 # https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
@@ -264,6 +234,7 @@ def test_xy_truncate():
     assert tms.xy(-181.0, 0.0, truncate=True) == tms.xy(-180.0, 0.0)
 
 
+@pytest.mark.xfail
 def test_lnglat():
     """test lnglat."""
     tms = morecantile.tms.get("WebMercatorQuad")
@@ -384,3 +355,31 @@ def test_tiles_roundtrip(t):
     assert val.x == t.x
     assert val.y == t.y
     assert val.z == t.z
+
+
+def test_extend_zoom():
+    """TileMatrixSet.ul should return the correct coordinates."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    merc = mercantile.xy_bounds(1000, 1000, 25)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(1000, 1000, 25)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
+
+    merc = mercantile.xy_bounds(2000, 2000, 26)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(2000, 2000, 26)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
+
+    merc = mercantile.xy_bounds(2000, 2000, 27)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(2000, 2000, 27)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
+
+    merc = mercantile.xy_bounds(2000, 2000, 30)
+    with pytest.warns(UserWarning):
+        more = tms.xy_bounds(2000, 2000, 30)
+    for a, b in zip(more, merc):
+        assert round(a - b, 7) == 0
