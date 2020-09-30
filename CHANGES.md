@@ -7,6 +7,7 @@
 * Add `tms.xy_bbox` and `tms.bbox` properties to return TileMatrixSet boundaries.
 * Add `tms.intersect_tms` to check if a bbox intersect with the TileMatrixSet boundaries.
 * Avoid out-range tiles (e.g. negative indexes)
+* Add `tms.zoom_for_res` function to get the TMS zoom level for a specific resolution (https://github.com/developmentseed/morecantile/issues/31).
 
 ## 1.2.0 (2020-06-01)
 
