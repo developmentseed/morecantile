@@ -1,6 +1,8 @@
-## 1.2.1 (TBD)
+## 1.3.0 (TBD)
 
 * extend TMS beyond TMS Document max zoom level (28)
+* require rasterio >= 1.1.7 (sept 2020)
+* remove deprecated function
 
 ## 1.2.0 (2020-06-01)
 
