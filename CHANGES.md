@@ -1,8 +1,12 @@
 ## 1.3.0 (TBD)
 
-* extend TMS beyond TMS Document max zoom level (28)
-* require rasterio >= 1.1.7 (sept 2020)
-* remove deprecated function
+* Allow Custom CRS for custom TMS definition (https://github.com/developmentseed/morecantile/issues/23)
+* Extend TMS beyond TMS Document max zoom level (https://github.com/developmentseed/morecantile/pull/28)
+* Require rasterio >= 1.1.7 (sept 2020) to support inverted lat/lon TMS (ref: https://github.com/developmentseed/morecantile/issues/26)
+* Remove deprecated function
+* Add `tms.xy_bbox` and `tms.bbox` properties to return TileMatrixSet boundaries.
+* Add `tms.intersect_tms` to check if a bbox intersect with the TileMatrixSet boundaries.
+* Avoid out-range tiles (e.g. negative indexes)
 
 ## 1.2.0 (2020-06-01)
 
@@ -20,7 +24,7 @@
 
 ## 1.1.1 (2020-05-15)
 
-* Fix bad default TMS files (#13)
+* Fix bad default TMS files (https://github.com/developmentseed/morecantile/issues/13)
 * Add regex in model for identifier validation
 
 ## 1.1.0 (2020-05-13)
@@ -33,12 +37,12 @@
 
 Major refactor of Morecantile, which is now based on OGC TileMatrixSet JSON documents.
 
-* use pydantic model to validate TMS JSON documents (#6, author @geospatial-jeff)
-* morecantile methods are part of the TMS model (#7)
+* use pydantic model to validate TMS JSON documents (https://github.com/developmentseed/morecantile/pull/6, author @geospatial-jeff)
+* morecantile methods are part of the TMS model (https://github.com/developmentseed/morecantile/pull/7)
 
 ## 0.1.0 (2020-02-03)
 
-* Rename defaults grids (#1)
+* Rename defaults grids (https://github.com/developmentseed/morecantile/issues/1)
 
 ## 0.0.1 (2020-01-23)
 

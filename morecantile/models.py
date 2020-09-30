@@ -376,7 +376,7 @@ class TileMatrixSet(BaseModel):
             else 0
         )
 
-        # # avoid out-of-rage tiles
+        # # avoid out-of-range tiles
         if xtile < 0:
             xtile = 0
 

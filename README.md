@@ -49,9 +49,9 @@ xmin                            xmax
 
 ---
 
-The name is an homage to [mercantile](https://github.com/mapbox/mercantile), a great tools to work with Web Mercator tile indexes. This module aims to mimic `mercatile` features but for other grids.
+Morecantile is like [mercantile](https://github.com/mapbox/mercantile) (the best tool to work with Web Mercator tile indexes), but with support for other TileMatrixSet grids.
 
-This module follows the **OGC Two Dimensional Tile Matrix Set** specification found in [http://docs.opengeospatial.org/is/17-083r2/17-083r2.html](http://docs.opengeospatial.org/is/17-083r2/17-083r2.html)
+**Morecantile** follows the **OGC Two Dimensional Tile Matrix Set** specification found in [http://docs.opengeospatial.org/is/17-083r2/17-083r2.html](http://docs.opengeospatial.org/is/17-083r2/17-083r2.html)
 
 **Note**: Variable matrix width tile set are not supported.
 

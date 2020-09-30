@@ -33,8 +33,6 @@ for matrix in tms:
 
 ### Define custom grid
 
-Note: TMS CRS must be defined by a EPSG number.
-
 ```python
 import morecantile
 from rasterio.crs import CRS
@@ -62,6 +60,19 @@ morecantile.tms.register(tms)
 tms = morecantile.tms.get("MyCustomTmsEPSG3031")
 assert "MyCustomTmsEPSG3031" in morecantile.tms.list()
 ```
+
+!!! important
+    starting with `morecantile==1.3.0`, you can create TMS using custom CRS.
+
+```python
+import morecantile
+from rasterio.crs import CRS
+
+crs = CRS.from_proj4("+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs")
+extent = [-13584760.000,-13585240.000,13585240.000,13584760.000]
+tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
+```
+
 
 ### Create tile and get bounds
 ```python
