@@ -1,5 +1,6 @@
 """Test TileMatrixSet model."""
 
+import json
 import os
 import random
 from collections.abc import Iterable
@@ -167,6 +168,8 @@ def test_schema():
     tms = morecantile.tms.get("WebMercatorQuad")
     assert tms.schema()
     assert tms.schema_json()
+    assert tms.json(exclude_none=True)
+    assert tms.dict(exclude_none=True)
 
     crs = CRS.from_proj4(
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
@@ -175,3 +178,18 @@ def test_schema():
     tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
     assert tms.schema()
     assert tms.schema_json()
+    assert tms.dict(exclude_none=True)
+    json_doc = json.loads(tms.json(exclude_none=True))
+    # We cannot translate PROJ4 to epsg so it's set to None
+    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/None"
+
+    crs = CRS.from_epsg(3031)
+    extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
+    tms = morecantile.TileMatrixSet.custom(
+        extent, crs, identifier="MyCustomTmsEPSG3031"
+    )
+    assert tms.schema()
+    assert tms.schema_json()
+    assert tms.json(exclude_none=True)
+    json_doc = json.loads(tms.json(exclude_none=True))
+    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/3031"

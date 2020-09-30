@@ -25,7 +25,7 @@ LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-class CRSType(CRS):
+class CRSType(CRS, AnyHttpUrl):
     """
     A geographic or projected coordinate reference system.
     """
@@ -47,7 +47,10 @@ class CRSType(CRS):
     def __modify_schema__(cls, field_schema):
         """Update default schema."""
         field_schema.update(
-            anyOf=[{"type": "CRS"}, {"type": "AnyHttpUrl"}],
+            anyOf=[
+                {"type": "rasterio.crs.CRS"},
+                {"type": "string", "minLength": 1, "maxLength": 65536, "format": "uri"},
+            ],
             examples=[
                 "CRS.from_epsg(4326)",
                 "http://www.opengis.net/def/crs/EPSG/0/3978",
