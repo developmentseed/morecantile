@@ -309,6 +309,30 @@ class TileMatrixSet(BaseModel):
         """
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
+    def zoom_for_res(self, res: float, max_z: Optional[int] = None) -> int:
+        """Get TMS zoom level corresponding to a specific resolution.
+
+        Args:
+            res (float): Resolution in TMS unit.
+            max_z (int): Maximum zoom level (default is tms maxzoom).
+
+        Returns:
+            int: TMS zoom for a given resolution.
+
+        Examples:
+            >>> zoom_for_res(430.021)
+
+        """
+        if not max_z:
+            max_z = self.maxzoom
+
+        for z in range(max_z):
+            matrix = self.matrix(z)
+            if res > self._resolution(matrix):
+                return max(0, z - 1)  # We don't want to scale up
+
+        return max_z
+
     def lnglat(self, x: float, y: float, truncate=False) -> Coords:
         """Transform point(x,y) to longitude and latitude."""
         inside = point_in_bbox(Coords(x, y), self.bbox)

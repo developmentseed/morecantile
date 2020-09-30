@@ -152,3 +152,11 @@ def test_InvertedLatLonGrids():
         28441670.269999996,
         6918457.73,
     )
+
+
+def test_zoom_for_res():
+    """Get TMS zoom level corresponding to a specific resolution."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert tms.zoom_for_res(612.0) == 7
+    assert tms.zoom_for_res(610.0) == 8
+    assert tms.zoom_for_res(0.0001) == 24
