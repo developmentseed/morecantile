@@ -1,4 +1,7 @@
-## 1.3.0 (TBD)
+## 1.3.0.post1 (2020-09-30)
+* fix TileMatrixSet's model schema bug where pydantic wasn't able to translate `Union[rasterio.crs.CRS, pydantic.AnyHttpUrl]` to a valid schema (ref: https://github.com/developmentseed/morecantile/issues/34)
+
+## 1.3.0 (2020-09-30)
 
 * Allow Custom CRS for custom TMS definition (https://github.com/developmentseed/morecantile/issues/23)
 * Extend TMS beyond TMS Document max zoom level (https://github.com/developmentseed/morecantile/pull/28)
