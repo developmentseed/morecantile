@@ -160,3 +160,18 @@ def test_zoom_for_res():
     assert tms.zoom_for_res(612.0) == 7
     assert tms.zoom_for_res(610.0) == 8
     assert tms.zoom_for_res(0.0001) == 24
+
+
+def test_schema():
+    """Translate Model to Schema."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert tms.schema()
+    assert tms.schema_json()
+
+    crs = CRS.from_proj4(
+        "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
+    )
+    extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
+    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
+    assert tms.schema()
+    assert tms.schema_json()

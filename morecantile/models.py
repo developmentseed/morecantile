@@ -25,6 +25,40 @@ LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
 
 
+class CRSType(CRS):
+    """
+    A geographic or projected coordinate reference system.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        """validator for the type."""
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: Union[CRS, AnyHttpUrl]):
+        """Validate CRS."""
+        # If input is a string we tranlate it to CRS
+        if not isinstance(value, CRS):
+            return CRS.from_user_input(value)
+        return value
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        """Update default schema."""
+        field_schema.update(
+            anyOf=[{"type": "CRS"}, {"type": "AnyHttpUrl"}],
+            examples=[
+                "CRS.from_epsg(4326)",
+                "http://www.opengis.net/def/crs/EPSG/0/3978",
+            ],
+        )
+
+    def __repr__(self):
+        """Type representation."""
+        return f"CRS({super().__repr__()})"
+
+
 def CRS_to_uri(crs: CRS) -> str:
     """Convert CRS to URI."""
     epsg_code = crs.to_epsg()
@@ -40,7 +74,7 @@ class BoundingBox(BaseModel):
     """Bounding box"""
 
     type: str = Field("BoundingBoxType", const=True)
-    crs: Union[CRS, AnyHttpUrl]
+    crs: CRSType
     lowerCorner: BoundsType
     upperCorner: BoundsType
 
@@ -49,13 +83,6 @@ class BoundingBox(BaseModel):
 
         arbitrary_types_allowed = True
         json_encoders = {CRS: lambda v: CRS_to_uri(v)}
-
-    @validator("crs")
-    def validate_crs(cls, crs):
-        """Translate URI to rasterio CRS Object."""
-        if not isinstance(crs, CRS):
-            crs = CRS.from_user_input(crs)
-        return crs
 
 
 class TileMatrix(BaseModel):
@@ -87,7 +114,7 @@ class TileMatrixSet(BaseModel):
     abstract: Optional[str]
     keywords: Optional[List[str]]
     identifier: str = Field(..., regex=r"^[\w\d_\-]+$")
-    supportedCRS: Union[CRS, AnyHttpUrl]
+    supportedCRS: CRSType
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[BoundingBox]
     tileMatrix: List[TileMatrix]
@@ -102,13 +129,6 @@ class TileMatrixSet(BaseModel):
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.identifier))
-
-    @validator("supportedCRS")
-    def validate_crs(cls, crs):
-        """Translate URI to rasterio CRS Object."""
-        if not isinstance(crs, CRS):
-            crs = CRS.from_user_input(crs)
-        return crs
 
     def __iter__(self):
         """Iterate over matrices"""
