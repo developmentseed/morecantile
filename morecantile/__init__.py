@@ -8,10 +8,8 @@ Refs:
 
 """
 
-import pkg_resources
+__version__ = "1.3.0.post1"
 
 from .commons import Coords, CoordsBbox, Tile  # noqa
 from .defaults import tms  # noqa
 from .models import TileMatrixSet  # noqa
-
-version = pkg_resources.get_distribution(__package__).version
