@@ -1,12 +1,14 @@
 """Default Morecantile TMS."""
 
 import os
-from typing import List
+import pathlib
+from typing import Dict, List
 
 from .errors import InvalidIdentifier
 from .models import TileMatrixSet
 
-data_dir = os.path.join(os.path.dirname(__file__), "data")
+morecantile_tms_dir = pathlib.Path(__file__).parent.joinpath("data")
+user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
 
 
 class DefaultTileMatrixSets(object):
@@ -14,21 +16,21 @@ class DefaultTileMatrixSets(object):
 
     def __init__(self):
         """Load default TMS in a dict."""
-        default_grids = [
-            os.path.splitext(f)[0] for f in os.listdir(data_dir) if f.endswith(".json")
-        ]
 
-        self._data = {
-            grid: TileMatrixSet.parse_file(os.path.join(data_dir, f"{grid}.json"))
-            for grid in default_grids
+        tms_paths = list(pathlib.Path(morecantile_tms_dir).glob("*.json"))
+        if user_tms_dir:
+            tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))
+
+        self._data: Dict[str, TileMatrixSet] = {
+            tms.stem: TileMatrixSet.parse_file(tms) for tms in tms_paths
         }
 
     def get(self, identifier: str) -> TileMatrixSet:
         """Fetch a TMS."""
-        try:
-            return self._data[identifier]
-        except KeyError:
+        if identifier not in self._data:
             raise InvalidIdentifier(f"Invalid identifier: {identifier}")
+
+        return self._data[identifier]
 
     def list(self) -> List[str]:
         """List registered TMS."""
