@@ -1,4 +1,31 @@
+## 1.3.1 (2020-10-07)
+
+* remove `pkg_resources` (https://github.com/pypa/setuptools/issues/510, https://github.com/developmentseed/morecantile/pull/36)
+* add `TILEMATRIXSET_DIRECTORY` to allow morecantile to load user's TMS
+
+```python
+# Save custom TMS to a file
+import morecantile
+from rasterio.crs import CRS
+
+crs = CRS.from_epsg(3031)
+extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
+tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomTmsEPSG3031")
+
+with open("/tmp/mytms/MyCustomTmsEPSG3031.json", "w") as f:
+    f.write(tms.json(exclude_none=True))
+```
+
+```python
+import os
+os.environ["TILEMATRIXSET_DIRECTORY"] = "/tmp/mytms"
+
+from morecantile import tms
+assert "MyCustomTmsEPSG3031" in tms.list()
+```
+
 ## 1.3.0.post1 (2020-09-30)
+
 * fix TileMatrixSet's model schema bug where pydantic wasn't able to translate `Union[rasterio.crs.CRS, pydantic.AnyHttpUrl]` to a valid schema (ref: https://github.com/developmentseed/morecantile/issues/34)
 
 ## 1.3.0 (2020-09-30)
