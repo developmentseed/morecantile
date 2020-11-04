@@ -25,9 +25,42 @@ def test_register():
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
     tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomGrid3031")
 
-    morecantile.tms.register(tms)
+    _ = morecantile.tms.register(tms)
+    assert len(morecantile.tms.list()) == 10
+
+    defaults = morecantile.tms.register(tms)
+    assert len(defaults.list()) == 11
+    assert "MyCustomGrid3031" in defaults.list()
+
+    defaults = morecantile.tms.register([tms])
+    assert len(defaults.list()) == 11
+    assert "MyCustomGrid3031" in defaults.list()
+
+    # Check it will raise an exception if TMS is already registered
+    with pytest.raises(Exception):
+        defaults = defaults.register(tms)
+
+    # Do not raise is overwrite=True
+    defaults = defaults.register(tms, overwrite=True)
+    assert len(defaults.list()) == 11
+
+    # make sure the default morecantile TMS are not overwriten
+    assert len(morecantile.defaults.default_tms.keys()) == 10
+
+    # add tms in morecantile defaults (not something to do anyway)
+    epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, identifier="epsg3031")
+    morecantile.defaults.default_tms["epsg3031"] = epsg3031
+    assert len(morecantile.defaults.default_tms.keys()) == 11
+
+    # make sure updating the default_tms dict has no effect on the default TileMatrixSets
+    assert len(morecantile.tms.list()) == 10
+
+    # Update internal TMS dict
+    morecantile.tms.tms["MyCustomGrid3031"] = tms
     assert len(morecantile.tms.list()) == 11
-    assert "MyCustomGrid3031" in morecantile.tms.list()
+
+    # make sure it doesn't propagate to the default dict
+    assert "MyCustomGrid3031" not in morecantile.defaults.default_tms
 
 
 def test_TMSproperties():
