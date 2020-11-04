@@ -55,4 +55,4 @@ class TileMatrixSets:
         return TileMatrixSets({**self.tms, **new_tms})
 
 
-tms = TileMatrixSets(default_tms)  # noqa
+tms = TileMatrixSets(default_tms.copy())  # noqa
