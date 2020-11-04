@@ -26,8 +26,15 @@ def test_register():
     tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomGrid3031")
 
     morecantile.tms.register(tms)
-    assert len(morecantile.tms.list()) == 11
-    assert "MyCustomGrid3031" in morecantile.tms.list()
+    assert len(morecantile.tms.list()) == 10
+
+    defaults = morecantile.tms.register(tms)
+    assert len(defaults.list()) == 11
+    assert "MyCustomGrid3031" in defaults.list()
+
+    tms = morecantile.tms.register([tms])
+    assert len(defaults.list()) == 11
+    assert "MyCustomGrid3031" in defaults.list()
 
 
 def test_TMSproperties():

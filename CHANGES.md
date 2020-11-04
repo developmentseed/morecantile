@@ -1,8 +1,28 @@
-## 2.0.0 (TBD)
+## 2.0.0 (2020-11-04)
 
 * switch from `CoordBBox` to `rasterio.coords.BoundingBox` (ref: https://github.com/developmentseed/morecantile/issues/38).
 * update `morecantile.commons` Tile and Coords to match rasterio's BoundingBox.
 * rename `morecantile.models.BoundingBox` to `morecantile.models.TMSBoundingBox` to avoind name colision with rasterio's BoundingBox.
+* improve default TMS immutability by making `morecantile.tms.register` to return a new TileMatrixSets instance (ref: https://github.com/developmentseed/morecantile/issues/37)
+
+```python
+import morecantile import TileMatrixSet, tms
+from rasterio.crs import CRS
+
+crs = CRS.from_epsg(3031)
+extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
+custom_tms = TileMatrixSet.custom(extent, crs, identifier="MyCustomTmsEPSG3031")
+
+print(len(tms.list()))
+>>> 10
+
+defaults = tms.register(custom_tms)
+print(len(tms.list()))
+>>> 10
+
+print(len(defaults.list()))
+>>> 11
+```
 
 ## 1.3.1 (2020-10-07)
 
