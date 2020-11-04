@@ -1,3 +1,9 @@
+## 2.0.0 (TBD)
+
+* switch from `CoordBBox` to `rasterio.coords.BoundingBox` (ref: https://github.com/developmentseed/morecantile/issues/38).
+* update `morecantile.commons` Tile and Coords to match rasterio's BoundingBox.
+* rename `morecantile.models.BoundingBox` to `morecantile.models.TMSBoundingBox` to avoind name colision with rasterio's BoundingBox.
+
 ## 1.3.1 (2020-10-07)
 
 * remove `pkg_resources` (https://github.com/pypa/setuptools/issues/510, https://github.com/developmentseed/morecantile/pull/36)

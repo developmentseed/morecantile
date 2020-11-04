@@ -70,10 +70,10 @@ def test_bounds(args):
     bbox = tms.bounds(*args)
     for a, b in zip(expected, bbox):
         assert round(a - b, 7) == 0
-    assert bbox.xmin == bbox[0]
-    assert bbox.ymin == bbox[1]
-    assert bbox.xmax == bbox[2]
-    assert bbox.ymax == bbox[3]
+    assert bbox.left == bbox[0]
+    assert bbox.bottom == bbox[1]
+    assert bbox.right == bbox[2]
+    assert bbox.top == bbox[3]
 
 
 @pytest.mark.parametrize(
@@ -187,10 +187,10 @@ def test_bbox(args):
     bbox = tms.bounds(*args)
     for a, b in zip(expected, bbox):
         assert round(a - b, 7) == 0
-    assert bbox.xmin == bbox[0]
-    assert bbox.ymin == bbox[1]
-    assert bbox.xmax == bbox[2]
-    assert bbox.ymax == bbox[3]
+    assert bbox.left == bbox[0]
+    assert bbox.bottom == bbox[1]
+    assert bbox.right == bbox[2]
+    assert bbox.top == bbox[3]
 
 
 def test_xy_tile():
@@ -238,18 +238,22 @@ def test_xy_truncate():
 def test_lnglat():
     """test lnglat."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    xy = (-8366731.739810849, -1655181.9927159143)
-    lnglat = tms.lnglat(*xy)
-    assert round(lnglat.x, 5) == -75.15963
-    assert round(lnglat.y, 5) == -14.70462
 
-    xy = (-28366731.739810849, -1655181.9927159143)
-    lnglat = tms.lnglat(*xy, truncate=True)
-    # GDAL returns ('inf', 'inf') and then inf is translated to 180,90 by truncate_lnglat
-    # assert round(lnglat.x, 5) == -180.0  # in Mercantile
-    # assert round(lnglat.y, 5) == -14.70462  # in Mercantile
-    assert round(lnglat.x, 5) == 180.0
-    assert round(lnglat.y, 5) == 90
+    with pytest.warns(UserWarning) as w:
+        assert not w
+        xy = (-8366731.739810849, -1655181.9927159143)
+        lnglat = tms.lnglat(*xy)
+        assert round(lnglat.x, 5) == -75.15963
+        assert round(lnglat.y, 5) == -14.70462
+
+    with pytest.warns(UserWarning):
+        xy = (-28366731.739810849, -1655181.9927159143)
+        lnglat = tms.lnglat(*xy, truncate=True)
+        # GDAL returns ('inf', 'inf') and then inf is translated to 180,90 by truncate_lnglat
+        # assert round(lnglat.x, 5) == -180.0  # in Mercantile
+        # assert round(lnglat.y, 5) == -14.70462  # in Mercantile
+        assert round(lnglat.x, 5) == 180.0
+        assert round(lnglat.y, 5) == 90
 
 
 def test_lnglat_xy_roundtrip():

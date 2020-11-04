@@ -82,11 +82,11 @@ tms = morecantile.tms.get("WebMercatorQuad")
 
 # Get the bounds for tile Z=4, X=10, Y=10 in the input projection
 tms.xy_bounds(morecantile.Tile(10, 10, 4))
->> CoordsBbox(xmin=5009377.085697308, ymin=-7514065.628545959, xmax=7514065.628545959, ymax=-5009377.085697308)
+>> BoundingBox(left=5009377.085697308, bottom=-7514065.628545959, right=7514065.628545959, top=-5009377.085697308)
 
 # Get the bounds for tile Z=4, X=10, Y=10 in LatLon (WGS84)
 tms.bounds(morecantile.Tile(10, 10, 4))
->> CoordsBbox(xmin=44.999999999999964, ymin=-55.776573018667634, xmax=67.4999999999999, ymax=-40.97989806962009)
+>> BoundingBox(left=44.999999999999964, bottom=-55.776573018667634, right=67.4999999999999, top=-40.97989806962009)
 ```
 
 ### Find tile for lat/lon
