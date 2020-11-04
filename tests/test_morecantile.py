@@ -32,9 +32,14 @@ def test_register():
     assert len(defaults.list()) == 11
     assert "MyCustomGrid3031" in defaults.list()
 
-    tms = morecantile.tms.register([tms])
+    defaults = morecantile.tms.register([tms])
     assert len(defaults.list()) == 11
     assert "MyCustomGrid3031" in defaults.list()
+
+    with pytest.raises(Exception):
+        defaults = defaults.register(tms)
+
+    defaults = defaults.register(tms, overwrite=True)
 
 
 def test_TMSproperties():
