@@ -1,34 +1,41 @@
 """Morecantile commons."""
 
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 
-Tile = namedtuple("Tile", ["x", "y", "z"])
-"""
-An TMS tile
+from rasterio.coords import BoundingBox  # noqa
 
-Attributes
-----------
-x, y, z : int
-    x and y indexes of the tile and zoom level z.
-"""
+_Tile = namedtuple("Tile", ["x", "y", "z"])
+_Coords = namedtuple("Coords", ["x", "y"])
 
-Coords = namedtuple("Coords", ["x", "y"])
-"""
-A x,y Coordinates pair.
 
-Attributes
-----------
-x, y : float
-    x, y coordinates in input projection unit.
-"""
+class Coords(_Coords):
+    """A x,y Coordinates pair.
 
-CoordsBbox = namedtuple("CoordsBbox", ["xmin", "ymin", "xmax", "ymax"])
-"""
-A geographic bounding box.
+    Args:
+        x (number): horizontal coordinate input projection unit.
+        y (number): vertical coordinate input projection unit.
 
-Attributes
-----------
-xmin, ymin, xmax, ymax : float
-    Bounding values in input projection unit.
+    Examples:
+        >>> Coords(-90.3, 10.5)
 
-"""
+    """
+
+    def _asdict(self):
+        return OrderedDict(zip(self._fields, self))
+
+
+class Tile(_Tile):
+    """TileMatrixSet X,Y,Z tile indices.
+
+    Args:
+        x (int): horizontal index.
+        y (int): verctical index.
+        z (int): zoom level.
+
+    Examples:
+        >>> Tile(0, 0, 0)
+
+    """
+
+    def _asdict(self):
+        return OrderedDict(zip(self._fields, self))
