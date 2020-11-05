@@ -83,7 +83,8 @@ ref: http://schemas.opengis.net/tms/1.0/json/examples/
 
 ## Implementations
 
-- [rio-tiler-crs](https://github.com/cogeotiff/rio-tiler-crs): Create tile from raster using Morecantile TMS.
+- [rio-tiler](https://github.com/cogeotiff/rio-tiler): Create tile from raster using Morecantile TMS.
+- [timvt](https://github.com/developmentseed/timvt): A lightweight PostGIS based dynamic vector tile server.
 
 ## Changes
 

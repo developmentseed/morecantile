@@ -1,3 +1,31 @@
+## 2.0.1 (2020-11-05)
+
+* simplify `morecantile.TileMatrixSet` default representation
+
+```python
+from morecantile import tms
+
+tms.get("WorldCRS84Quad")
+>>> <TileMatrixSet title='CRS84 for the World' identifier='WorldCRS84Quad'>
+
+print(tms.get("WorldCRS84Quad").json())
+>>> {
+    'type': 'TileMatrixSetType',
+    'title': 'CRS84 for the World',
+    'abstract': None,
+    'keywords': None,
+    'identifier': 'WorldCRS84Quad',
+    'supportedCRS': CRS.from_epsg(4326),
+    'wellKnownScaleSet': AnyHttpUrl(...),
+    'boundingBox': {
+        'type': 'BoundingBoxType',
+        'crs': CRS.from_epsg(4326),
+        'lowerCorner': (-180.0, -90.0),
+        'upperCorner': (180.0, 90.0)},
+        'tileMatrix': [...]
+    }
+```
+
 ## 2.0.0 (2020-11-04)
 
 * switch from `CoordBBox` to `rasterio.coords.BoundingBox` (ref: https://github.com/developmentseed/morecantile/issues/38).

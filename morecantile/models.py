@@ -138,6 +138,10 @@ class TileMatrixSet(BaseModel):
         for matrix in self.tileMatrix:
             yield matrix
 
+    def __repr__(self):
+        """Simplify default pydantic model repr."""
+        return f"<TileMatrixSet title='{self.title}' identifier='{self.identifier}'>"
+
     @property
     def crs(self) -> CRS:
         """Fetch CRS from epsg"""
