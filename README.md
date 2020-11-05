@@ -18,8 +18,6 @@
 xmin                            xmax
 ```
 
-
-
 <p align="center">
   <em>Construct and use map tile grids (a.k.a TileMatrixSet / TMS).</em>
 </p>
