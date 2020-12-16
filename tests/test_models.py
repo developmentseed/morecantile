@@ -10,7 +10,7 @@ from pydantic import ValidationError
 from rasterio.crs import CRS
 
 import morecantile
-from morecantile.errors import DeprecationWarning, InvalidIdentifier
+from morecantile.errors import InvalidIdentifier
 from morecantile.models import TileMatrix, TileMatrixSet
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
@@ -169,6 +169,10 @@ def test_zoom_for_res():
 
     # native resolution of zoom 24 is 0.009330691929342784
     assert tms.zoom_for_res(0.0001) == 24
+
+    # theoritical resolution of zoom 25 is 0.004665345964671392
+    with pytest.warns(UserWarning):
+        assert tms.zoom_for_res(0.0001, max_z=25) == 25
 
 
 def test_schema():

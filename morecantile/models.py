@@ -10,7 +10,7 @@ from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import DeprecationWarning, InvalidIdentifier
+from .errors import InvalidIdentifier
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
