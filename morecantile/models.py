@@ -667,16 +667,7 @@ class TileMatrixSet(BaseModel):
         else:
             bboxes = [(west, south, east, north)]
 
-        # tms_bounds = self._tms_bounds
         for w, s, e, n in bboxes:
-            # w, s, e, n = transform_bounds(WGS84_CRS, self.crs, w, s, e, n, densify_pts=21)
-            # if not self.intersect_tms(w, s, e, n):
-            #     continue
-
-            # w = max(tms_bounds[0], w)
-            # s = max(tms_bounds[1], s)
-            # e = min(tms_bounds[2], e)
-            # n = min(tms_bounds[3], n)
             for z in zooms:
                 ul_tile = self.tile(w, n, z)
                 lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
