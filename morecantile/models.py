@@ -337,12 +337,22 @@ class TileMatrixSet(BaseModel):
         """
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
-    def zoom_for_res(self, res: float, max_z: Optional[int] = None) -> int:
+    def zoom_for_res(
+        self,
+        res: float,
+        max_z: Optional[int] = None,
+        zoom_level_strategy: str = "auto",
+    ) -> int:
         """Get TMS zoom level corresponding to a specific resolution.
 
         Args:
             res (float): Resolution in TMS unit.
             max_z (int): Maximum zoom level (default is tms maxzoom).
+            zoom_level_strategy (str): Strategy to determine zoom level (same as in GDAL 3.2).
+                LOWER will select the zoom level immediately below the theoretical computed non-integral zoom level.
+                On the contrary, UPPER will select the immediately above zoom level.
+                Defaults to AUTO which selects the closest zoom level.
+                ref: https://gdal.org/drivers/raster/cog.html#raster-cog
 
         Returns:
             int: TMS zoom for a given resolution.
@@ -354,12 +364,28 @@ class TileMatrixSet(BaseModel):
         if not max_z:
             max_z = self.maxzoom
 
-        for z in range(max_z):
-            matrix = self.matrix(z)
-            if res > self._resolution(matrix):
-                return max(0, z - 1)  # We don't want to scale up
+        # Freely adapted from https://github.com/OSGeo/gdal/blob/dc38aa64d779ecc45e3cd15b1817b83216cf96b8/gdal/frmts/gtiff/cogdriver.cpp#L272-L305
+        for zoom_level in range(max_z + 1):
+            matrix_res = self._resolution(self.matrix(zoom_level))
+            if res > matrix_res or abs(res - matrix_res) / matrix_res <= 1e-8:
+                break
 
-        return max_z
+        if zoom_level > 0 and abs(res - matrix_res) / matrix_res > 1e-8:
+            if zoom_level_strategy.lower() == "lower":
+                zoom_level -= 1
+            elif zoom_level_strategy.lower() == "upper":
+                pass
+            elif zoom_level_strategy.lower() == "auto":
+                if (self._resolution(self.matrix(zoom_level - 1)) / res) < (
+                    res / matrix_res
+                ):
+                    zoom_level -= 1
+            else:
+                raise ValueError(
+                    f"Invalid strategy: {zoom_level_strategy}. Should be one of lower|upper|auto"
+                )
+
+        return zoom_level
 
     def lnglat(self, x: float, y: float, truncate=False) -> Coords:
         """Transform point(x,y) to longitude and latitude."""

@@ -1,3 +1,7 @@
+## 2.1.0 (TBD)
+
+* add `zoom_level_strategy` option for `TileMatrixSet.zoom_for_res` to match GDAL 3.2.
+
 ## 2.0.1 (2020-11-05)
 
 * simplify `morecantile.TileMatrixSet` default representation

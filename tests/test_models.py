@@ -158,8 +158,16 @@ def test_InvertedLatLonGrids():
 def test_zoom_for_res():
     """Get TMS zoom level corresponding to a specific resolution."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert tms.zoom_for_res(612.0) == 7
+
+    # native resolution of zoom 7 is 1222.9924525628178
+    # native resolution of zoom 8 is 611.4962262814075
+    assert tms.zoom_for_res(612.0) == 8
+    assert tms.zoom_for_res(612.0, zoom_level_strategy="lower") == 7
+    assert tms.zoom_for_res(612.0, zoom_level_strategy="upper") == 8
+
     assert tms.zoom_for_res(610.0) == 8
+
+    # native resolution of zoom 24 is 0.009330691929342784
     assert tms.zoom_for_res(0.0001) == 24
 
 
