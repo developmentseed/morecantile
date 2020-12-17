@@ -1,7 +1,7 @@
 ## 2.1.0 (2020-12-17)
 
 * add `zoom_level_strategy` option for `TileMatrixSet.zoom_for_res` to match GDAL 3.2.
-By default, it is set to `auto`, meaning that it will select the closest zoom level. User can set the strategy to `lower` or `upper` to select below or able zoom levels.
+By default, it is set to `auto`, meaning that it will select the closest zoom level. User can set the strategy to `lower` or `upper` to select below or above zoom levels.
 ```python
 import morecantile
 tms = morecantile.tms.get("WebMercatorQuad")
