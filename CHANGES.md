@@ -1,3 +1,8 @@
+
+## 2.1.1 (TBD)
+
+* Add `mercantile` as required package (author @pratikyadav, https://github.com/developmentseed/morecantile/pull/47).
+
 ## 2.1.0 (2020-12-17)
 
 * add `zoom_level_strategy` option for `TileMatrixSet.zoom_for_res` to match GDAL 3.2.
