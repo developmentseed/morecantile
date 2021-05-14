@@ -5,8 +5,10 @@ import pytest
 from rasterio.crs import CRS
 
 import morecantile
-from morecantile.errors import InvalidIdentifier
+from morecantile.errors import InvalidIdentifier, PointOutsideTMSBounds
 from morecantile.utils import meters_per_unit
+
+from .conftest import gdal_version, requires_gdal3, requires_gdal_lt_3
 
 
 def test_default_grids():
@@ -245,20 +247,52 @@ def test_xy_null_island():
         assert round(a - b, 7) == 0
 
 
+@pytest.mark.xfail(
+    gdal_version.major == 3, reason="GDAL versions >= 3 returns [inf, -inf]",
+)
 def test_xy_south_pole():
+    """Return -inf for y at South Pole - Same as mercantile."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.warns(PointOutsideTMSBounds):
+        xy = tms.xy(0.0, -90)
+        assert xy.x == 0.0
+        assert xy.y == float("-inf")
+
+
+@pytest.mark.xfail(
+    gdal_version.major == 2, reason="GDAL versions >= 3 returns [inf, -inf]",
+)
+def test_xy_south_pole_gdal3():
     """Return -inf for y at South Pole"""
     tms = morecantile.tms.get("WebMercatorQuad")
-    xy = tms.xy(0.0, -90)
-    assert xy.x == 0.0
-    assert xy.y == float("-inf")
+    with pytest.warns(PointOutsideTMSBounds):
+        xy = tms.xy(0.0, -90)
+        assert xy.x == float("inf")
+        assert xy.y == float("-inf")
 
 
+@pytest.mark.xfail(
+    gdal_version.major == 3, reason="GDAL versions >= 3 return [inf, inf]",
+)
 def test_xy_north_pole():
-    """Return inf for y at North Pole"""
+    """Return inf for y at North Pole - Same as mercantile."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    xy = tms.xy(0.0, 90)
-    assert xy.x == 0.0
-    assert xy.y == float("inf")
+    with pytest.warns(PointOutsideTMSBounds):
+        xy = tms.xy(0.0, 90)
+        assert xy.x == 0.0
+        assert xy.y == float("inf")
+
+
+@pytest.mark.xfail(
+    gdal_version.major == 2, reason="GDAL versions >= 3 return [inf, inf]",
+)
+def test_xy_north_pole_gdal3():
+    """Return inf for y at North Pole."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.warns(PointOutsideTMSBounds):
+        xy = tms.xy(0.0, 90)
+        assert xy.x == float("inf")
+        assert xy.y == float("inf")
 
 
 def test_xy_truncate():
@@ -272,21 +306,42 @@ def test_lnglat():
     """test lnglat."""
     tms = morecantile.tms.get("WebMercatorQuad")
 
-    with pytest.warns(UserWarning) as w:
+    with pytest.warns(None) as w:
         assert not w
         xy = (-8366731.739810849, -1655181.9927159143)
         lnglat = tms.lnglat(*xy)
         assert round(lnglat.x, 5) == -75.15963
         assert round(lnglat.y, 5) == -14.70462
 
-    with pytest.warns(UserWarning):
+    with pytest.warns(PointOutsideTMSBounds):
         xy = (-28366731.739810849, -1655181.9927159143)
         lnglat = tms.lnglat(*xy, truncate=True)
-        # GDAL returns ('inf', 'inf') and then inf is translated to 180,90 by truncate_lnglat
-        # assert round(lnglat.x, 5) == -180.0  # in Mercantile
-        # assert round(lnglat.y, 5) == -14.70462  # in Mercantile
+        assert round(lnglat.x, 5) == -180.0  # in Mercantile
+        assert round(lnglat.y, 5) == -14.70462  # in Mercantile
+
+
+@requires_gdal_lt_3
+def test_lnglat_gdal2():
+    """test lnglat."""
+    # GDAL2 returns ('inf', 'inf') and then inf is translated to 180,90 by truncate_lnglat
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.warns(PointOutsideTMSBounds):
+        xy = (-28366731.739810849, -1655181.9927159143)
+        lnglat = tms.lnglat(*xy, truncate=True)
         assert round(lnglat.x, 5) == 180.0
         assert round(lnglat.y, 5) == 90
+
+
+@requires_gdal3
+def test_lnglat_gdal3():
+    """test lnglat."""
+    # GDAL3 returns (105.17731317609572, -14.704620000000013)
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.warns(PointOutsideTMSBounds):
+        xy = (-28366731.739810849, -1655181.9927159143)
+        lnglat = tms.lnglat(*xy, truncate=True)
+        assert round(lnglat.x, 5) == 105.17731
+        assert round(lnglat.y, 5) == -14.70462
 
 
 def test_lnglat_xy_roundtrip():
@@ -363,13 +418,31 @@ def test_tiles():
     bounds = (175.0, 5.0, -175.0, 10.0)
     assert len(list(tms.tiles(*bounds, zooms=[2]))) == 2
 
-    # Y is clamped to (0, 2 ** zoom - 1)
-    tiles = list(tms.tiles(-180, -90, 180, 90, [1]))
+
+@pytest.mark.xfail
+def test_global_tiles_clamped():
+    """Y is clamped to (0, 2 ** zoom - 1)."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.warns(PointOutsideTMSBounds):
+        tiles = list(tms.tiles(-180, -90, 180, 90, [1]))
+        assert len(tiles) == 4
+        assert min(t.y for t in tiles) == 0
+        assert max(t.y for t in tiles) == 1
+
+
+def test_global_tiles():
+    """get 4 tiles at zoom 0"""
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    tiles = list(tms.tiles(*tms.bbox, [1]))
     assert len(tiles) == 4
     assert min(t.y for t in tiles) == 0
     assert max(t.y for t in tiles) == 1
 
-    # tiles(bounds(tile)) gives the tile's children
+
+def test_tiles_roundtrip_children():
+    """tiles(bounds(tile)) gives the tile's children"""
+    tms = morecantile.tms.get("WebMercatorQuad")
     t = morecantile.Tile(x=3413, y=6202, z=14)
     res = list(tms.tiles(*tms.bounds(t), zooms=[15]))
     assert len(res) == 4
@@ -380,7 +453,7 @@ def test_tiles():
     [
         morecantile.Tile(x=3413, y=6202, z=14),
         morecantile.Tile(486, 332, 10),
-        # morecantile.Tile(10, 10, 10), This is failing
+        morecantile.Tile(10, 10, 10),
     ],
 )
 def test_tiles_roundtrip(t):
