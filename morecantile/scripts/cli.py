@@ -2,14 +2,50 @@
 
 import json
 import logging
+import sys
 
 import click
-from mercantile.scripts import configure_logging, coords, iter_lines, normalize_input
 from rasterio.crs import CRS
+from rasterio.rio.helpers import coords
 
 import morecantile
 
 logger = logging.getLogger(__name__)
+
+
+def configure_logging(verbosity):
+    """Configure log verbosity.
+
+    Original code from https://github.com/mapbox/mercantile/blob/71bb3dbdaeb4ccf0e14bfabf1f58d36465cd5289/mercantile/scripts/__init__.py#L13-L26
+    License: BSD-3 Original work Copyright 2021 Mapbox
+    """
+    log_level = max(10, 30 - 10 * verbosity)
+    logging.basicConfig(stream=sys.stderr, level=log_level)
+
+
+def normalize_input(input):
+    """Normalize file or string input.
+
+    Original code from https://github.com/mapbox/mercantile/blob/71bb3dbdaeb4ccf0e14bfabf1f58d36465cd5289/mercantile/scripts/__init__.py#L34-L40
+    License: BSD-3 Original work Copyright 2021 Mapbox
+    """
+    try:
+        src = click.open_file(input).readlines()
+    except IOError:
+        src = [input]
+    return src
+
+
+def iter_lines(lines):
+    """Iterate over lines of input, stripping and skipping.
+
+    Original code from https://github.com/mapbox/mercantile/blob/71bb3dbdaeb4ccf0e14bfabf1f58d36465cd5289/mercantile/scripts/__init__.py#L43-L48
+    License: BSD-3 Original work Copyright 2021 Mapbox
+    """
+    for line in lines:
+        line = line.strip()
+        if line:
+            yield line
 
 
 def normalize_source(input):
