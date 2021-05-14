@@ -7,7 +7,7 @@ Issues and pull requests are more than welcome.
 ```bash
 $ git clone https://github.com/developmentseed/morecantile.git
 $ cd morecantile
-$ pip install -e .[dev]
+$ pip install -e .["dev"]
 ```
 
 **Python3.7 only**

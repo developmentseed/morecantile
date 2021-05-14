@@ -4,8 +4,8 @@ from collections import OrderedDict, namedtuple
 
 from rasterio.coords import BoundingBox  # noqa
 
-_Tile = namedtuple("Tile", ["x", "y", "z"])
-_Coords = namedtuple("Coords", ["x", "y"])
+_Tile = namedtuple("_Tile", ["x", "y", "z"])
+_Coords = namedtuple("_Coords", ["x", "y"])
 
 
 class Coords(_Coords):
