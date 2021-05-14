@@ -1,7 +1,7 @@
 
 ## 2.1.1 (TBD)
 
-* Add `mercantile` as required package (author @pratikyadav, https://github.com/developmentseed/morecantile/pull/47).
+* remove `mercantile` dependency.
 
 ## 2.1.0 (2020-12-17)
 
