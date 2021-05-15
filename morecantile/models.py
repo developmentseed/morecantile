@@ -10,7 +10,7 @@ from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import InvalidIdentifier
+from .errors import InvalidIdentifier, PointOutsideTMSBounds
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
@@ -391,7 +391,10 @@ class TileMatrixSet(BaseModel):
         """Transform point(x,y) to longitude and latitude."""
         inside = point_in_bbox(Coords(x, y), self.xy_bbox)
         if not inside:
-            warnings.warn("Point is outside TMS bounds.", UserWarning)
+            warnings.warn(
+                f"Point ({x}, {y}) is outside TMS bounds {list(self.xy_bbox)}.",
+                PointOutsideTMSBounds,
+            )
 
         xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
         lng, lat = xs[0], ys[0]
@@ -405,6 +408,13 @@ class TileMatrixSet(BaseModel):
         """Transform longitude and latitude coordinates to TMS CRS."""
         if truncate:
             lng, lat = truncate_lnglat(lng, lat)
+
+        inside = point_in_bbox(Coords(lng, lat), self.bbox)
+        if not inside:
+            warnings.warn(
+                f"Point ({lng}, {lat}) is outside TMS bounds {list(self.bbox)}.",
+                PointOutsideTMSBounds,
+            )
 
         xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
         x, y = xs[0], ys[0]
@@ -594,6 +604,17 @@ class TileMatrixSet(BaseModel):
                 if self._invert_axis
                 else self.boundingBox.upperCorner[1]
             )
+            if self.boundingBox.crs != self.crs:
+                left, bottom, right, top = transform_bounds(
+                    self.boundingBox.crs,
+                    self.crs,
+                    left,
+                    bottom,
+                    right,
+                    top,
+                    densify_pts=21,
+                )
+
         else:
             zoom = self.minzoom
             matrix = self.matrix(zoom)
@@ -669,7 +690,7 @@ class TileMatrixSet(BaseModel):
 
         for w, s, e, n in bboxes:
             for z in zooms:
-                ul_tile = self.tile(w, n, z)
+                ul_tile = self.tile(w + LL_EPSILON, n - LL_EPSILON, z)
                 lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
 
                 for i in range(ul_tile.x, lr_tile.x + 1):

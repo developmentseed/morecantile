@@ -2,6 +2,8 @@
 ## 2.1.1 (TBD)
 
 * remove `mercantile` dependency.
+* raise `PointOutsideTMSBounds` warning when user is doing operations outside TMS bounds.
+* fix wrong `xy_bbox` when `tms.boundingBox` use a specific CRS.
 
 ## 2.1.0 (2020-12-17)
 
