@@ -1,5 +1,5 @@
 
-## 2.1.1 (TBD)
+## 2.1.1 (2021-05-17)
 
 * remove `mercantile` dependency.
 * raise `PointOutsideTMSBounds` warning when user is doing operations outside TMS bounds.
