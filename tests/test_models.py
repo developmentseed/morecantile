@@ -138,6 +138,13 @@ def test_Custom():
     assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
     assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
 
+    # Kyle's test
+    custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), CRS.from_epsg(4326))
+    assert custom_tms.xy_bbox == (-120, 30, -110, 40)
+    assert custom_tms.bbox == (-120, 30, -110, 40)
+    assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)
+    assert custom_tms.bounds(0, 0, 0) == (-120, 30, -110, 40)
+
 
 def test_InvertedLatLonGrids():
     """Check Inverted LatLon grids."""

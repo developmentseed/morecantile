@@ -1,4 +1,8 @@
 
+## 2.1.2 (2021-05-18)
+
+* fix wrong TMS boundingBox definition when using inverted CRS (https://github.com/developmentseed/morecantile/pull/53)
+
 ## 2.1.1 (2021-05-17)
 
 * remove `mercantile` dependency.
