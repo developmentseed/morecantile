@@ -13,6 +13,8 @@ import morecantile
 from morecantile.errors import InvalidIdentifier
 from morecantile.models import TileMatrix, TileMatrixSet
 
+from .conftest import gdal_version
+
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
     os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(".json")
@@ -137,6 +139,35 @@ def test_Custom():
     assert wmMat.matrixHeight == cusMat.matrixHeight
     assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
     assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
+
+
+# Before GDAL3, `morecantile.models.crs_axis_inverted` will always return False for
+# CRS defined with `epsg`, which is why this test should fail in GDAL 2.
+# ref https://github.com/mapbox/rasterio/blob/8cb216ca83e57284f8a56bafbe8eda4334a34db6/rasterio/crs.py#L509-L538
+@pytest.mark.xfail(
+    gdal_version.major < 3,
+    reason="In GDAL < 3.0, CRS defined with EPSG will always return False in morecantile.models.crs_axis_inverted",
+)
+def test_custom_tms_bounds_epsg4326():
+    """Check bounds with epsg4326."""
+    custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), CRS.from_epsg(4326))
+    assert custom_tms.xy_bbox == (-120, 30, -110, 40)
+    assert custom_tms.bbox == (-120, 30, -110, 40)
+    assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)
+    assert custom_tms.bounds(0, 0, 0) == (-120, 30, -110, 40)
+
+
+# When using `from_user_input`, `morecantile.models.crs_axis_inverted` should return the valid result.
+def test_custom_tms_bounds_user_crs():
+    """Check bounds with epsg4326."""
+    custom_tms = TileMatrixSet.custom(
+        (-120, 30, -110, 40),
+        CRS.from_user_input("http://www.opengis.net/def/crs/EPSG/0/4326"),
+    )
+    assert custom_tms.xy_bbox == (-120, 30, -110, 40)
+    assert custom_tms.bbox == (-120, 30, -110, 40)
+    assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)
+    assert custom_tms.bounds(0, 0, 0) == (-120, 30, -110, 40)
 
 
 def test_InvertedLatLonGrids():

@@ -239,7 +239,7 @@ class TileMatrixSet(BaseModel):
             tms["boundingBox"] = TMSBoundingBox(
                 crs=extent_crs or crs,
                 lowerCorner=[extent[1], extent[0]],
-                upperCorner=[extent[2], extent[3]],
+                upperCorner=[extent[3], extent[2]],
             )
         else:
             tms["boundingBox"] = TMSBoundingBox(
