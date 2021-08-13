@@ -99,6 +99,14 @@ def test_load():
         TileMatrixSet.load("ANotValidName")
 
 
+def test_quadkey_support():
+    tms = TileMatrixSet.load("CanadianNAD83_LCC")
+    assert not tms.quadkey
+
+    tms = TileMatrixSet.load("UPSArcticWGS84Quad")
+    assert tms.quadkey
+
+
 def test_findMatrix():
     """Should raise an error when TileMatrix is not found."""
     tms = morecantile.tms.get("WebMercatorQuad")
