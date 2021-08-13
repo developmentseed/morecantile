@@ -14,6 +14,7 @@ from .errors import InvalidIdentifier, PointOutsideTMSBounds
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
+    check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
     truncate_lnglat,
@@ -161,6 +162,11 @@ class TileMatrixSet(BaseModel):
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
         return crs_axis_inverted(self.crs)
+
+    @property
+    def quadkey(self) -> bool:
+        """Indicator if the Tile Matrix Set supports the creation of quadkeys"""
+        return check_quadkey_support(self.tileMatrix)
 
     @classmethod
     def load(cls, name: str):
