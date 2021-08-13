@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from rasterio.crs import CRS
 
 import morecantile
+from morecantile.commons import Tile
 from morecantile.errors import InvalidIdentifier
 from morecantile.models import TileMatrix, TileMatrixSet
 
@@ -101,10 +102,36 @@ def test_load():
 
 def test_quadkey_support():
     tms = TileMatrixSet.load("CanadianNAD83_LCC")
-    assert not tms.quadkey
+    assert not tms.quadkey_support
 
     tms = TileMatrixSet.load("UPSArcticWGS84Quad")
-    assert tms.quadkey
+    assert tms.quadkey_support
+
+
+def test_quadkey():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    expected = "0313102310"
+    assert tms.quadkey(486, 332, 10) == expected
+
+
+def test_quadkey_to_tile():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    qk = "0313102310"
+    expected = Tile(486, 332, 10)
+    assert tms.quadkey_to_tile(qk) == expected
+
+
+def test_empty_quadkey_to_tile():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    qk = ""
+    expected = Tile(0, 0, 0)
+    assert tms.quadkey_to_tile(qk) == expected
+
+
+def test_quadkey_failure():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.raises(morecantile.errors.QuadKeyError):
+        tms.quadkey_to_tile("lolwut")
 
 
 def test_findMatrix():
