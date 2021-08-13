@@ -10,7 +10,12 @@ from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import InvalidIdentifier, PointOutsideTMSBounds
+from .errors import (
+    InvalidIdentifier,
+    NoQuadkeySupport,
+    PointOutsideTMSBounds,
+    QuadKeyError,
+)
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
@@ -164,7 +169,7 @@ class TileMatrixSet(BaseModel):
         return crs_axis_inverted(self.crs)
 
     @property
-    def quadkey(self) -> bool:
+    def quadkey_support(self) -> bool:
         """Indicator if the Tile Matrix Set supports the creation of quadkeys"""
         return check_quadkey_support(self.tileMatrix)
 
@@ -789,3 +794,60 @@ class TileMatrixSet(BaseModel):
             feat["id"] = fid
 
         return feat
+
+    def quadkey(self, *tile: Tile) -> str:
+        """Get the quadkey of a tile
+        Parameters
+        ----------
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+        Returns
+        -------
+        str
+        """
+        if not self.quadkey_support:
+            raise NoQuadkeySupport(
+                "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
+            )
+        tile = _parse_tile_arg(*tile)
+        xtile, ytile, zoom = tile
+        qk = []
+        for z in range(zoom, self.minzoom, -1):
+            digit = 0
+            mask = 1 << (z - 1)
+            if xtile & mask:
+                digit += 1
+            if ytile & mask:
+                digit += 2
+            qk.append(str(digit))
+        return "".join(qk)
+
+    def quadkey_to_tile(self, qk: str) -> Tile:
+        """Get the tile corresponding to a quadkey
+        Parameters
+        ----------
+        qk : str
+            A quadkey string.
+        Returns
+        -------
+        Tile
+        """
+        if not self.quadkey_support:
+            raise NoQuadkeySupport(
+                "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
+            )
+        if len(qk) == 0:
+            return Tile(0, 0, 0)
+        xtile, ytile = 0, 0
+        for i, digit in enumerate(reversed(qk)):
+            mask = 1 << i
+            if digit == "1":
+                xtile = xtile | mask
+            elif digit == "2":
+                ytile = ytile | mask
+            elif digit == "3":
+                xtile = xtile | mask
+                ytile = ytile | mask
+            elif digit != "0":
+                raise QuadKeyError("Unexpected quadkey digit: %r", digit)
+        return Tile(xtile, ytile, i + 1)
