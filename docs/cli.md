@@ -51,6 +51,7 @@ Options:
                 - CanadianNAD83_LCC
                 - UPSArcticWGS84Quad
                 - NZTM2000
+                - NZTM2000Quad
                 - UTM31WGS84Quad
                 - UPSAntarcticWGS84Quad
                 - WorldMercatorWGS84Quad
@@ -91,6 +92,7 @@ Options:
                 - CanadianNAD83_LCC
                 - UPSArcticWGS84Quad
                 - NZTM2000
+                - NZTM2000Quad
                 - UTM31WGS84Quad
                 - UPSAntarcticWGS84Quad
                 - WorldMercatorWGS84Quad
@@ -149,6 +151,7 @@ Options:
                 - CanadianNAD83_LCC
                 - UPSArcticWGS84Quad
                 - NZTM2000
+                - NZTM2000Quad
                 - UTM31WGS84Quad
                 - UPSAntarcticWGS84Quad
                 - WorldMercatorWGS84Quad
