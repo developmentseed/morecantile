@@ -4,7 +4,7 @@ import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
 from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
@@ -127,7 +127,7 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
-    is_quadtree: bool = False
+    _is_quadtree: bool = PrivateAttr()
 
     class Config:
         """Configure TileMatrixSet."""
@@ -143,7 +143,7 @@ class TileMatrixSet(BaseModel):
     def __init__(self, **kwargs):
         """Check if TileMatrixSet supports quadkeys"""
         super().__init__(**kwargs)
-        self.is_quadtree = check_quadkey_support(self.tileMatrix)
+        self._is_quadtree = check_quadkey_support(self.tileMatrix)
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -806,7 +806,7 @@ class TileMatrixSet(BaseModel):
         -------
         str
         """
-        if not self.is_quadtree:
+        if not self._is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
@@ -833,7 +833,7 @@ class TileMatrixSet(BaseModel):
         -------
         Tile
         """
-        if not self.is_quadtree:
+        if not self._is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )

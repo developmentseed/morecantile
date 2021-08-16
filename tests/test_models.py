@@ -102,10 +102,10 @@ def test_load():
 
 def test_quadkey_support():
     tms = TileMatrixSet.load("CanadianNAD83_LCC")
-    assert not tms.is_quadtree
+    assert not tms._is_quadtree
 
     tms = TileMatrixSet.load("UPSArcticWGS84Quad")
-    assert tms.is_quadtree
+    assert tms._is_quadtree
 
 
 def test_quadkey():
