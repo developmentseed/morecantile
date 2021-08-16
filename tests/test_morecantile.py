@@ -6,7 +6,7 @@ from rasterio.crs import CRS
 
 import morecantile
 from morecantile.errors import InvalidIdentifier, PointOutsideTMSBounds
-from morecantile.utils import meters_per_unit
+from morecantile.utils import is_power_of_two, meters_per_unit
 
 from .conftest import gdal_version, requires_gdal3, requires_gdal_lt_3
 
@@ -493,3 +493,8 @@ def test_extend_zoom():
         more = tms.xy_bounds(2000, 2000, 30)
     for a, b in zip(more, merc):
         assert round(a - b, 7) == 0
+
+
+def test_is_power_of_two():
+    assert is_power_of_two(8)
+    assert not is_power_of_two(7)
