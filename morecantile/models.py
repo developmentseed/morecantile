@@ -127,6 +127,7 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
+    is_quadkey: bool = False
 
     class Config:
         """Configure TileMatrixSet."""
@@ -138,6 +139,11 @@ class TileMatrixSet(BaseModel):
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.identifier))
+
+    def __init__(self, **kwargs):
+        """Check if TileMatrixSet supports quadkeys"""
+        super().__init__(**kwargs)
+        self.is_quadkey = check_quadkey_support(self.tileMatrix)
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -167,11 +173,6 @@ class TileMatrixSet(BaseModel):
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
         return crs_axis_inverted(self.crs)
-
-    @property
-    def quadkey_support(self) -> bool:
-        """Indicator if the Tile Matrix Set supports the creation of quadkeys"""
-        return check_quadkey_support(self.tileMatrix)
 
     @classmethod
     def load(cls, name: str):
@@ -805,7 +806,7 @@ class TileMatrixSet(BaseModel):
         -------
         str
         """
-        if not self.quadkey_support:
+        if not self.is_quadkey:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
@@ -832,7 +833,7 @@ class TileMatrixSet(BaseModel):
         -------
         Tile
         """
-        if not self.quadkey_support:
+        if not self.is_quadkey:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
