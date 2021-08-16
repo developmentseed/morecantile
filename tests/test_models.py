@@ -102,10 +102,10 @@ def test_load():
 
 def test_quadkey_support():
     tms = TileMatrixSet.load("CanadianNAD83_LCC")
-    assert not tms.is_quadkey
+    assert not tms.is_quadtree
 
     tms = TileMatrixSet.load("UPSArcticWGS84Quad")
-    assert tms.is_quadkey
+    assert tms.is_quadtree
 
 
 def test_quadkey():
@@ -132,6 +132,18 @@ def test_quadkey_failure():
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.raises(morecantile.errors.QuadKeyError):
         tms.quadkey_to_tile("lolwut")
+
+
+def test_quadkey_not_supported_failure():
+    tms = TileMatrixSet.load("NZTM2000")
+    with pytest.raises(morecantile.errors.NoQuadkeySupport):
+        tms.quadkey(1, 1, 1)
+
+
+def test_quadkey_to_tile_not_supported_failure():
+    tms = TileMatrixSet.load("NZTM2000")
+    with pytest.raises(morecantile.errors.NoQuadkeySupport):
+        tms.quadkey_to_tile("3")
 
 
 def test_findMatrix():

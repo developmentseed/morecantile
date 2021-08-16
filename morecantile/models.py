@@ -127,7 +127,7 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
-    is_quadkey: bool = False
+    is_quadtree: bool = False
 
     class Config:
         """Configure TileMatrixSet."""
@@ -143,7 +143,7 @@ class TileMatrixSet(BaseModel):
     def __init__(self, **kwargs):
         """Check if TileMatrixSet supports quadkeys"""
         super().__init__(**kwargs)
-        self.is_quadkey = check_quadkey_support(self.tileMatrix)
+        self.is_quadtree = check_quadkey_support(self.tileMatrix)
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -806,7 +806,7 @@ class TileMatrixSet(BaseModel):
         -------
         str
         """
-        if not self.is_quadkey:
+        if not self.is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
@@ -833,7 +833,7 @@ class TileMatrixSet(BaseModel):
         -------
         Tile
         """
-        if not self.is_quadkey:
+        if not self.is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
