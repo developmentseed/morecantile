@@ -96,13 +96,13 @@ def test_cli_shapesWGS84():
     runner = CliRunner()
     result = runner.invoke(
         cli,
-        ["shapes", "--precision", "6", "--identifier", "WorldCRS84Quad"],
+        ["shapes", "--precision", "6", "--identifier", "WorldMercatorWGS84Quad"],
         "[106, 193, 9]",
     )
     assert result.exit_code == 0
     assert (
         result.output
-        == '{"bbox": [-142.734375, 21.796875, -142.382813, 22.148438], "geometry": {"coordinates": [[[-142.734375, 21.796875], [-142.734375, 22.148438], [-142.382813, 22.148438], [-142.382813, 21.796875], [-142.734375, 21.796875]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "EPSG:4326", "grid_name": "WorldCRS84Quad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
+        == '{"bbox": [37.264008, -56.347191, 37.615571, -56.151464], "geometry": {"coordinates": [[[37.264008, -56.347191], [37.264008, -56.151464], [37.615571, -56.151464], [37.615571, -56.347191], [37.264008, -56.347191]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "EPSG:3395", "grid_name": "WorldMercatorWGS84Quad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
     )
 
 
