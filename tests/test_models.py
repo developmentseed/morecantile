@@ -7,7 +7,7 @@ from collections.abc import Iterable
 
 import pytest
 from pydantic import ValidationError
-from rasterio.crs import CRS
+from pyproj import CRS
 
 import morecantile
 from morecantile.errors import InvalidIdentifier
@@ -160,10 +160,7 @@ def test_custom_tms_bounds_epsg4326():
 # When using `from_user_input`, `morecantile.models.crs_axis_inverted` should return the valid result.
 def test_custom_tms_bounds_user_crs():
     """Check bounds with epsg4326."""
-    custom_tms = TileMatrixSet.custom(
-        (-120, 30, -110, 40),
-        CRS.from_user_input("http://www.opengis.net/def/crs/EPSG/0/4326"),
-    )
+    custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), CRS.from_epsg(4326),)
     assert custom_tms.xy_bbox == (-120, 30, -110, 40)
     assert custom_tms.bbox == (-120, 30, -110, 40)
     assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)

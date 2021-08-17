@@ -4,10 +4,9 @@ import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
-from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
-from rasterio.features import bounds as feature_bounds
-from rasterio.warp import transform, transform_bounds, transform_geom
+from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
+from pyproj import CRS, Transformer
+from pyproj.exceptions import CRSError
 
 from .commons import BoundingBox, Coords, Tile
 from .errors import InvalidIdentifier, PointOutsideTMSBounds
@@ -40,7 +39,11 @@ class CRSType(CRS, AnyHttpUrl):
         """Validate CRS."""
         # If input is a string we tranlate it to CRS
         if not isinstance(value, CRS):
-            return CRS.from_user_input(value)
+            try:
+                return CRS.from_user_input(value)
+            except CRSError:
+                return CRS.from_epsg(value.split("/")[-1])
+
         return value
 
     @classmethod
@@ -70,7 +73,7 @@ def CRS_to_uri(crs: CRS) -> str:
 
 def crs_axis_inverted(crs: CRS) -> bool:
     """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
-    return epsg_treats_as_latlong(crs) or epsg_treats_as_northingeasting(crs)
+    return crs.is_geographic or crs.axis_info[0].name == "Northing"
 
 
 class TMSBoundingBox(BaseModel):
@@ -121,12 +124,24 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
+    _to_wgs84: Transformer = PrivateAttr()
+    _from_wgs84: Transformer = PrivateAttr()
 
     class Config:
         """Configure TileMatrixSet."""
 
         arbitrary_types_allowed = True
         json_encoders = {CRS: lambda v: CRS_to_uri(v)}
+
+    def __init__(self, **data):
+        """create PyProj transforms."""
+        super().__init__(**data)
+        self._to_wgs84 = Transformer.from_crs(
+            self.supportedCRS, WGS84_CRS, always_xy=True
+        )
+        self._from_wgs84 = Transformer.from_crs(
+            WGS84_CRS, self.supportedCRS, always_xy=True
+        )
 
     @validator("tileMatrix")
     def sort_tile_matrices(cls, v):
@@ -229,11 +244,7 @@ class TileMatrixSet(BaseModel):
             "tileMatrix": [],
         }
 
-        is_inverted = False
-        if crs.to_epsg():
-            # We use URI because with EPSG code it doesn't work in GDAL 2
-            crs_uri = CRS_to_uri(crs)
-            is_inverted = crs_axis_inverted(CRS.from_user_input(crs_uri))
+        is_inverted = crs_axis_inverted(crs)
 
         if is_inverted:
             tms["boundingBox"] = TMSBoundingBox(
@@ -249,8 +260,10 @@ class TileMatrixSet(BaseModel):
             )
 
         if extent_crs:
+            transform = Transformer.from_crs(extent_crs, crs, always_xy=True)
+            left, bottom, right, top = extent
             bbox = BoundingBox(
-                *transform_bounds(extent_crs, crs, *extent, densify_pts=21)
+                *transform.transform_bounds(left, bottom, right, top, densify_pts=21)
             )
         else:
             bbox = BoundingBox(*extent)
@@ -396,8 +409,7 @@ class TileMatrixSet(BaseModel):
                 PointOutsideTMSBounds,
             )
 
-        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
-        lng, lat = xs[0], ys[0]
+        lng, lat = self._to_wgs84.transform(x, y)
 
         if truncate:
             lng, lat = truncate_lnglat(lng, lat)
@@ -416,14 +428,7 @@ class TileMatrixSet(BaseModel):
                 PointOutsideTMSBounds,
             )
 
-        xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
-        x, y = xs[0], ys[0]
-
-        # https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L232-L237
-        if lat <= -90:
-            y = float("-inf")
-        elif lat >= 90:
-            y = float("inf")
+        x, y = self._from_wgs84.transform(lng, lat)
 
         return Coords(x, y)
 
@@ -605,14 +610,11 @@ class TileMatrixSet(BaseModel):
                 else self.boundingBox.upperCorner[1]
             )
             if self.boundingBox.crs != self.crs:
-                left, bottom, right, top = transform_bounds(
-                    self.boundingBox.crs,
-                    self.crs,
-                    left,
-                    bottom,
-                    right,
-                    top,
-                    densify_pts=21,
+                transform = Transformer.from_crs(
+                    self.boundingBox.crs, self.crs, always_xy=True
+                )
+                left, bottom, right, top = transform.transform_bounds(
+                    left, bottom, right, top, densify_pts=21,
                 )
 
         else:
@@ -626,10 +628,10 @@ class TileMatrixSet(BaseModel):
     @property
     def bbox(self):
         """Return TMS bounding box in WGS84."""
-        left, bottom, right, top = transform_bounds(
-            self.crs, WGS84_CRS, *self.xy_bbox, densify_pts=21
+        left, bottom, right, top = self.xy_bbox
+        return BoundingBox(
+            *self._to_wgs84.transform_bounds(left, bottom, right, top, densify_pts=21,)
         )
-        return BoundingBox(left, bottom, right, top)
 
     def intersect_tms(self, bbox: BoundingBox) -> bool:
         """Check if a bounds intersects with the TMS bounds."""
@@ -735,9 +737,9 @@ class TileMatrixSet(BaseModel):
         west, south, east, north = self.xy_bounds(tile)
 
         if not projected:
-            geom = bbox_to_feature(west, south, east, north)
-            geom = transform_geom(self.crs, WGS84_CRS, geom)
-            west, south, east, north = feature_bounds(geom)
+            west, south, east, north = self._to_wgs84.transform_bounds(
+                west, south, east, north, densify_pts=21
+            )
 
         if buffer:
             west -= buffer

@@ -3,7 +3,7 @@
 import math
 from typing import Dict, Tuple
 
-from rasterio.crs import CRS
+from pyproj import CRS
 
 from .commons import BoundingBox, Coords, Tile
 from .errors import TileArgParsingError
@@ -51,7 +51,9 @@ def meters_per_unit(crs: CRS) -> float:
 
     """
     # crs.linear_units_factor[1]  GDAL 3.0
-    return 1.0 if crs.linear_units == "metre" else 2 * math.pi * 6378137 / 360.0
+    return (
+        1.0 if crs.axis_info[0].unit_name == "metre" else 2 * math.pi * 6378137 / 360.0
+    )
 
 
 def truncate_lnglat(lng: float, lat: float) -> Tuple[float, float]:

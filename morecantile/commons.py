@@ -2,10 +2,9 @@
 
 from collections import OrderedDict, namedtuple
 
-from rasterio.coords import BoundingBox  # noqa
-
 _Tile = namedtuple("_Tile", ["x", "y", "z"])
 _Coords = namedtuple("_Coords", ["x", "y"])
+BoundingBox = namedtuple("BoundingBox", ("left", "bottom", "right", "top"))
 
 
 class Coords(_Coords):
