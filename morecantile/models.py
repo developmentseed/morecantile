@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
+from pyproj.enums import WktVersion
 from pyproj.exceptions import CRSError
 
 from .commons import BoundingBox, Coords, Tile
@@ -17,6 +18,13 @@ from .utils import (
     point_in_bbox,
     truncate_lnglat,
 )
+
+try:
+    import rasterio
+    from rasterio.env import GDALVersion
+except ModuleNotFoundError:
+    rasterio = None
+    GDALVersion = None
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
@@ -161,6 +169,19 @@ class TileMatrixSet(BaseModel):
     def crs(self) -> CRS:
         """Fetch CRS from epsg"""
         return self.supportedCRS
+
+    @property
+    def rasterio_crs(self) -> CRS:
+        """Return rasterio CRS."""
+        if not rasterio:
+            raise ModuleNotFoundError(
+                "Rasterio has to be installed to use `rasterio_crs` method."
+            )
+
+        if GDALVersion.runtime().major < 3:
+            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
+        else:
+            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt())
 
     @property
     def minzoom(self) -> int:
