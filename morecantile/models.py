@@ -20,10 +20,11 @@ from .utils import (
 )
 
 try:
-    import rasterio
+    from rasterio.crs import CRS as rasterioCRS
     from rasterio.env import GDALVersion
 except ModuleNotFoundError:
     rasterio = None
+    rasterioCRS = None
     GDALVersion = None
 
 NumType = Union[float, int]
@@ -171,17 +172,17 @@ class TileMatrixSet(BaseModel):
         return self.supportedCRS
 
     @property
-    def rasterio_crs(self) -> CRS:
+    def rasterio_crs(self) -> rasterioCRS:
         """Return rasterio CRS."""
-        if not rasterio:
+        if not rasterioCRS:
             raise ModuleNotFoundError(
                 "Rasterio has to be installed to use `rasterio_crs` method."
             )
 
         if GDALVersion.runtime().major < 3:
-            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
+            return rasterioCRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
         else:
-            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt())
+            return rasterioCRS.from_wkt(self.crs.to_wkt())
 
     @property
     def minzoom(self) -> int:
