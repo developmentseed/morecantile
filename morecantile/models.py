@@ -810,17 +810,18 @@ class TileMatrixSet(BaseModel):
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
+
         tile = _parse_tile_arg(*tile)
-        xtile, ytile, zoom = tile
         qk = []
-        for z in range(zoom, self.minzoom, -1):
+        for z in range(tile.z, self.minzoom, -1):
             digit = 0
             mask = 1 << (z - 1)
-            if xtile & mask:
+            if tile.x & mask:
                 digit += 1
-            if ytile & mask:
+            if tile.y & mask:
                 digit += 2
             qk.append(str(digit))
+
         return "".join(qk)
 
     def quadkey_to_tile(self, qk: str) -> Tile:
