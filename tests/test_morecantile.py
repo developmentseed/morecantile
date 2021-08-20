@@ -8,7 +8,7 @@ import morecantile
 from morecantile.errors import InvalidIdentifier, PointOutsideTMSBounds
 from morecantile.utils import meters_per_unit
 
-from .conftest import gdal_version, requires_gdal3, requires_gdal_lt_3
+from .conftest import requires_gdal3, requires_gdal_lt_3
 
 DEFAULT_GRID_COUNT = 11
 
@@ -249,9 +249,7 @@ def test_xy_null_island():
         assert round(a - b, 7) == 0
 
 
-@pytest.mark.xfail(
-    gdal_version.major == 3, reason="GDAL versions >= 3 returns [inf, -inf]",
-)
+@pytest.mark.xfail
 def test_xy_south_pole():
     """Return -inf for y at South Pole - Same as mercantile."""
     tms = morecantile.tms.get("WebMercatorQuad")
@@ -261,39 +259,13 @@ def test_xy_south_pole():
         assert xy.y == float("-inf")
 
 
-@pytest.mark.xfail(
-    gdal_version.major == 2, reason="GDAL versions >= 3 returns [inf, -inf]",
-)
-def test_xy_south_pole_gdal3():
-    """Return -inf for y at South Pole"""
-    tms = morecantile.tms.get("WebMercatorQuad")
-    with pytest.warns(PointOutsideTMSBounds):
-        xy = tms.xy(0.0, -90)
-        assert xy.x == float("inf")
-        assert xy.y == float("-inf")
-
-
-@pytest.mark.xfail(
-    gdal_version.major == 3, reason="GDAL versions >= 3 return [inf, inf]",
-)
+@pytest.mark.xfail
 def test_xy_north_pole():
     """Return inf for y at North Pole - Same as mercantile."""
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.warns(PointOutsideTMSBounds):
         xy = tms.xy(0.0, 90)
         assert xy.x == 0.0
-        assert xy.y == float("inf")
-
-
-@pytest.mark.xfail(
-    gdal_version.major == 2, reason="GDAL versions >= 3 return [inf, inf]",
-)
-def test_xy_north_pole_gdal3():
-    """Return inf for y at North Pole."""
-    tms = morecantile.tms.get("WebMercatorQuad")
-    with pytest.warns(PointOutsideTMSBounds):
-        xy = tms.xy(0.0, 90)
-        assert xy.x == float("inf")
         assert xy.y == float("inf")
 
 
