@@ -170,6 +170,31 @@ def test_custom_tms_bounds_user_crs():
     assert custom_tms.bounds(0, 0, 0) == (-120, 30, -110, 40)
 
 
+def test_nztm_quad_is_quad():
+    tms = morecantile.tms.get("NZTM2000Quad")
+    bound = tms.xy_bounds(morecantile.Tile(0, 0, 0))
+    expected = (-3260586.7284, 419435.9938, 6758167.443, 10438190.1652)
+    for a, b in zip(expected, bound):
+        assert round(a - b, 4) == 0
+
+
+# NZTM2000Quad should use all the WebMercatorQuad zoom scales
+def test_nztm_quad_scales():
+    nztm_tms = morecantile.tms.get("NZTM2000Quad")
+    google_tms = morecantile.tms.get("WebMercatorQuad")
+    print(dir(google_tms))
+
+    for z in range(2, nztm_tms.maxzoom + 2):
+        assert (
+            round(
+                google_tms.matrix(z).scaleDenominator
+                - nztm_tms.matrix(z - 2).scaleDenominator,
+                4,
+            )
+            == 0
+        )
+
+
 def test_InvertedLatLonGrids():
     """Check Inverted LatLon grids."""
     tms = morecantile.tms.get("NZTM2000")
