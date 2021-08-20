@@ -1,7 +1,7 @@
 """morecantile utils."""
 
 import math
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 from pyproj import CRS
 
@@ -93,4 +93,21 @@ def point_in_bbox(point: Coords, bbox: BoundingBox, precision: int = 5) -> bool:
         and round(point.x, precision) <= round(bbox.right, precision)
         and round(point.y, precision) >= round(bbox.bottom, precision)
         and round(point.y, precision) <= round(bbox.top, precision)
+    )
+
+
+def is_power_of_two(number: int) -> bool:
+    """Check if a number is a power of 2"""
+    return (number & (number - 1) == 0) and number != 0
+
+
+def check_quadkey_support(tms: List) -> bool:
+    """Check if a Tile Matrix Set supports quadkeys"""
+    return all(
+        [
+            (t.matrixWidth == t.matrixHeight)
+            and is_power_of_two(t.matrixWidth)
+            and ((t.matrixWidth * 2) == tms[i + 1].matrixWidth)
+            for i, t in enumerate(tms[:-1])
+        ]
     )

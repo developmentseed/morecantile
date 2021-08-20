@@ -1,21 +1,21 @@
 {
     "type": "TileMatrixSetType",
-    "title": "World Mercator WGS84 (ellipsoid)",
-    "identifier": "WorldMercatorWGS84Quad",
+    "title": "CRS84 for the World",
+    "identifier": "WorldCRS84Quad",
     "boundingBox": {
         "type": "BoundingBoxType",
-        "crs": "urn:ogc:def:crs:EPSG::3395",
+        "crs": "urn:ogc:def:crs:OGC::CRS84",
         "lowerCorner": [
-            -20037508.3427892,
-            -20037508.3427892
+            -180,
+            -90
         ],
         "upperCorner": [
-            20037508.3427892,
-            20037508.3427892
+            180,
+            90
         ]
     },
-    "supportedCRS": "urn:ogc:def:crs:EPSG::3395",
-    "wellKnownScaleSet": "http://www.opengis.net/def/wkss/OGC/1.0/WorldMercatorWGS84",
+    "supportedCRS": "urn:ogc:def:crs:OGC::CRS84",
+    "wellKnownScaleSet": "http://www.opengis.net/def/wkss/OGC/1.0/GoogleCRS84Quad",
     "tileMatrix": [
         {
             "type": "TileMatrixType",

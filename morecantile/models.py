@@ -7,13 +7,18 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
 from pyproj.enums import WktVersion
-from pyproj.exceptions import CRSError
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import InvalidIdentifier, PointOutsideTMSBounds
+from .errors import (
+    InvalidIdentifier,
+    NoQuadkeySupport,
+    PointOutsideTMSBounds,
+    QuadKeyError,
+)
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
+    check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
     truncate_lnglat,
@@ -44,14 +49,11 @@ class CRSType(CRS, AnyHttpUrl):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union[CRS, AnyHttpUrl]):
+    def validate(cls, value: Union[CRS, AnyHttpUrl]) -> CRS:
         """Validate CRS."""
         # If input is a string we tranlate it to CRS
         if not isinstance(value, CRS):
-            try:
-                return CRS.from_user_input(value)
-            except CRSError:
-                return CRS.from_epsg(value.split("/")[-1])
+            return CRS.from_user_input(value)
 
         return value
 
@@ -133,6 +135,7 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
+    _is_quadtree: bool = PrivateAttr()
     _to_wgs84: Transformer = PrivateAttr()
     _from_wgs84: Transformer = PrivateAttr()
 
@@ -143,8 +146,9 @@ class TileMatrixSet(BaseModel):
         json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
     def __init__(self, **data):
-        """create PyProj transforms."""
+        """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
         super().__init__(**data)
+        self._is_quadtree = check_quadkey_support(self.tileMatrix)
         self._to_wgs84 = Transformer.from_crs(
             self.supportedCRS, WGS84_CRS, always_xy=True
         )
@@ -807,3 +811,61 @@ class TileMatrixSet(BaseModel):
             feat["id"] = fid
 
         return feat
+
+    def quadkey(self, *tile: Tile) -> str:
+        """Get the quadkey of a tile
+        Parameters
+        ----------
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+        Returns
+        -------
+        str
+        """
+        if not self._is_quadtree:
+            raise NoQuadkeySupport(
+                "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
+            )
+
+        tile = _parse_tile_arg(*tile)
+        qk = []
+        for z in range(tile.z, self.minzoom, -1):
+            digit = 0
+            mask = 1 << (z - 1)
+            if tile.x & mask:
+                digit += 1
+            if tile.y & mask:
+                digit += 2
+            qk.append(str(digit))
+
+        return "".join(qk)
+
+    def quadkey_to_tile(self, qk: str) -> Tile:
+        """Get the tile corresponding to a quadkey
+        Parameters
+        ----------
+        qk : str
+            A quadkey string.
+        Returns
+        -------
+        Tile
+        """
+        if not self._is_quadtree:
+            raise NoQuadkeySupport(
+                "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
+            )
+        if len(qk) == 0:
+            return Tile(0, 0, 0)
+        xtile, ytile = 0, 0
+        for i, digit in enumerate(reversed(qk)):
+            mask = 1 << i
+            if digit == "1":
+                xtile = xtile | mask
+            elif digit == "2":
+                ytile = ytile | mask
+            elif digit == "3":
+                xtile = xtile | mask
+                ytile = ytile | mask
+            elif digit != "0":
+                raise QuadKeyError("Unexpected quadkey digit: %r", digit)
+        return Tile(xtile, ytile, i + 1)

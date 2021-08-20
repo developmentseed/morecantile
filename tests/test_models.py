@@ -10,6 +10,7 @@ from pydantic import ValidationError
 from pyproj import CRS
 
 import morecantile
+from morecantile.commons import Tile
 from morecantile.errors import InvalidIdentifier
 from morecantile.models import TileMatrix, TileMatrixSet
 
@@ -97,6 +98,52 @@ def test_load():
         TileMatrixSet.load("ANotValidName")
 
 
+def test_quadkey_support():
+    tms = TileMatrixSet.load("CanadianNAD83_LCC")
+    assert not tms._is_quadtree
+
+    tms = TileMatrixSet.load("UPSArcticWGS84Quad")
+    assert tms._is_quadtree
+
+
+def test_quadkey():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    expected = "0313102310"
+    assert tms.quadkey(486, 332, 10) == expected
+
+
+def test_quadkey_to_tile():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    qk = "0313102310"
+    expected = Tile(486, 332, 10)
+    assert tms.quadkey_to_tile(qk) == expected
+
+
+def test_empty_quadkey_to_tile():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    qk = ""
+    expected = Tile(0, 0, 0)
+    assert tms.quadkey_to_tile(qk) == expected
+
+
+def test_quadkey_failure():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.raises(morecantile.errors.QuadKeyError):
+        tms.quadkey_to_tile("lolwut")
+
+
+def test_quadkey_not_supported_failure():
+    tms = TileMatrixSet.load("NZTM2000")
+    with pytest.raises(morecantile.errors.NoQuadkeySupport):
+        tms.quadkey(1, 1, 1)
+
+
+def test_quadkey_to_tile_not_supported_failure():
+    tms = TileMatrixSet.load("NZTM2000")
+    with pytest.raises(morecantile.errors.NoQuadkeySupport):
+        tms.quadkey_to_tile("3")
+
+
 def test_findMatrix():
     """Should raise an error when TileMatrix is not found."""
     tms = morecantile.tms.get("WebMercatorQuad")
@@ -156,6 +203,31 @@ def test_custom_tms_bounds_user_crs():
     assert custom_tms.bbox == (-120, 30, -110, 40)
     assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)
     assert custom_tms.bounds(0, 0, 0) == (-120, 30, -110, 40)
+
+
+def test_nztm_quad_is_quad():
+    tms = morecantile.tms.get("NZTM2000Quad")
+    bound = tms.xy_bounds(morecantile.Tile(0, 0, 0))
+    expected = (-3260586.7284, 419435.9938, 6758167.443, 10438190.1652)
+    for a, b in zip(expected, bound):
+        assert round(a - b, 4) == 0
+
+
+# NZTM2000Quad should use all the WebMercatorQuad zoom scales
+def test_nztm_quad_scales():
+    nztm_tms = morecantile.tms.get("NZTM2000Quad")
+    google_tms = morecantile.tms.get("WebMercatorQuad")
+    print(dir(google_tms))
+
+    for z in range(2, nztm_tms.maxzoom + 2):
+        assert (
+            round(
+                google_tms.matrix(z).scaleDenominator
+                - nztm_tms.matrix(z - 2).scaleDenominator,
+                4,
+            )
+            == 0
+        )
 
 
 def test_InvertedLatLonGrids():

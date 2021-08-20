@@ -6,12 +6,14 @@ from pyproj import CRS
 
 import morecantile
 from morecantile.errors import InvalidIdentifier, PointOutsideTMSBounds
-from morecantile.utils import meters_per_unit
+from morecantile.utils import is_power_of_two, meters_per_unit
+
+DEFAULT_GRID_COUNT = 11
 
 
 def test_default_grids():
     """Morecantile.default_grids should return the correct list of grids."""
-    assert len(morecantile.tms.list()) == 9
+    assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
 
     with pytest.raises(InvalidIdentifier):
         morecantile.tms.get("ANotValidName")
@@ -19,21 +21,21 @@ def test_default_grids():
 
 def test_register():
     """Test register a new grid."""
-    assert len(morecantile.tms.list()) == 9
+    assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
     tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomGrid3031")
 
     _ = morecantile.tms.register(tms)
-    assert len(morecantile.tms.list()) == 9
+    assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
 
     defaults = morecantile.tms.register(tms)
-    assert len(defaults.list()) == 10
+    assert len(defaults.list()) == DEFAULT_GRID_COUNT + 1
     assert "MyCustomGrid3031" in defaults.list()
 
     defaults = morecantile.tms.register([tms])
-    assert len(defaults.list()) == 10
+    assert len(defaults.list()) == DEFAULT_GRID_COUNT + 1
     assert "MyCustomGrid3031" in defaults.list()
 
     # Check it will raise an exception if TMS is already registered
@@ -42,22 +44,22 @@ def test_register():
 
     # Do not raise is overwrite=True
     defaults = defaults.register(tms, overwrite=True)
-    assert len(defaults.list()) == 10
+    assert len(defaults.list()) == DEFAULT_GRID_COUNT + 1
 
     # make sure the default morecantile TMS are not overwriten
-    assert len(morecantile.defaults.default_tms.keys()) == 9
+    assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT
 
     # add tms in morecantile defaults (not something to do anyway)
     epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, identifier="epsg3031")
     morecantile.defaults.default_tms["epsg3031"] = epsg3031
-    assert len(morecantile.defaults.default_tms.keys()) == 10
+    assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT + 1
 
     # make sure updating the default_tms dict has no effect on the default TileMatrixSets
-    assert len(morecantile.tms.list()) == 9
+    assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
 
     # Update internal TMS dict
     morecantile.tms.tms["MyCustomGrid3031"] = tms
-    assert len(morecantile.tms.list()) == 10
+    assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT + 1
 
     # make sure it doesn't propagate to the default dict
     assert "MyCustomGrid3031" not in morecantile.defaults.default_tms
@@ -447,3 +449,8 @@ def test_extend_zoom():
         more = tms.xy_bounds(2000, 2000, 30)
     for a, b in zip(more, merc):
         assert round(a - b, 7) == 0
+
+
+def test_is_power_of_two():
+    assert is_power_of_two(8)
+    assert not is_power_of_two(7)

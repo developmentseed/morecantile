@@ -4,7 +4,7 @@
     "identifier": "UPSAntarcticWGS84Quad",
     "boundingBox": {
         "type": "BoundingBoxType",
-        "crs": "http://www.opengis.net/def/crs/EPSG/0/5042",
+        "crs": "urn:ogc:def:crs:EPSG::5042",
         "lowerCorner": [
             -14440759.350252,
             -14440759.350252
@@ -14,7 +14,7 @@
             18440759.350252
         ]
     },
-    "supportedCRS": "http://www.opengis.net/def/crs/EPSG/0/5042",
+    "supportedCRS": "urn:ogc:def:crs:EPSG::5042",
     "tileMatrix": [
         {
             "type": "TileMatrixType",

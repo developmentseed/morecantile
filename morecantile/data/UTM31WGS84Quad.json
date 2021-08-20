@@ -4,7 +4,7 @@
     "identifier": "UTM31WGS84Quad",
     "boundingBox": {
         "type": "BoundingBoxType",
-        "crs": "http://www.opengis.net/def/crs/EPSG/0/32631",
+        "crs": "urn:ogc:def:crs:EPSG::32631",
         "lowerCorner": [
             -9501965.72931276,
             -20003931.4586255
@@ -14,7 +14,7 @@
             20003931.4586255
         ]
     },
-    "supportedCRS": "http://www.opengis.net/def/crs/EPSG/0/32631",
+    "supportedCRS": "urn:ogc:def:crs:EPSG::32631",
     "tileMatrix": [
         {
             "type": "TileMatrixType",
