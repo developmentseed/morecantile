@@ -1,4 +1,8 @@
 
+## 2.1.3 (TBD)
+
+* add **NZTM2000Quad** tile matrix set from LINZ (author @blacha, https://github.com/developmentseed/morecantile/pull/57)
+
 ## 2.1.2 (2021-05-18)
 
 * fix wrong TMS boundingBox definition when using inverted CRS (https://github.com/developmentseed/morecantile/pull/53)
