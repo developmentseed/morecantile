@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
 from pyproj.enums import WktVersion
+from pyproj.exceptions import ProjError
 
 from .commons import BoundingBox, Coords, Tile
 from .errors import (
@@ -28,7 +29,6 @@ try:
     from rasterio.crs import CRS as rasterioCRS
     from rasterio.env import GDALVersion
 except ModuleNotFoundError:
-    rasterio = None
     rasterioCRS = None
     GDALVersion = None
 
@@ -149,12 +149,21 @@ class TileMatrixSet(BaseModel):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
         super().__init__(**data)
         self._is_quadtree = check_quadkey_support(self.tileMatrix)
-        self._to_wgs84 = Transformer.from_crs(
-            self.supportedCRS, WGS84_CRS, always_xy=True
-        )
-        self._from_wgs84 = Transformer.from_crs(
-            WGS84_CRS, self.supportedCRS, always_xy=True
-        )
+        try:
+            self._to_wgs84 = Transformer.from_crs(
+                self.supportedCRS, WGS84_CRS, always_xy=True
+            )
+            self._from_wgs84 = Transformer.from_crs(
+                WGS84_CRS, self.supportedCRS, always_xy=True
+            )
+        except ProjError:
+            warnings.warn(
+                "Could not create coordinate Transformer from input CRS to WGS84"
+                "tms methods might not be available.",
+                UserWarning,
+            )
+            self._to_wgs84 = None
+            self._from_wgs84 = None
 
     @validator("tileMatrix")
     def sort_tile_matrices(cls, v):

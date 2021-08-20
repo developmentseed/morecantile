@@ -217,8 +217,6 @@ def test_nztm_quad_is_quad():
 def test_nztm_quad_scales():
     nztm_tms = morecantile.tms.get("NZTM2000Quad")
     google_tms = morecantile.tms.get("WebMercatorQuad")
-    print(dir(google_tms))
-
     for z in range(2, nztm_tms.maxzoom + 2):
         assert (
             round(
@@ -278,7 +276,10 @@ def test_schema():
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
-    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
+    with pytest.warns(UserWarning):
+        tms = morecantile.TileMatrixSet.custom(
+            extent, crs, identifier="MarsNPolek2MOLA5k"
+        )
     assert tms.schema()
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
