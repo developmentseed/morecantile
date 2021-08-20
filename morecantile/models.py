@@ -4,16 +4,22 @@ import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-from pydantic import AnyHttpUrl, BaseModel, Field, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
 from rasterio.features import bounds as feature_bounds
 from rasterio.warp import transform, transform_bounds, transform_geom
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import InvalidIdentifier, PointOutsideTMSBounds
+from .errors import (
+    InvalidIdentifier,
+    NoQuadkeySupport,
+    PointOutsideTMSBounds,
+    QuadKeyError,
+)
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
+    check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
     truncate_lnglat,
@@ -121,6 +127,7 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
+    _is_quadtree: bool = PrivateAttr()
 
     class Config:
         """Configure TileMatrixSet."""
@@ -132,6 +139,11 @@ class TileMatrixSet(BaseModel):
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.identifier))
+
+    def __init__(self, **kwargs):
+        """Check if TileMatrixSet supports quadkeys"""
+        super().__init__(**kwargs)
+        self._is_quadtree = check_quadkey_support(self.tileMatrix)
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -783,3 +795,61 @@ class TileMatrixSet(BaseModel):
             feat["id"] = fid
 
         return feat
+
+    def quadkey(self, *tile: Tile) -> str:
+        """Get the quadkey of a tile
+        Parameters
+        ----------
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+        Returns
+        -------
+        str
+        """
+        if not self._is_quadtree:
+            raise NoQuadkeySupport(
+                "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
+            )
+
+        tile = _parse_tile_arg(*tile)
+        qk = []
+        for z in range(tile.z, self.minzoom, -1):
+            digit = 0
+            mask = 1 << (z - 1)
+            if tile.x & mask:
+                digit += 1
+            if tile.y & mask:
+                digit += 2
+            qk.append(str(digit))
+
+        return "".join(qk)
+
+    def quadkey_to_tile(self, qk: str) -> Tile:
+        """Get the tile corresponding to a quadkey
+        Parameters
+        ----------
+        qk : str
+            A quadkey string.
+        Returns
+        -------
+        Tile
+        """
+        if not self._is_quadtree:
+            raise NoQuadkeySupport(
+                "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
+            )
+        if len(qk) == 0:
+            return Tile(0, 0, 0)
+        xtile, ytile = 0, 0
+        for i, digit in enumerate(reversed(qk)):
+            mask = 1 << i
+            if digit == "1":
+                xtile = xtile | mask
+            elif digit == "2":
+                ytile = ytile | mask
+            elif digit == "3":
+                xtile = xtile | mask
+                ytile = ytile | mask
+            elif digit != "0":
+                raise QuadKeyError("Unexpected quadkey digit: %r", digit)
+        return Tile(xtile, ytile, i + 1)

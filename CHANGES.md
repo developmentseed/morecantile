@@ -2,6 +2,21 @@
 ## 2.1.3 (TBD)
 
 * add **NZTM2000Quad** tile matrix set from LINZ (author @blacha, https://github.com/developmentseed/morecantile/pull/57)
+* add **quadkey** supports (@author adrian-knauer, https://github.com/developmentseed/morecantile/pull/56)
+
+    ```python
+    import morecantile
+
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    # Tile to Quadkey
+    tms.quadkey(486, 332, 10)
+    >>> "0313102310"
+
+    # Quadkey to Tile
+    tms.quadkey_to_tile("0313102310")
+    >>> Tile(486, 332, 10)
+    ```
 
 ## 2.1.2 (2021-05-18)
 

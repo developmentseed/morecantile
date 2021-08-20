@@ -19,3 +19,11 @@ class TileArgParsingError(MorecantileError):
 
 class PointOutsideTMSBounds(UserWarning):
     """Point is outside TMS bounds."""
+
+
+class NoQuadkeySupport(MorecantileError):
+    """Raised when a custom TileMatrixSet doesn't support quadkeys"""
+
+
+class QuadKeyError(MorecantileError):
+    """Raised when errors occur in computing or parsing quad keys"""
