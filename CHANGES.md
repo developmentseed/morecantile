@@ -1,5 +1,5 @@
 
-## 2.1.3 (2021-08-20)
+## 2.1.4 (2021-08-20)
 
 * add **NZTM2000Quad** tile matrix set from LINZ (author @blacha, https://github.com/developmentseed/morecantile/pull/57)
 * add **quadkey** supports (@author adrian-knauer, https://github.com/developmentseed/morecantile/pull/56)
@@ -19,6 +19,9 @@
     ```
 
 * update `NZTM2000*` CRS uri from `https://www.opengis.net/def/crs/EPSG/0/2193` to `urn:ogc:def:crs:EPSG:2193` (https://github.com/developmentseed/morecantile/pull/61)
+
+
+## 2.1.3 - Doesn't exists
 
 ## 2.1.2 (2021-05-18)
 
