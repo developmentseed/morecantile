@@ -18,6 +18,8 @@
     >>> Tile(486, 332, 10)
     ```
 
+* update `NZTM2000*` CRS uri from `https://www.opengis.net/def/crs/EPSG/0/2193` to `urn:ogc:def:crs:EPSG:2193` (https://github.com/developmentseed/morecantile/pull/61)
+
 ## 2.1.2 (2021-05-18)
 
 * fix wrong TMS boundingBox definition when using inverted CRS (https://github.com/developmentseed/morecantile/pull/53)
