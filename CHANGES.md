@@ -1,5 +1,5 @@
 
-## 2.1.3 (TBD)
+## 2.1.3 (2021-08-20)
 
 * add **NZTM2000Quad** tile matrix set from LINZ (author @blacha, https://github.com/developmentseed/morecantile/pull/57)
 * add **quadkey** supports (@author adrian-knauer, https://github.com/developmentseed/morecantile/pull/56)
