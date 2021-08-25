@@ -388,6 +388,10 @@ def test_tiles():
         tms.tiles(-180.0, 0.0, -170.0, 10.0, zooms=[2])
     )
 
+
+def test_tiles_antimeridian():
+    tms = morecantile.tms.get("WebMercatorQuad")
+
     # Antimeridian-crossing bounding boxes are handled
     bounds = (175.0, 5.0, -175.0, 10.0)
     assert len(list(tms.tiles(*bounds, zooms=[2]))) == 2
