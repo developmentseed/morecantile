@@ -6,6 +6,8 @@
 **breaking changes**
 
 * switch from rasterio to PyProj for CRS definition and projection transformation (https://github.com/developmentseed/morecantile/pull/58)
+* remove python 3.6 supports (because of pyproj)
+
 
 ## 2.1.4 (2021-08-20)
 
