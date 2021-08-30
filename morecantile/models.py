@@ -1,6 +1,5 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 import math
-import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -10,12 +9,7 @@ from pyproj.enums import WktVersion
 from pyproj.exceptions import ProjError
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import (
-    InvalidIdentifier,
-    NoQuadkeySupport,
-    PointOutsideTMSBounds,
-    QuadKeyError,
-)
+from .errors import NoQuadkeySupport, PointOutsideTMSBounds, QuadKeyError
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
@@ -38,7 +32,7 @@ LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-class CRSType(CRS, AnyHttpUrl):
+class CRSType(CRS, str):
     """
     A geographic or projected coordinate reference system.
     """
@@ -49,7 +43,7 @@ class CRSType(CRS, AnyHttpUrl):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union[CRS, AnyHttpUrl]) -> CRS:
+    def validate(cls, value: Union[CRS, str]) -> CRS:
         """Validate CRS."""
         # If input is a string we tranlate it to CRS
         if not isinstance(value, CRS):
@@ -62,12 +56,13 @@ class CRSType(CRS, AnyHttpUrl):
         """Update default schema."""
         field_schema.update(
             anyOf=[
-                {"type": "rasterio.crs.CRS"},
-                {"type": "string", "minLength": 1, "maxLength": 65536, "format": "uri"},
+                {"type": "pyproj.CRS"},
+                {"type": "string", "minLength": 1, "maxLength": 65536},
             ],
             examples=[
                 "CRS.from_epsg(4326)",
                 "http://www.opengis.net/def/crs/EPSG/0/3978",
+                "urn:ogc:def:crs:EPSG::2193",
             ],
         )
 
@@ -211,18 +206,6 @@ class TileMatrixSet(BaseModel):
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
         return crs_axis_inverted(self.crs)
-
-    @classmethod
-    def load(cls, name: str):
-        """Load default TileMatrixSet."""
-        warnings.warn(
-            "TileMatrixSet.load will be deprecated in version 2.0.0", DeprecationWarning
-        )
-        try:
-            data_dir = os.path.join(os.path.dirname(__file__), "data")
-            return cls.parse_file(os.path.join(data_dir, f"{name}.json"))
-        except FileNotFoundError:
-            raise InvalidIdentifier(f"'{name}' is not a valid default TileMatrixSet.")
 
     @classmethod
     def custom(

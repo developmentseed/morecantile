@@ -1,4 +1,12 @@
 
+## 3.0.0.pre1
+
+* add `.rasterio_crs` properties to TMS for compatibility with rasterio (https://github.com/developmentseed/morecantile/pull/58)
+
+**breaking changes**
+
+* switch from rasterio to PyProj for CRS definition and projection transformation (https://github.com/developmentseed/morecantile/pull/58)
+
 ## 2.1.4 (2021-08-20)
 
 * add **NZTM2000Quad** tile matrix set from LINZ (author @blacha, https://github.com/developmentseed/morecantile/pull/57)

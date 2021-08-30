@@ -89,20 +89,17 @@ def test_tile_matrix():
         TileMatrix(**variable_matrix)
 
 
-def test_load():
-    """Should raise an error when file not found."""
-    with pytest.warns(DeprecationWarning):
-        TileMatrixSet.load("WebMercatorQuad")
-
+def test_invalid_tms():
+    """should raise an error when tms name is not found."""
     with pytest.raises(InvalidIdentifier):
-        TileMatrixSet.load("ANotValidName")
+        morecantile.tms.get("ANotValidName")
 
 
 def test_quadkey_support():
-    tms = TileMatrixSet.load("CanadianNAD83_LCC")
+    tms = morecantile.tms.get("CanadianNAD83_LCC")
     assert not tms._is_quadtree
 
-    tms = TileMatrixSet.load("UPSArcticWGS84Quad")
+    tms = morecantile.tms.get("UPSArcticWGS84Quad")
     assert tms._is_quadtree
 
 
@@ -133,13 +130,13 @@ def test_quadkey_failure():
 
 
 def test_quadkey_not_supported_failure():
-    tms = TileMatrixSet.load("NZTM2000")
+    tms = morecantile.tms.get("NZTM2000")
     with pytest.raises(morecantile.errors.NoQuadkeySupport):
         tms.quadkey(1, 1, 1)
 
 
 def test_quadkey_to_tile_not_supported_failure():
-    tms = TileMatrixSet.load("NZTM2000")
+    tms = morecantile.tms.get("NZTM2000")
     with pytest.raises(morecantile.errors.NoQuadkeySupport):
         tms.quadkey_to_tile("3")
 
