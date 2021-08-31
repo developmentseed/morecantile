@@ -441,6 +441,33 @@ def test_tiles_roundtrip(t):
     assert val.z == t.z
 
 
+def test_neighbors():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    x, y, z = 243, 166, 9
+    tiles = tms.neighbors(x, y, z)
+    assert len(tiles) == 8
+    assert all(t.z == z for t in tiles)
+    assert all(t.x - x in (-1, 0, 1) for t in tiles)
+    assert all(t.y - y in (-1, 0, 1) for t in tiles)
+
+
+def test_neighbors_invalid():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    x, y, z = 0, 166, 9
+    tiles = tms.neighbors(x, y, z)
+    assert len(tiles) == 8 - 3  # no top-left, left, bottom-left
+    assert all(t.z == z for t in tiles)
+    assert all(t.x - x in (-1, 0, 1) for t in tiles)
+    assert all(t.y - y in (-1, 0, 1) for t in tiles)
+
+
+def test_root_neighbors_invalid():
+    tms = morecantile.tms.get("WebMercatorQuad")
+    x, y, z = 0, 0, 0
+    tiles = tms.neighbors(x, y, z)
+    assert len(tiles) == 0  # root tile has no neighbors
+
+
 def test_extend_zoom():
     """TileMatrixSet.ul should return the correct coordinates."""
     tms = morecantile.tms.get("WebMercatorQuad")
