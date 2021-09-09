@@ -1,13 +1,29 @@
 """Morecantile commons."""
 
-from collections import OrderedDict, namedtuple
-
-_Tile = namedtuple("_Tile", ["x", "y", "z"])
-_Coords = namedtuple("_Coords", ["x", "y"])
-BoundingBox = namedtuple("BoundingBox", ("left", "bottom", "right", "top"))
+from typing import NamedTuple
 
 
-class Coords(_Coords):
+class BoundingBox(NamedTuple):
+    """A xmin,ymin,xmax,ymax coordinates tuple.
+
+    Args:
+    left (number): min horizontal coordinate.
+    bottom (number):min vertical coordinate.
+    right (number): max horizontal coordinate.
+    top (number): max vertical coordinate.
+
+    Examples:
+        >>> BoundingBox(-180.0, -90.0, 180.0, 90.0)
+
+    """
+
+    left: float
+    bottom: float
+    right: float
+    top: float
+
+
+class Coords(NamedTuple):
     """A x,y Coordinates pair.
 
     Args:
@@ -19,11 +35,11 @@ class Coords(_Coords):
 
     """
 
-    def _asdict(self):
-        return OrderedDict(zip(self._fields, self))
+    x: float
+    y: float
 
 
-class Tile(_Tile):
+class Tile(NamedTuple):
     """TileMatrixSet X,Y,Z tile indices.
 
     Args:
@@ -36,5 +52,6 @@ class Tile(_Tile):
 
     """
 
-    def _asdict(self):
-        return OrderedDict(zip(self._fields, self))
+    x: int
+    y: int
+    z: int

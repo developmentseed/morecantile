@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 with open("README.md") as f:
     long_description = f.read()
 
-inst_reqs = ["pyproj~=3.1", "pydantic"]
+inst_reqs = ["attrs", "pyproj~=3.1", "pydantic"]
 
 extra_reqs = {
     "rasterio": ["rasterio>=1.2.1"],
@@ -16,7 +16,7 @@ extra_reqs = {
 
 setup(
     name="morecantile",
-    version="2.1.4",
+    version="3.0.0a0",
     python_requires=">=3.7",
     description=u"""Construct and use map tile grids (a.k.a TileMatrixSet / TMS).""",
     long_description=long_description,

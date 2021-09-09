@@ -1,5 +1,5 @@
 
-## 3.0.0.pre1
+## 3.0.0a0
 
 * add `.rasterio_crs` properties to TMS for compatibility with rasterio (https://github.com/developmentseed/morecantile/pull/58)
 

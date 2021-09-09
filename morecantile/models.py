@@ -536,8 +536,9 @@ class TileMatrixSet(BaseModel):
         The upper left geospatial coordiantes of the input tile.
 
         """
-        tile = _parse_tile_arg(*tile)
-        matrix = self.matrix(tile.z)
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
         res = self._resolution(matrix)
 
         origin_x = (
@@ -547,8 +548,8 @@ class TileMatrixSet(BaseModel):
             matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
         )
 
-        xcoord = origin_x + tile.x * res * matrix.tileWidth
-        ycoord = origin_y - tile.y * res * matrix.tileHeight
+        xcoord = origin_x + t.x * res * matrix.tileWidth
+        ycoord = origin_y - t.y * res * matrix.tileHeight
         return Coords(xcoord, ycoord)
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
@@ -564,9 +565,10 @@ class TileMatrixSet(BaseModel):
         The bounding box of the input tile.
 
         """
-        tile = _parse_tile_arg(*tile)
-        left, top = self._ul(*tile)
-        right, bottom = self._ul(tile.x + 1, tile.y + 1, tile.z)
+        t = _parse_tile_arg(*tile)
+
+        left, top = self._ul(t)
+        right, bottom = self._ul(Tile(t.x + 1, t.y + 1, t.z))
         return BoundingBox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
@@ -582,7 +584,9 @@ class TileMatrixSet(BaseModel):
         The upper left geospatial coordiantes of the input tile.
 
         """
-        x, y = self._ul(*tile)
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._ul(t)
         return Coords(*self.lnglat(x, y))
 
     def bounds(self, *tile: Tile) -> BoundingBox:
@@ -598,9 +602,10 @@ class TileMatrixSet(BaseModel):
         The bounding box of the input tile.
 
         """
-        tile = _parse_tile_arg(*tile)
-        left, top = self.ul(tile.x, tile.y, tile.z)
-        right, bottom = self.ul(tile.x + 1, tile.y + 1, tile.z)
+        t = _parse_tile_arg(*tile)
+
+        left, top = self.ul(t)
+        right, bottom = self.ul(Tile(t.x + 1, t.y + 1, t.z))
         return BoundingBox(left, bottom, right, top)
 
     @property
@@ -638,8 +643,10 @@ class TileMatrixSet(BaseModel):
         else:
             zoom = self.minzoom
             matrix = self.matrix(zoom)
-            left, top = self._ul(0, 0, zoom)
-            right, bottom = self._ul(matrix.matrixWidth, matrix.matrixHeight, zoom)
+            left, top = self._ul(Tile(0, 0, zoom))
+            right, bottom = self._ul(
+                Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
+            )
 
         return BoundingBox(left, bottom, right, top)
 
@@ -806,27 +813,31 @@ class TileMatrixSet(BaseModel):
 
     def quadkey(self, *tile: Tile) -> str:
         """Get the quadkey of a tile
+
         Parameters
         ----------
         tile : Tile or sequence of int
             May be be either an instance of Tile or 3 ints, X, Y, Z.
+
         Returns
         -------
         str
+
         """
         if not self._is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
 
-        tile = _parse_tile_arg(*tile)
+        t = _parse_tile_arg(*tile)
+
         qk = []
-        for z in range(tile.z, self.minzoom, -1):
+        for z in range(t.z, self.minzoom, -1):
             digit = 0
             mask = 1 << (z - 1)
-            if tile.x & mask:
+            if t.x & mask:
                 digit += 1
-            if tile.y & mask:
+            if t.y & mask:
                 digit += 2
             qk.append(str(digit))
 
@@ -834,20 +845,25 @@ class TileMatrixSet(BaseModel):
 
     def quadkey_to_tile(self, qk: str) -> Tile:
         """Get the tile corresponding to a quadkey
+
         Parameters
         ----------
         qk : str
             A quadkey string.
+
         Returns
         -------
         Tile
+
         """
         if not self._is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
+
         if len(qk) == 0:
             return Tile(0, 0, 0)
+
         xtile, ytile = 0, 0
         for i, digit in enumerate(reversed(qk)):
             mask = 1 << i
@@ -860,4 +876,5 @@ class TileMatrixSet(BaseModel):
                 ytile = ytile | mask
             elif digit != "0":
                 raise QuadKeyError("Unexpected quadkey digit: %r", digit)
+
         return Tile(xtile, ytile, i + 1)
