@@ -2,13 +2,11 @@
 
 import mercantile
 import pytest
-from rasterio.crs import CRS
+from pyproj import CRS
 
 import morecantile
 from morecantile.errors import InvalidIdentifier, PointOutsideTMSBounds
 from morecantile.utils import is_power_of_two, meters_per_unit
-
-from .conftest import requires_gdal3, requires_gdal_lt_3
 
 DEFAULT_GRID_COUNT = 11
 
@@ -75,10 +73,6 @@ def test_TMSproperties():
     assert tms.minzoom == 0
     assert tms.maxzoom == 24
 
-    tms = morecantile.tms.get("WorldCRS84Quad")
-    assert tms.crs == CRS.from_epsg(4326)
-    assert meters_per_unit(tms.crs) == 111319.49079327358
-
 
 def test_tile_coordinates():
     """Test coordinates to tile index utils."""
@@ -88,9 +82,6 @@ def test_tile_coordinates():
     # Check equivalence between mercantile and morecantile
     # wlon, wlat = mercantile.xy(20.0, 15.0)
     assert tms.tile(20.0, 15.0, 5) == mercantile.tile(20.0, 15.0, 5)
-
-    tms = morecantile.tms.get("WorldCRS84Quad")
-    assert tms.tile(-39.8, 74.2, 4) == morecantile.Tile(12, 1, 4)
 
 
 @pytest.mark.parametrize(
@@ -251,17 +242,23 @@ def test_xy_null_island():
 
 @pytest.mark.xfail
 def test_xy_south_pole():
-    """Return -inf for y at South Pole - Same as mercantile."""
+    """Return -inf for y at South Pole
+
+    Note: mercantile returns (0.0, inf)
+    """
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.warns(PointOutsideTMSBounds):
         xy = tms.xy(0.0, -90)
         assert xy.x == 0.0
-        assert xy.y == float("-inf")
+        assert xy.y == float("inf")
 
 
 @pytest.mark.xfail
 def test_xy_north_pole():
-    """Return inf for y at North Pole - Same as mercantile."""
+    """Return inf for y at North Pole.
+
+    Note: mercantile returns (0.0, -inf)
+    """
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.warns(PointOutsideTMSBounds):
         xy = tms.xy(0.0, 90)
@@ -290,26 +287,13 @@ def test_lnglat():
     with pytest.warns(PointOutsideTMSBounds):
         xy = (-28366731.739810849, -1655181.9927159143)
         lnglat = tms.lnglat(*xy, truncate=True)
-        assert round(lnglat.x, 5) == -180.0  # in Mercantile
+        assert round(lnglat.x, 5) == -180.0  # in Mercantile (105.17731 in Morecantile)
         assert round(lnglat.y, 5) == -14.70462  # in Mercantile
 
 
-@requires_gdal_lt_3
-def test_lnglat_gdal2():
-    """test lnglat."""
-    # GDAL2 returns ('inf', 'inf') and then inf is translated to 180,90 by truncate_lnglat
-    tms = morecantile.tms.get("WebMercatorQuad")
-    with pytest.warns(PointOutsideTMSBounds):
-        xy = (-28366731.739810849, -1655181.9927159143)
-        lnglat = tms.lnglat(*xy, truncate=True)
-        assert round(lnglat.x, 5) == 180.0
-        assert round(lnglat.y, 5) == 90
-
-
-@requires_gdal3
 def test_lnglat_gdal3():
     """test lnglat."""
-    # GDAL3 returns (105.17731317609572, -14.704620000000013)
+    # PROJ>=7 returns (105.17731317609572, -14.704620000000013)
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.warns(PointOutsideTMSBounds):
         xy = (-28366731.739810849, -1655181.9927159143)

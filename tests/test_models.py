@@ -7,14 +7,12 @@ from collections.abc import Iterable
 
 import pytest
 from pydantic import ValidationError
-from rasterio.crs import CRS
+from pyproj import CRS
 
 import morecantile
 from morecantile.commons import Tile
 from morecantile.errors import InvalidIdentifier
 from morecantile.models import TileMatrix, TileMatrixSet
-
-from .conftest import gdal_version
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
@@ -91,20 +89,17 @@ def test_tile_matrix():
         TileMatrix(**variable_matrix)
 
 
-def test_load():
-    """Should raise an error when file not found."""
-    with pytest.warns(DeprecationWarning):
-        TileMatrixSet.load("WebMercatorQuad")
-
+def test_invalid_tms():
+    """should raise an error when tms name is not found."""
     with pytest.raises(InvalidIdentifier):
-        TileMatrixSet.load("ANotValidName")
+        morecantile.tms.get("ANotValidName")
 
 
 def test_quadkey_support():
-    tms = TileMatrixSet.load("CanadianNAD83_LCC")
+    tms = morecantile.tms.get("CanadianNAD83_LCC")
     assert not tms._is_quadtree
 
-    tms = TileMatrixSet.load("UPSArcticWGS84Quad")
+    tms = morecantile.tms.get("UPSArcticWGS84Quad")
     assert tms._is_quadtree
 
 
@@ -135,13 +130,13 @@ def test_quadkey_failure():
 
 
 def test_quadkey_not_supported_failure():
-    tms = TileMatrixSet.load("NZTM2000")
+    tms = morecantile.tms.get("NZTM2000")
     with pytest.raises(morecantile.errors.NoQuadkeySupport):
         tms.quadkey(1, 1, 1)
 
 
 def test_quadkey_to_tile_not_supported_failure():
-    tms = TileMatrixSet.load("NZTM2000")
+    tms = morecantile.tms.get("NZTM2000")
     with pytest.raises(morecantile.errors.NoQuadkeySupport):
         tms.quadkey_to_tile("3")
 
@@ -188,13 +183,6 @@ def test_Custom():
     assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
 
 
-# Before GDAL3, `morecantile.models.crs_axis_inverted` will always return False for
-# CRS defined with `epsg`, which is why this test should fail in GDAL 2.
-# ref https://github.com/mapbox/rasterio/blob/8cb216ca83e57284f8a56bafbe8eda4334a34db6/rasterio/crs.py#L509-L538
-@pytest.mark.xfail(
-    gdal_version.major < 3,
-    reason="In GDAL < 3.0, CRS defined with EPSG will always return False in morecantile.models.crs_axis_inverted",
-)
 def test_custom_tms_bounds_epsg4326():
     """Check bounds with epsg4326."""
     custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), CRS.from_epsg(4326))
@@ -207,10 +195,7 @@ def test_custom_tms_bounds_epsg4326():
 # When using `from_user_input`, `morecantile.models.crs_axis_inverted` should return the valid result.
 def test_custom_tms_bounds_user_crs():
     """Check bounds with epsg4326."""
-    custom_tms = TileMatrixSet.custom(
-        (-120, 30, -110, 40),
-        CRS.from_user_input("http://www.opengis.net/def/crs/EPSG/0/4326"),
-    )
+    custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), CRS.from_epsg(4326),)
     assert custom_tms.xy_bbox == (-120, 30, -110, 40)
     assert custom_tms.bbox == (-120, 30, -110, 40)
     assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)
@@ -229,8 +214,6 @@ def test_nztm_quad_is_quad():
 def test_nztm_quad_scales():
     nztm_tms = morecantile.tms.get("NZTM2000Quad")
     google_tms = morecantile.tms.get("WebMercatorQuad")
-    print(dir(google_tms))
-
     for z in range(2, nztm_tms.maxzoom + 2):
         assert (
             round(
@@ -290,7 +273,10 @@ def test_schema():
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
-    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
+    with pytest.warns(UserWarning):
+        tms = morecantile.TileMatrixSet.custom(
+            extent, crs, identifier="MarsNPolek2MOLA5k"
+        )
     assert tms.schema()
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)

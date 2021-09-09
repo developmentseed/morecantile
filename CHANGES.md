@@ -1,4 +1,14 @@
 
+## 3.0.0a0
+
+* add `.rasterio_crs` properties to TMS for compatibility with rasterio (https://github.com/developmentseed/morecantile/pull/58)
+
+**breaking changes**
+
+* switch from rasterio to PyProj for CRS definition and projection transformation (https://github.com/developmentseed/morecantile/pull/58)
+* remove python 3.6 supports (because of pyproj)
+
+
 ## 2.1.4 (2021-08-20)
 
 * add **NZTM2000Quad** tile matrix set from LINZ (author @blacha, https://github.com/developmentseed/morecantile/pull/57)
@@ -19,7 +29,6 @@
     ```
 
 * update `NZTM2000*` CRS uri from `https://www.opengis.net/def/crs/EPSG/0/2193` to `urn:ogc:def:crs:EPSG:2193` (https://github.com/developmentseed/morecantile/pull/61)
-
 
 ## 2.1.3 - Doesn't exists
 

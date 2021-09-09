@@ -4,7 +4,7 @@
     "identifier": "EuropeanETRS89_LAEAQuad",
     "boundingBox": {
         "type": "BoundingBoxType",
-        "crs": "http://www.opengis.net/def/crs/EPSG/0/3035",
+        "crs": "urn:ogc:def:crs:EPSG::3035",
         "lowerCorner": [
             1000000.0,
             2000000.0
@@ -14,7 +14,7 @@
             5500000.0
         ]
     },
-    "supportedCRS": "http://www.opengis.net/def/crs/EPSG/0/3035",
+    "supportedCRS": "urn:ogc:def:crs:EPSG::3035",
     "tileMatrix": [
         {
             "type": "TileMatrixType",

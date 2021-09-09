@@ -1,21 +1,15 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 import math
-import os
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
-from rasterio.crs import CRS, epsg_treats_as_latlong, epsg_treats_as_northingeasting
-from rasterio.features import bounds as feature_bounds
-from rasterio.warp import transform, transform_bounds, transform_geom
+from pyproj import CRS, Transformer
+from pyproj.enums import WktVersion
+from pyproj.exceptions import ProjError
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import (
-    InvalidIdentifier,
-    NoQuadkeySupport,
-    PointOutsideTMSBounds,
-    QuadKeyError,
-)
+from .errors import NoQuadkeySupport, PointOutsideTMSBounds, QuadKeyError
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
@@ -25,13 +19,20 @@ from .utils import (
     truncate_lnglat,
 )
 
+try:
+    from rasterio.crs import CRS as rasterioCRS
+    from rasterio.env import GDALVersion
+except ModuleNotFoundError:
+    rasterioCRS = None
+    GDALVersion = None
+
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-class CRSType(CRS, AnyHttpUrl):
+class CRSType(CRS, str):
     """
     A geographic or projected coordinate reference system.
     """
@@ -42,11 +43,12 @@ class CRSType(CRS, AnyHttpUrl):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: Union[CRS, AnyHttpUrl]):
+    def validate(cls, value: Union[CRS, str]) -> CRS:
         """Validate CRS."""
         # If input is a string we tranlate it to CRS
         if not isinstance(value, CRS):
             return CRS.from_user_input(value)
+
         return value
 
     @classmethod
@@ -54,12 +56,13 @@ class CRSType(CRS, AnyHttpUrl):
         """Update default schema."""
         field_schema.update(
             anyOf=[
-                {"type": "rasterio.crs.CRS"},
-                {"type": "string", "minLength": 1, "maxLength": 65536, "format": "uri"},
+                {"type": "pyproj.CRS"},
+                {"type": "string", "minLength": 1, "maxLength": 65536},
             ],
             examples=[
                 "CRS.from_epsg(4326)",
                 "http://www.opengis.net/def/crs/EPSG/0/3978",
+                "urn:ogc:def:crs:EPSG::2193",
             ],
         )
 
@@ -76,7 +79,7 @@ def CRS_to_uri(crs: CRS) -> str:
 
 def crs_axis_inverted(crs: CRS) -> bool:
     """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
-    return epsg_treats_as_latlong(crs) or epsg_treats_as_northingeasting(crs)
+    return crs.is_geographic or crs.axis_info[0].name == "Northing"
 
 
 class TMSBoundingBox(BaseModel):
@@ -128,6 +131,8 @@ class TileMatrixSet(BaseModel):
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
     _is_quadtree: bool = PrivateAttr()
+    _to_wgs84: Transformer = PrivateAttr()
+    _from_wgs84: Transformer = PrivateAttr()
 
     class Config:
         """Configure TileMatrixSet."""
@@ -135,15 +140,30 @@ class TileMatrixSet(BaseModel):
         arbitrary_types_allowed = True
         json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
+    def __init__(self, **data):
+        """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
+        super().__init__(**data)
+        self._is_quadtree = check_quadkey_support(self.tileMatrix)
+        try:
+            self._to_wgs84 = Transformer.from_crs(
+                self.supportedCRS, WGS84_CRS, always_xy=True
+            )
+            self._from_wgs84 = Transformer.from_crs(
+                WGS84_CRS, self.supportedCRS, always_xy=True
+            )
+        except ProjError:
+            warnings.warn(
+                "Could not create coordinate Transformer from input CRS to WGS84"
+                "tms methods might not be available.",
+                UserWarning,
+            )
+            self._to_wgs84 = None
+            self._from_wgs84 = None
+
     @validator("tileMatrix")
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.identifier))
-
-    def __init__(self, **kwargs):
-        """Check if TileMatrixSet supports quadkeys"""
-        super().__init__(**kwargs)
-        self._is_quadtree = check_quadkey_support(self.tileMatrix)
 
     def __iter__(self):
         """Iterate over matrices"""
@@ -160,6 +180,19 @@ class TileMatrixSet(BaseModel):
         return self.supportedCRS
 
     @property
+    def rasterio_crs(self) -> rasterioCRS:
+        """Return rasterio CRS."""
+        if not rasterioCRS:
+            raise ModuleNotFoundError(
+                "Rasterio has to be installed to use `rasterio_crs` method."
+            )
+
+        if GDALVersion.runtime().major < 3:
+            return rasterioCRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
+        else:
+            return rasterioCRS.from_wkt(self.crs.to_wkt())
+
+    @property
     def minzoom(self) -> int:
         """TileMatrixSet minimum TileMatrix identifier"""
         return int(self.tileMatrix[0].identifier)
@@ -173,18 +206,6 @@ class TileMatrixSet(BaseModel):
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
         return crs_axis_inverted(self.crs)
-
-    @classmethod
-    def load(cls, name: str):
-        """Load default TileMatrixSet."""
-        warnings.warn(
-            "TileMatrixSet.load will be deprecated in version 2.0.0", DeprecationWarning
-        )
-        try:
-            data_dir = os.path.join(os.path.dirname(__file__), "data")
-            return cls.parse_file(os.path.join(data_dir, f"{name}.json"))
-        except FileNotFoundError:
-            raise InvalidIdentifier(f"'{name}' is not a valid default TileMatrixSet.")
 
     @classmethod
     def custom(
@@ -205,7 +226,7 @@ class TileMatrixSet(BaseModel):
 
         Attributes
         ----------
-        crs: rasterio.crs.CRS
+        crs: pyproj.CRS
             Tile Matrix Set coordinate reference system
         extent: list
             Bounding box of the Tile Matrix Set, (left, bottom, right, top).
@@ -217,8 +238,8 @@ class TileMatrixSet(BaseModel):
             Tiling schema coalescence coefficient (default: [1, 1] for EPSG:3857).
             Should be set to [2, 1] for EPSG:4326.
             see: http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#14
-        extent_crs: rasterio.crs.CRS
-            Extent's coordinate reference system, as a rasterio CRS object.
+        extent_crs: pyproj.CRS
+            Extent's coordinate reference system, as a pyproj CRS object.
             (default: same as input crs)
         minzoom: int
             Tile Matrix Set minimum zoom level (default is 0).
@@ -241,11 +262,7 @@ class TileMatrixSet(BaseModel):
             "tileMatrix": [],
         }
 
-        is_inverted = False
-        if crs.to_epsg():
-            # We use URI because with EPSG code it doesn't work in GDAL 2
-            crs_uri = CRS_to_uri(crs)
-            is_inverted = crs_axis_inverted(CRS.from_user_input(crs_uri))
+        is_inverted = crs_axis_inverted(crs)
 
         if is_inverted:
             tms["boundingBox"] = TMSBoundingBox(
@@ -261,8 +278,10 @@ class TileMatrixSet(BaseModel):
             )
 
         if extent_crs:
+            transform = Transformer.from_crs(extent_crs, crs, always_xy=True)
+            left, bottom, right, top = extent
             bbox = BoundingBox(
-                *transform_bounds(extent_crs, crs, *extent, densify_pts=21)
+                *transform.transform_bounds(left, bottom, right, top, densify_pts=21)
             )
         else:
             bbox = BoundingBox(*extent)
@@ -408,8 +427,7 @@ class TileMatrixSet(BaseModel):
                 PointOutsideTMSBounds,
             )
 
-        xs, ys = transform(self.crs, WGS84_CRS, [x], [y])
-        lng, lat = xs[0], ys[0]
+        lng, lat = self._to_wgs84.transform(x, y)
 
         if truncate:
             lng, lat = truncate_lnglat(lng, lat)
@@ -428,14 +446,7 @@ class TileMatrixSet(BaseModel):
                 PointOutsideTMSBounds,
             )
 
-        xs, ys = transform(WGS84_CRS, self.crs, [lng], [lat])
-        x, y = xs[0], ys[0]
-
-        # https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py#L232-L237
-        if lat <= -90:
-            y = float("-inf")
-        elif lat >= 90:
-            y = float("inf")
+        x, y = self._from_wgs84.transform(lng, lat)
 
         return Coords(x, y)
 
@@ -525,8 +536,9 @@ class TileMatrixSet(BaseModel):
         The upper left geospatial coordiantes of the input tile.
 
         """
-        tile = _parse_tile_arg(*tile)
-        matrix = self.matrix(tile.z)
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
         res = self._resolution(matrix)
 
         origin_x = (
@@ -536,8 +548,8 @@ class TileMatrixSet(BaseModel):
             matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
         )
 
-        xcoord = origin_x + tile.x * res * matrix.tileWidth
-        ycoord = origin_y - tile.y * res * matrix.tileHeight
+        xcoord = origin_x + t.x * res * matrix.tileWidth
+        ycoord = origin_y - t.y * res * matrix.tileHeight
         return Coords(xcoord, ycoord)
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
@@ -553,9 +565,10 @@ class TileMatrixSet(BaseModel):
         The bounding box of the input tile.
 
         """
-        tile = _parse_tile_arg(*tile)
-        left, top = self._ul(*tile)
-        right, bottom = self._ul(tile.x + 1, tile.y + 1, tile.z)
+        t = _parse_tile_arg(*tile)
+
+        left, top = self._ul(t)
+        right, bottom = self._ul(Tile(t.x + 1, t.y + 1, t.z))
         return BoundingBox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
@@ -571,7 +584,9 @@ class TileMatrixSet(BaseModel):
         The upper left geospatial coordiantes of the input tile.
 
         """
-        x, y = self._ul(*tile)
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._ul(t)
         return Coords(*self.lnglat(x, y))
 
     def bounds(self, *tile: Tile) -> BoundingBox:
@@ -587,9 +602,10 @@ class TileMatrixSet(BaseModel):
         The bounding box of the input tile.
 
         """
-        tile = _parse_tile_arg(*tile)
-        left, top = self.ul(tile.x, tile.y, tile.z)
-        right, bottom = self.ul(tile.x + 1, tile.y + 1, tile.z)
+        t = _parse_tile_arg(*tile)
+
+        left, top = self.ul(t)
+        right, bottom = self.ul(Tile(t.x + 1, t.y + 1, t.z))
         return BoundingBox(left, bottom, right, top)
 
     @property
@@ -617,31 +633,30 @@ class TileMatrixSet(BaseModel):
                 else self.boundingBox.upperCorner[1]
             )
             if self.boundingBox.crs != self.crs:
-                left, bottom, right, top = transform_bounds(
-                    self.boundingBox.crs,
-                    self.crs,
-                    left,
-                    bottom,
-                    right,
-                    top,
-                    densify_pts=21,
+                transform = Transformer.from_crs(
+                    self.boundingBox.crs, self.crs, always_xy=True
+                )
+                left, bottom, right, top = transform.transform_bounds(
+                    left, bottom, right, top, densify_pts=21,
                 )
 
         else:
             zoom = self.minzoom
             matrix = self.matrix(zoom)
-            left, top = self._ul(0, 0, zoom)
-            right, bottom = self._ul(matrix.matrixWidth, matrix.matrixHeight, zoom)
+            left, top = self._ul(Tile(0, 0, zoom))
+            right, bottom = self._ul(
+                Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
+            )
 
         return BoundingBox(left, bottom, right, top)
 
     @property
     def bbox(self):
         """Return TMS bounding box in WGS84."""
-        left, bottom, right, top = transform_bounds(
-            self.crs, WGS84_CRS, *self.xy_bbox, densify_pts=21
+        left, bottom, right, top = self.xy_bbox
+        return BoundingBox(
+            *self._to_wgs84.transform_bounds(left, bottom, right, top, densify_pts=21,)
         )
-        return BoundingBox(left, bottom, right, top)
 
     def intersect_tms(self, bbox: BoundingBox) -> bool:
         """Check if a bounds intersects with the TMS bounds."""
@@ -747,9 +762,9 @@ class TileMatrixSet(BaseModel):
         west, south, east, north = self.xy_bounds(tile)
 
         if not projected:
-            geom = bbox_to_feature(west, south, east, north)
-            geom = transform_geom(self.crs, WGS84_CRS, geom)
-            west, south, east, north = feature_bounds(geom)
+            west, south, east, north = self._to_wgs84.transform_bounds(
+                west, south, east, north, densify_pts=21
+            )
 
         if buffer:
             west -= buffer
@@ -798,27 +813,31 @@ class TileMatrixSet(BaseModel):
 
     def quadkey(self, *tile: Tile) -> str:
         """Get the quadkey of a tile
+
         Parameters
         ----------
         tile : Tile or sequence of int
             May be be either an instance of Tile or 3 ints, X, Y, Z.
+
         Returns
         -------
         str
+
         """
         if not self._is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
 
-        tile = _parse_tile_arg(*tile)
+        t = _parse_tile_arg(*tile)
+
         qk = []
-        for z in range(tile.z, self.minzoom, -1):
+        for z in range(t.z, self.minzoom, -1):
             digit = 0
             mask = 1 << (z - 1)
-            if tile.x & mask:
+            if t.x & mask:
                 digit += 1
-            if tile.y & mask:
+            if t.y & mask:
                 digit += 2
             qk.append(str(digit))
 
@@ -826,20 +845,25 @@ class TileMatrixSet(BaseModel):
 
     def quadkey_to_tile(self, qk: str) -> Tile:
         """Get the tile corresponding to a quadkey
+
         Parameters
         ----------
         qk : str
             A quadkey string.
+
         Returns
         -------
         Tile
+
         """
         if not self._is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
+
         if len(qk) == 0:
             return Tile(0, 0, 0)
+
         xtile, ytile = 0, 0
         for i, digit in enumerate(reversed(qk)):
             mask = 1 << i
@@ -852,4 +876,5 @@ class TileMatrixSet(BaseModel):
                 ytile = ytile | mask
             elif digit != "0":
                 raise QuadKeyError("Unexpected quadkey digit: %r", digit)
+
         return Tile(xtile, ytile, i + 1)

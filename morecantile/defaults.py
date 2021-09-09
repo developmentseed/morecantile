@@ -2,7 +2,7 @@
 
 import os
 import pathlib
-from copy import deepcopy
+from copy import copy
 from typing import Dict, List, Sequence, Union
 
 import attr
@@ -56,4 +56,4 @@ class TileMatrixSets:
         return TileMatrixSets({**self.tms, **new_tms})
 
 
-tms = TileMatrixSets(deepcopy(default_tms))  # noqa
+tms = TileMatrixSets(copy(default_tms))  # noqa

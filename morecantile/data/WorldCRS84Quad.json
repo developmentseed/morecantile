@@ -4,7 +4,7 @@
     "identifier": "WorldCRS84Quad",
     "boundingBox": {
         "type": "BoundingBoxType",
-        "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+        "crs": "urn:ogc:def:crs:OGC::CRS84",
         "lowerCorner": [
             -180,
             -90
@@ -14,7 +14,7 @@
             90
         ]
     },
-    "supportedCRS": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+    "supportedCRS": "urn:ogc:def:crs:OGC::CRS84",
     "wellKnownScaleSet": "http://www.opengis.net/def/wkss/OGC/1.0/GoogleCRS84Quad",
     "tileMatrix": [
         {

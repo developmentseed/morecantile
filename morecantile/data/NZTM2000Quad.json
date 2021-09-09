@@ -3,10 +3,10 @@
   "title": "LINZ NZTM2000Quad Map Tile Grid",
   "abstract": "See https://github.com/linz/NZTM2000TileMatrixSet",
   "identifier": "NZTM2000Quad",
-  "supportedCRS": "urn:ogc:def:crs:EPSG:2193",
+  "supportedCRS": "urn:ogc:def:crs:EPSG::2193",
   "boundingBox": {
     "type": "BoundingBoxType",
-    "crs": "urn:ogc:def:crs:EPSG:2193",
+    "crs": "urn:ogc:def:crs:EPSG::2193",
     "lowerCorner": [
       419435.9938,
       -3260586.7284

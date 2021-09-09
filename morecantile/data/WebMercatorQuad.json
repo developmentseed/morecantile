@@ -4,7 +4,7 @@
     "identifier": "WebMercatorQuad",
     "boundingBox": {
         "type": "BoundingBoxType",
-        "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+        "crs": "urn:ogc:def:crs:EPSG::3857",
         "lowerCorner": [
             -20037508.3427892,
             -20037508.3427892
@@ -14,7 +14,7 @@
             20037508.3427892
         ]
     },
-    "supportedCRS": "http://www.opengis.net/def/crs/EPSG/0/3857",
+    "supportedCRS": "urn:ogc:def:crs:EPSG::3857",
     "wellKnownScaleSet": "http://www.opengis.net/def/wkss/OGC/1.0/GoogleMapsCompatible",
     "tileMatrix": [
         {

@@ -5,8 +5,7 @@ import logging
 import sys
 
 import click
-from rasterio.crs import CRS
-from rasterio.rio.helpers import coords
+from pyproj import CRS
 
 import morecantile
 
@@ -76,6 +75,28 @@ def normalize_source(input):
                 yield json.loads(line)
 
     return feature_gen()
+
+
+def coords(obj):
+    """Yield all coordinate coordinate tuples from a geometry or feature.
+    From python-geojson package.
+
+    Original code from https://github.com/mapbox/rasterio/blob/3910956d6cfadd55ea085dd60790246c167967cd/rasterio/rio/helpers.py
+    License: Copyright (c) 2013, MapBox
+    """
+    if isinstance(obj, (tuple, list)):
+        coordinates = obj
+    elif "geometry" in obj:
+        coordinates = obj["geometry"]["coordinates"]
+    else:
+        coordinates = obj.get("coordinates", obj)
+    for e in coordinates:
+        if isinstance(e, (float, int)):
+            yield tuple(coordinates)
+            break
+        else:
+            for f in coords(e):
+                yield f
 
 
 # The CLI command group.
