@@ -1,5 +1,5 @@
 
-## 3.0.0a0
+## 3.0.0a0 (2021-09-09)
 
 * add `.rasterio_crs` properties to TMS for compatibility with rasterio (https://github.com/developmentseed/morecantile/pull/58)
 * Use new Class-like notation for namedtuple (https://github.com/developmentseed/morecantile/pull/58)
