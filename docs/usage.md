@@ -32,7 +32,7 @@ tms
 
 ```python
 import morecantile
-from rasterio.crs import CRS
+from pyproj import CRS
 
 crs = CRS.from_epsg(3031)
 extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
@@ -64,24 +64,13 @@ tms
 
     ```python
     import morecantile
-    from rasterio.crs import CRS
+    from pyproj import CRS
 
     crs = CRS.from_proj4("+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs")
     extent = [-13584760.000,-13585240.000,13585240.000,13584760.000]
     tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
     ```
 
-!!! important
-    If you are using `rasterio=< 1.1.8` wheels or `GDAL<3`, using CRS defined using EPSG code might lead to incorect results.
-    If your CRS is known has inverted coordinates (lat/lon or northing/easting) you should define the CRS object using `CRS.from_user_input`.
-
-    ```python
-    from morecantile.models import crs_axis_inverted
-    from rasterio.crs import CRS
-
-    assert not crs_axis_inverted(CRS.from_epsg(4326))  # return False only for GDAL <3
-    assert crs_axis_inverted(CRS.from_user_input("http://www.opengis.net/def/crs/EPSG/0/4326"))
-    ```
 
 ### Create tile and get bounds
 ```python
@@ -108,9 +97,12 @@ tms.tile(159.31, -42, 4)
 >>> Tile(x=15, y=10, z=4)
 
 # Or using coordinates in input CRS
-x, y = ts.point_fromwgs84(159.31, -42)
-ts._tile(x, y, 4)
->>> Tile(x=11, y=10, z=4)
+x, y = tms.xy(159.31, -42)
+print(x, y)
+>>> (17734308.078276414, -5160979.444049781)
+
+tms._tile(x, y, 4)
+>>> Tile(x=15, y=10, z=4)
 ```
 
 ### Get Geojson Feature

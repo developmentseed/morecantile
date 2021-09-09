@@ -64,6 +64,12 @@ $ pip install morecantile
 $ pip install git+https://github.com/developmentseed/morecantile.git
 ```
 
+!!! important
+    Morecantile 3.0 is currently available as `pre-release`
+    see https://github.com/developmentseed/morecantile/blob/master/CHANGES.md#300a0
+
+    and install using `pip install morecantile --pre`
+
 ### Defaults Grids
 
 - **CanadianNAD83_LCC**: Lambert conformal conic NAD83 for Canada - EPSG:3978

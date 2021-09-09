@@ -2,12 +2,12 @@
 ## 3.0.0a0
 
 * add `.rasterio_crs` properties to TMS for compatibility with rasterio (https://github.com/developmentseed/morecantile/pull/58)
+* Use new Class-like notation for namedtuple (https://github.com/developmentseed/morecantile/pull/58)
 
 **breaking changes**
 
 * switch from rasterio to PyProj for CRS definition and projection transformation (https://github.com/developmentseed/morecantile/pull/58)
 * remove python 3.6 supports (because of pyproj)
-
 
 ## 2.1.4 (2021-08-20)
 
