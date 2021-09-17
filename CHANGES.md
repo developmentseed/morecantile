@@ -1,4 +1,8 @@
 
+## 3.0.0 (2021-09-20)
+
+* no change since 3.0.0a0
+
 ## 3.0.0a0 (2021-09-09)
 
 * add `.rasterio_crs` properties to TMS for compatibility with rasterio (https://github.com/developmentseed/morecantile/pull/58)
