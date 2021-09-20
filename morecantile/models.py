@@ -1,4 +1,5 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
+
 import math
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -18,13 +19,6 @@ from .utils import (
     point_in_bbox,
     truncate_lnglat,
 )
-
-try:
-    from rasterio.crs import CRS as rasterioCRS
-    from rasterio.env import GDALVersion
-except ModuleNotFoundError:
-    rasterioCRS = None
-    GDALVersion = None
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
@@ -180,17 +174,16 @@ class TileMatrixSet(BaseModel):
         return self.supportedCRS
 
     @property
-    def rasterio_crs(self) -> rasterioCRS:
+    def rasterio_crs(self):
         """Return rasterio CRS."""
-        if not rasterioCRS:
-            raise ModuleNotFoundError(
-                "Rasterio has to be installed to use `rasterio_crs` method."
-            )
+
+        import rasterio
+        from rasterio.env import GDALVersion
 
         if GDALVersion.runtime().major < 3:
-            return rasterioCRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
+            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
         else:
-            return rasterioCRS.from_wkt(self.crs.to_wkt())
+            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt())
 
     @property
     def minzoom(self) -> int:

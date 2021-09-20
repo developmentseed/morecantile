@@ -1,7 +1,11 @@
 
 ## 3.0.0 (2021-09-20)
 
-* no change since 3.0.0a0
+* no change since 3.0.0a1
+
+## 3.0.0a1 (2021-09-17)
+
+* only import rasterio if needed (https://github.com/developmentseed/morecantile/pull/66)
 
 ## 3.0.0a0 (2021-09-09)
 
