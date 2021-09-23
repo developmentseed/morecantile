@@ -7,6 +7,8 @@ on:
     paths:
       # Only rebuild website when docs have changed
       - 'README.md'
+      - 'CHANGES.md'
+      - 'CONTRIBUTING.md'
       - 'docs/**'
       - 'mkdocs.yml'
 
