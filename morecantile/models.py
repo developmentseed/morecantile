@@ -124,9 +124,14 @@ class TileMatrixSet(BaseModel):
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
     tileMatrix: List[TileMatrix]
+
+    # Private attributes
     _is_quadtree: bool = PrivateAttr()
-    _to_wgs84: Transformer = PrivateAttr()
-    _from_wgs84: Transformer = PrivateAttr()
+
+    # CRS transformation attributes
+    _geographic_crs: CRSType = PrivateAttr(default=WGS84_CRS)
+    _to_geographic: Transformer = PrivateAttr()
+    _from_geographic: Transformer = PrivateAttr()
 
     class Config:
         """Configure TileMatrixSet."""
@@ -137,22 +142,24 @@ class TileMatrixSet(BaseModel):
     def __init__(self, **data):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
         super().__init__(**data)
+
         self._is_quadtree = check_quadkey_support(self.tileMatrix)
+
         try:
-            self._to_wgs84 = Transformer.from_crs(
-                self.supportedCRS, WGS84_CRS, always_xy=True
+            self._to_geographic = Transformer.from_crs(
+                self.supportedCRS, self._geographic_crs, always_xy=True
             )
-            self._from_wgs84 = Transformer.from_crs(
-                WGS84_CRS, self.supportedCRS, always_xy=True
+            self._from_geographic = Transformer.from_crs(
+                self._geographic_crs, self.supportedCRS, always_xy=True
             )
         except ProjError:
             warnings.warn(
-                "Could not create coordinate Transformer from input CRS to WGS84"
-                "tms methods might not be available.",
+                "Could not create coordinate Transformer from input CRS to given geographic CRS"
+                "some methods might not be available.",
                 UserWarning,
             )
-            self._to_wgs84 = None
-            self._from_wgs84 = None
+            self._to_geographic = None
+            self._from_geographic = None
 
     @validator("tileMatrix")
     def sort_tile_matrices(cls, v):
@@ -213,6 +220,7 @@ class TileMatrixSet(BaseModel):
         maxzoom: int = 24,
         title: str = "Custom TileMatrixSet",
         identifier: str = "Custom",
+        geographic_crs: CRS = WGS84_CRS,
     ):
         """
         Construct a custom TileMatrixSet.
@@ -242,6 +250,8 @@ class TileMatrixSet(BaseModel):
             Tile Matrix Set title (default is 'Custom TileMatrixSet')
         identifier: str
             Tile Matrix Set identifier (default is 'Custom')
+        geographic_crs: pyproj.CRS
+            Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
 
         Returns:
         --------
@@ -253,6 +263,7 @@ class TileMatrixSet(BaseModel):
             "identifier": identifier,
             "supportedCRS": crs,
             "tileMatrix": [],
+            "_geographic_crs": geographic_crs,
         }
 
         is_inverted = crs_axis_inverted(crs)
@@ -420,7 +431,7 @@ class TileMatrixSet(BaseModel):
                 PointOutsideTMSBounds,
             )
 
-        lng, lat = self._to_wgs84.transform(x, y)
+        lng, lat = self._to_geographic.transform(x, y)
 
         if truncate:
             lng, lat = truncate_lnglat(lng, lat)
@@ -439,7 +450,7 @@ class TileMatrixSet(BaseModel):
                 PointOutsideTMSBounds,
             )
 
-        x, y = self._from_wgs84.transform(lng, lat)
+        x, y = self._from_geographic.transform(lng, lat)
 
         return Coords(x, y)
 
@@ -526,7 +537,7 @@ class TileMatrixSet(BaseModel):
 
         Returns
         -------
-        The upper left geospatial coordiantes of the input tile.
+        The upper left geospatial coordinates of the input tile.
 
         """
         t = _parse_tile_arg(*tile)
@@ -574,7 +585,7 @@ class TileMatrixSet(BaseModel):
 
         Returns
         -------
-        The upper left geospatial coordiantes of the input tile.
+        The upper left geospatial coordinates of the input tile.
 
         """
         t = _parse_tile_arg(*tile)
@@ -648,7 +659,9 @@ class TileMatrixSet(BaseModel):
         """Return TMS bounding box in WGS84."""
         left, bottom, right, top = self.xy_bbox
         return BoundingBox(
-            *self._to_wgs84.transform_bounds(left, bottom, right, top, densify_pts=21,)
+            *self._to_geographic.transform_bounds(
+                left, bottom, right, top, densify_pts=21,
+            )
         )
 
     def intersect_tms(self, bbox: BoundingBox) -> bool:
@@ -729,7 +742,7 @@ class TileMatrixSet(BaseModel):
         """
         Get the GeoJSON feature corresponding to a tile.
 
-        Originaly from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py
+        Originally from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py
 
         Parameters
         ----------
@@ -755,7 +768,7 @@ class TileMatrixSet(BaseModel):
         west, south, east, north = self.xy_bounds(tile)
 
         if not projected:
-            west, south, east, north = self._to_wgs84.transform_bounds(
+            west, south, east, north = self._to_geographic.transform_bounds(
                 west, south, east, north, densify_pts=21
             )
 
