@@ -390,7 +390,10 @@ def tms(identifier):
 # The custom command.
 @cli.command(short_help="Create Custom TileMatrixSet")
 @click.option(
-    "--epsg", type=int, help="EPSG number.", required=True,
+    "--epsg",
+    type=int,
+    help="EPSG number.",
+    required=True,
 )
 @click.option(
     "--extent",
@@ -410,7 +413,9 @@ def tms(identifier):
 @click.option("--tile-width", type=int, default=256, help="Width of each tile.")
 @click.option("--tile-height", type=int, default=256, help="Height of each tile.")
 @click.option(
-    "--extent-epsg", type=int, help="EPSG number for the bounding box.",
+    "--extent-epsg",
+    type=int,
+    help="EPSG number for the bounding box.",
 )
 def custom(epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent_epsg):
     """Create Custom TMS."""
@@ -524,7 +529,10 @@ def tms_to_geojson(
     for x in range(0, matrix.matrixWidth):
         for y in range(0, matrix.matrixHeight):
             feature = tms.feature(
-                (x, y, level), projected=projected, buffer=buffer, precision=precision,
+                (x, y, level),
+                projected=projected,
+                buffer=buffer,
+                precision=precision,
             )
             bbox = feature["bbox"]
             w, s, e, n = bbox

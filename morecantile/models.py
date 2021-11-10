@@ -73,7 +73,7 @@ def CRS_to_uri(crs: CRS) -> str:
 
 def crs_axis_inverted(crs: CRS) -> bool:
     """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
-    return crs.is_geographic or crs.axis_info[0].name == "Northing"
+    return crs.axis_info[0].abbrev.upper() in ["Y", "LAT", "N"]
 
 
 class TMSBoundingBox(BaseModel):
@@ -641,7 +641,11 @@ class TileMatrixSet(BaseModel):
                     self.boundingBox.crs, self.crs, always_xy=True
                 )
                 left, bottom, right, top = transform.transform_bounds(
-                    left, bottom, right, top, densify_pts=21,
+                    left,
+                    bottom,
+                    right,
+                    top,
+                    densify_pts=21,
                 )
 
         else:
@@ -660,7 +664,11 @@ class TileMatrixSet(BaseModel):
         left, bottom, right, top = self.xy_bbox
         return BoundingBox(
             *self._to_geographic.transform_bounds(
-                left, bottom, right, top, densify_pts=21,
+                left,
+                bottom,
+                right,
+                top,
+                densify_pts=21,
             )
         )
 

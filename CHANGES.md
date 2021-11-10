@@ -1,8 +1,9 @@
 
-## 3.0.1 (2021-11-08)
+## 3.0.1 (2021-11-10)
 
 * rename `_to_wgs84` and `_from_wgs84` private attributes to `_to_geographic` and `_from_geographic` (https://github.com/developmentseed/morecantile/pull/68)
 * add `_geographic_crs` private attribute to `morecantile.TileMatrixSet` to define the CRS used in  `_to_geographic` and `_from_geographic` (https://github.com/developmentseed/morecantile/pull/68)
+* fix `TileMatrixSet._invert_axis` method to only check axis information (https://github.com/developmentseed/morecantile/pull/71)
 
 ## 3.0.0 (2021-09-23)
 
