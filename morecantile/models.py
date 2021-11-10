@@ -641,7 +641,11 @@ class TileMatrixSet(BaseModel):
                     self.boundingBox.crs, self.crs, always_xy=True
                 )
                 left, bottom, right, top = transform.transform_bounds(
-                    left, bottom, right, top, densify_pts=21,
+                    left,
+                    bottom,
+                    right,
+                    top,
+                    densify_pts=21,
                 )
 
         else:
@@ -660,7 +664,11 @@ class TileMatrixSet(BaseModel):
         left, bottom, right, top = self.xy_bbox
         return BoundingBox(
             *self._to_geographic.transform_bounds(
-                left, bottom, right, top, densify_pts=21,
+                left,
+                bottom,
+                right,
+                top,
+                densify_pts=21,
             )
         )
 
