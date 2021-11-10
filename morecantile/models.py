@@ -73,7 +73,7 @@ def CRS_to_uri(crs: CRS) -> str:
 
 def crs_axis_inverted(crs: CRS) -> bool:
     """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
-    return crs.is_geographic or crs.axis_info[0].name == "Northing"
+    return crs.axis_info[0].abbrev.upper() in ["Y", "LAT", "N"]
 
 
 class TMSBoundingBox(BaseModel):

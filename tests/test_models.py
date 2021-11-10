@@ -294,3 +294,24 @@ def test_schema():
     assert tms.json(exclude_none=True)
     json_doc = json.loads(tms.json(exclude_none=True))
     assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
+
+
+@pytest.mark.parametrize(
+    "id,result",
+    [
+        ("LINZAntarticaMapTilegrid", True),
+        ("EuropeanETRS89_LAEAQuad", True),
+        ("CanadianNAD83_LCC", False),
+        ("UPSArcticWGS84Quad", False),
+        ("NZTM2000", True),
+        ("NZTM2000Quad", True),
+        ("UTM31WGS84Quad", False),
+        ("UPSAntarcticWGS84Quad", False),
+        ("WorldMercatorWGS84Quad", False),
+        ("WorldCRS84Quad", False),
+        ("WebMercatorQuad", False),
+    ],
+)
+def test_inverted_tms(id, result):
+    """Make sure _invert_axis return the correct result."""
+    assert morecantile.tms.get(id)._invert_axis == result
