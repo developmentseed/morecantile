@@ -299,6 +299,59 @@ def test_schema():
     assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
 
 
+MARS2000_SPHERE = CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
+
+
+def test_mars_tms():
+    """The Mars global mercator scheme should broadly align with the Earth
+    Web Mercator CRS, despite the different planetary radius and scale.
+    """
+    MARS_MERCATOR = CRS.from_proj4(
+        "+proj=merc +R=3396190 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +no_defs"
+    )
+
+    # same boundaries as Earth mercator
+    mars_tms = TileMatrixSet.custom(
+        [
+            -179.9999999999996,
+            -85.05112877980656,
+            179.9999999999996,
+            85.05112877980656,
+        ],
+        MARS_MERCATOR,
+        extent_crs=MARS2000_SPHERE,
+        title="Web Mercator Mars",
+        geographic_crs=MARS2000_SPHERE,
+    )
+
+    pos = (35, 40, 3)
+    mars_tile = mars_tms.tile(*pos)
+    mercator_tms = morecantile.tms.get("WebMercatorQuad")
+    earth_tile = mercator_tms.tile(*pos)
+
+    assert mars_tile.x == earth_tile.x
+    assert mars_tile.y == earth_tile.y
+    assert mars_tile.z == earth_tile.z == 3
+
+
+def test_mars_local_tms():
+    """Local TMS using Mars CRS"""
+    # A transverse mercator projection for the landing site of the Perseverance rover.
+    SYRTIS_TM = CRS.from_proj4(
+        "+proj=tmerc +lat_0=17 +lon_0=76.5 +k=0.9996 +x_0=0 +y_0=0 +a=3396190 +b=3376200 +units=m +no_defs"
+    )
+    # 100km grid centered on 17N, 76.5E
+    syrtis_tms = TileMatrixSet.custom(
+        [-5e5, -5e5, 5e5, 5e5],
+        SYRTIS_TM,
+        title="Web Mercator Mars",
+        geographic_crs=MARS2000_SPHERE,
+    )
+    center = syrtis_tms.ul(1, 1, 1)
+    assert round(center.x, 6) == 76.5
+    assert round(center.y, 6) == 17
+
+
 @pytest.mark.parametrize(
     "id,result",
     [

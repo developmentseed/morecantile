@@ -1,4 +1,8 @@
 
+## 3.0.2 (2021-11-12)
+
+* add `_geographic_crs` definition in `__init__` to make sure it's initialized from user input (author @davenquinn, https://github.com/developmentseed/morecantile/pull/72)
+
 ## 3.0.1 (2021-11-10)
 
 * rename `_to_wgs84` and `_from_wgs84` private attributes to `_to_geographic` and `_from_geographic` (https://github.com/developmentseed/morecantile/pull/68)
