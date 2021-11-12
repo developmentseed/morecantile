@@ -145,6 +145,7 @@ class TileMatrixSet(BaseModel):
 
         self._is_quadtree = check_quadkey_support(self.tileMatrix)
 
+        self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
         try:
             self._to_geographic = Transformer.from_crs(
                 self.supportedCRS, self._geographic_crs, always_xy=True
