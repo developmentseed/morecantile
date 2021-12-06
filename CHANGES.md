@@ -1,4 +1,8 @@
 
+## 3.0.3 (2021-12-06)
+
+* add `WGS1984Quad` (`WGS84/epgs:4326`) TileMatrixSet (https://github.com/developmentseed/morecantile/pull/74)
+
 ## 3.0.2 (2021-11-12)
 
 * add `_geographic_crs` definition in `__init__` to make sure it's initialized from user input (author @davenquinn, https://github.com/developmentseed/morecantile/pull/72)

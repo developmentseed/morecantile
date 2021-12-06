@@ -56,7 +56,8 @@ Options:
                 - UPSAntarcticWGS84Quad
                 - WorldMercatorWGS84Quad
                 - WorldCRS84Quad
-                - WebMercatorQuad             
+                - WGS1984Quad
+                - WebMercatorQuad
   --seq / --lf                    Write a RS-delimited JSON sequence (default is LF).
   --help                          Show this message and exit.
 ```
@@ -97,7 +98,8 @@ Options:
                 - UPSAntarcticWGS84Quad
                 - WorldMercatorWGS84Quad
                 - WorldCRS84Quad
-                - WebMercatorQuad  
+                - WGS1984Quad
+                - WebMercatorQuad
   --precision INTEGER             Decimal precision of coordinates.
   --indent INTEGER                Indentation level for JSON output
   --compact / --no-compact        Use compact separators (',', ':').
@@ -138,7 +140,7 @@ Options:
 The tms command returns the TileMatrixSet document
 
 ```
-$ morecantile tms --help   
+$ morecantile tms --help
 Usage: morecantile tms [OPTIONS]
 
   Print TMS JSON.
@@ -156,6 +158,7 @@ Options:
                 - UPSAntarcticWGS84Quad
                 - WorldMercatorWGS84Quad
                 - WorldCRS84Quad
+                - WGS1984Quad
                 - WebMercatorQuad
   --help                          Show this message and exit.
 ```

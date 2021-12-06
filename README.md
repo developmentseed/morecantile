@@ -75,7 +75,8 @@ $ pip install git+https://github.com/developmentseed/morecantile.git
 - **UPSArcticWGS84Quad**: Universal Polar Stereographic WGS 84 Quad for Arctic - EPSG:5041
 - **UTM31WGS84Quad**: Example of UTM grid - EPSG:32631
 - **WebMercatorQuad**: Spherical Mercator - EPGS:3857 (default grid for Web Mercator based maps)
-- **WorldCRS84Quad**: CRS84 for the World - EPGS:4326 (WGS84)
+- **WGS1984Quad**: EPSG:4326 for the World - EPGS:4326 (WGS84)
+- **WorldCRS84Quad**: CRS84 for the World
 - **WorldMercatorWGS84Quad**: Elliptical Mercator projection - EPGS:3395
 
 ref: http://schemas.opengis.net/tms/1.0/json/examples/

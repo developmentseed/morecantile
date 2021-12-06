@@ -25,9 +25,8 @@ def test_tile_matrix_set(tileset):
     """Load TileMatrixSet in models."""
     # Confirm model validation is working
     ts = TileMatrixSet.parse_file(tileset)
-    # This would fail if `supportedCRS` isn't supported by GDAL/Rasterio
-    epsg = ts.crs
-    isinstance(epsg, CRS)
+    # This would fail if `supportedCRS` isn't supported by PROJ
+    isinstance(ts.crs, CRS)
 
 
 def test_tile_matrix_iter():
@@ -365,6 +364,7 @@ def test_mars_local_tms():
         ("UPSAntarcticWGS84Quad", False),
         ("WorldMercatorWGS84Quad", False),
         ("WorldCRS84Quad", False),
+        ("WGS1984Quad", True),
         ("WebMercatorQuad", False),
     ],
 )
