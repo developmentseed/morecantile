@@ -15,6 +15,7 @@ print(morecantile.tms.list())
     'UPSAntarcticWGS84Quad',
     'WorldMercatorWGS84Quad',
     'WorldCRS84Quad',
+    'WGS1984Quad',
     'WebMercatorQuad'
 ]
 ```
