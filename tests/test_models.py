@@ -262,6 +262,14 @@ def test_zoom_for_res():
     with pytest.warns(UserWarning):
         assert tms.zoom_for_res(0.0001, max_z=25) == 25
 
+    # minzoom greater than 0
+    crs = CRS.from_epsg(3857)
+    extent = [-20026376.39, -20048966.10, 20026376.39, 20048966.10]
+    tms = morecantile.TileMatrixSet.custom(
+        extent, crs, identifier="MyCustomTmsEPSG3857", minzoom=6
+    )
+    assert tms.zoom_for_res(10) == 14
+
 
 def test_schema():
     """Translate Model to Schema."""

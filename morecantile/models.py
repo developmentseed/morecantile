@@ -379,6 +379,7 @@ class TileMatrixSet(BaseModel):
         res: float,
         max_z: Optional[int] = None,
         zoom_level_strategy: str = "auto",
+        min_z: Optional[int] = None,
     ) -> int:
         """Get TMS zoom level corresponding to a specific resolution.
 
@@ -390,6 +391,7 @@ class TileMatrixSet(BaseModel):
                 On the contrary, UPPER will select the immediately above zoom level.
                 Defaults to AUTO which selects the closest zoom level.
                 ref: https://gdal.org/drivers/raster/cog.html#raster-cog
+            min_z (int): Minimum zoom level (default is tms minzoom).
 
         Returns:
             int: TMS zoom for a given resolution.
@@ -401,8 +403,11 @@ class TileMatrixSet(BaseModel):
         if not max_z:
             max_z = self.maxzoom
 
+        if not min_z:
+            min_z = self.minzoom
+
         # Freely adapted from https://github.com/OSGeo/gdal/blob/dc38aa64d779ecc45e3cd15b1817b83216cf96b8/gdal/frmts/gtiff/cogdriver.cpp#L272-L305
-        for zoom_level in range(max_z + 1):
+        for zoom_level in range(min_z, max_z + 1):
             matrix_res = self._resolution(self.matrix(zoom_level))
             if res > matrix_res or abs(res - matrix_res) / matrix_res <= 1e-8:
                 break
