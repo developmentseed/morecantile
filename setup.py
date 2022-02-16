@@ -16,7 +16,7 @@ extra_reqs = {
 
 setup(
     name="morecantile",
-    version="3.0.3",
+    version="3.0.4",
     python_requires=">=3.7",
     description=u"""Construct and use map tile grids (a.k.a TileMatrixSet / TMS).""",
     long_description=long_description,
