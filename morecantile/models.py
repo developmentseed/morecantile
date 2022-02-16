@@ -400,10 +400,10 @@ class TileMatrixSet(BaseModel):
             >>> zoom_for_res(430.021)
 
         """
-        if not max_z:
+        if max_z is None:
             max_z = self.maxzoom
 
-        if not min_z:
+        if min_z is None:
             min_z = self.minzoom
 
         # Freely adapted from https://github.com/OSGeo/gdal/blob/dc38aa64d779ecc45e3cd15b1817b83216cf96b8/gdal/frmts/gtiff/cogdriver.cpp#L272-L305
