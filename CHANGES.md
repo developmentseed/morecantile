@@ -1,4 +1,8 @@
 
+## 3.0.4 (2022-02-16)
+
+* Allow zoom_for_res to work for a TMS with a minzoom > 0 (author @samn, https://github.com/developmentseed/morecantile/pull/78)
+
 ## 3.0.3 (2021-12-06)
 
 * add `WGS1984Quad` (`WGS84/epgs:4326`) TileMatrixSet (https://github.com/developmentseed/morecantile/pull/74)
