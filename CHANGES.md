@@ -1,4 +1,9 @@
 
+## 3.0.5 (TBD)
+
+* truncate geographic Lon/Lat inputs to the TMS geographic bbox instead of `-180., -90., 180., 90.` (https://github.com/developmentseed/morecantile/pull/79)
+* remove `utils.truncate_lnglat` function (https://github.com/developmentseed/morecantile/pull/79)
+
 ## 3.0.4 (2022-02-16)
 
 * Allow zoom_for_res to work for a TMS with a minzoom > 0 (author @samn, https://github.com/developmentseed/morecantile/pull/78)

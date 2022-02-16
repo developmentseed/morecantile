@@ -17,7 +17,6 @@ from .utils import (
     check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
-    truncate_lnglat,
 )
 
 NumType = Union[float, int]
@@ -156,7 +155,7 @@ class TileMatrixSet(BaseModel):
             )
         except ProjError:
             warnings.warn(
-                "Could not create coordinate Transformer from input CRS to given geographic CRS"
+                "Could not create coordinate Transformer from input CRS to the given geographic CRS"
                 "some methods might not be available.",
                 UserWarning,
             )
@@ -430,7 +429,7 @@ class TileMatrixSet(BaseModel):
         return zoom_level
 
     def lnglat(self, x: float, y: float, truncate=False) -> Coords:
-        """Transform point(x,y) to longitude and latitude."""
+        """Transform point(x,y) to geographic longitude and latitude."""
         inside = point_in_bbox(Coords(x, y), self.xy_bbox)
         if not inside:
             warnings.warn(
@@ -441,14 +440,14 @@ class TileMatrixSet(BaseModel):
         lng, lat = self._to_geographic.transform(x, y)
 
         if truncate:
-            lng, lat = truncate_lnglat(lng, lat)
+            lng, lat = self.truncate_lnglat(lng, lat)
 
         return Coords(lng, lat)
 
     def xy(self, lng: float, lat: float, truncate=False) -> Coords:
-        """Transform longitude and latitude coordinates to TMS CRS."""
+        """Transform geographic longitude and latitude coordinates to TMS CRS."""
         if truncate:
-            lng, lat = truncate_lnglat(lng, lat)
+            lng, lat = self.truncate_lnglat(lng, lat)
 
         inside = point_in_bbox(Coords(lng, lat), self.bbox)
         if not inside:
@@ -461,14 +460,33 @@ class TileMatrixSet(BaseModel):
 
         return Coords(x, y)
 
+    def truncate_lnglat(self, lng: float, lat: float) -> Tuple[float, float]:
+        """
+        Truncate geographic coordinates to TMS geographic bbox.
+
+        Adapted from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py
+
+        """
+        if lng > self.bbox.right:
+            lng = self.bbox.right
+        elif lng < self.bbox.left:
+            lng = self.bbox.left
+
+        if lat > self.bbox.top:
+            lat = self.bbox.top
+        elif lat < self.bbox.bottom:
+            lat = self.bbox.bottom
+
+        return lng, lat
+
     def _tile(self, xcoord: float, ycoord: float, zoom: int) -> Tile:
         """
-        Get the tile containing a Point (in input projection).
+        Get the tile containing a Point (in TMS CRS).
 
         Parameters
         ----------
         xcoord, ycoord : float
-            A longitude and latitude pair in input projection.
+            A `X` and `Y` pair in TMS coordinate reference system.
         zoom : int
             The zoom level.
 
@@ -515,16 +533,16 @@ class TileMatrixSet(BaseModel):
 
     def tile(self, lng: float, lat: float, zoom: int, truncate=False) -> Tile:
         """
-        Get the tile containing a longitude and latitude.
+        Get the tile for a given geographic longitude and latitude pair.
 
         Parameters
         ----------
         lng, lat : float
-            A longitude and latitude pair in decimal degrees.
+            A longitude and latitude pair in geographic coordinate reference system.
         zoom : int
             The web mercator zoom level.
         truncate : bool
-            Whether or not to truncate inputs to limits of WGS84 bounds.
+            Whether or not to truncate inputs to limits of TMS geographic bounds.
 
         Returns
         -------
@@ -536,15 +554,15 @@ class TileMatrixSet(BaseModel):
 
     def _ul(self, *tile: Tile) -> Coords:
         """
-        Return the upper left coordinate of the (x, y, z) tile in input projection.
+        Return the upper left coordinate of the tile in TMS coordinate reference system.
 
         Attributes
         ----------
-        tile: (x, y, z) tile coordinates or a Tile object we want the upper left geospatial coordinates of.
+        tile: (x, y, z) tile coordinates or a Tile object we want the upper left coordinates of.
 
         Returns
         -------
-        The upper left geospatial coordinates of the input tile.
+        Coords: The upper left coordinates of the input tile.
 
         """
         t = _parse_tile_arg(*tile)
@@ -565,7 +583,7 @@ class TileMatrixSet(BaseModel):
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
         """
-        Return the bounding box of the (x, y, z) tile in input projection.
+        Return the bounding box of the tile in TMS coordinate reference system.
 
         Attributes
         ----------
@@ -573,7 +591,7 @@ class TileMatrixSet(BaseModel):
 
         Returns
         -------
-        The bounding box of the input tile.
+        BoundingBox: The bounding box of the input tile.
 
         """
         t = _parse_tile_arg(*tile)
@@ -584,15 +602,15 @@ class TileMatrixSet(BaseModel):
 
     def ul(self, *tile: Tile) -> Coords:
         """
-        Return the upper left coordinate of the (x, y, z) tile in Lat Lon.
+        Return the upper left coordinates of the tile in geographic coordinate reference system.
 
         Attributes
         ----------
-        tile: (x, y, z) tile coordinates or a Tile object we want the upper left geospatial coordinates of.
+        tile (tuple or Tile): (x, y, z) tile coordinates or a Tile object we want the upper left geographic coordinates of.
 
         Returns
         -------
-        The upper left geospatial coordinates of the input tile.
+        Coords: The upper left geographic coordinates of the input tile.
 
         """
         t = _parse_tile_arg(*tile)
@@ -602,15 +620,15 @@ class TileMatrixSet(BaseModel):
 
     def bounds(self, *tile: Tile) -> BoundingBox:
         """
-        Return the bounding box of the (x, y, z) tile in LatLong.
+        Return the bounding box of the tile in geographic coordinate reference system.
 
         Attributes
         ----------
-        tile: A tuple of (x, y, z) tile coordinates or a Tile object we want the bounding box of.
+        tile (tuple or Tile): A tuple of (x, y, z) tile coordinates or a Tile object we want the bounding box of.
 
         Returns
         -------
-        The bounding box of the input tile.
+        BoundingBox: The bounding box of the input tile.
 
         """
         t = _parse_tile_arg(*tile)
@@ -667,7 +685,7 @@ class TileMatrixSet(BaseModel):
 
     @property
     def bbox(self):
-        """Return TMS bounding box in WGS84."""
+        """Return TMS bounding box in geographic coordinate reference system."""
         left, bottom, right, top = self.xy_bbox
         return BoundingBox(
             *self._to_geographic.transform_bounds(
@@ -706,7 +724,7 @@ class TileMatrixSet(BaseModel):
         Parameters
         ----------
         west, south, east, north : sequence of float
-            Bounding values in decimal degrees.
+            Bounding values in decimal degrees (geographic CRS).
         zooms : int or sequence of int
             One or more zoom levels.
         truncate : bool, optional
@@ -726,19 +744,27 @@ class TileMatrixSet(BaseModel):
             zooms = (zooms,)
 
         if truncate:
-            west, south = truncate_lnglat(west, south)
-            east, north = truncate_lnglat(east, north)
+            west, south = self.truncate_lnglat(west, south)
+            east, north = self.truncate_lnglat(east, north)
 
         if west > east:
-            bbox_west = (-180.0, south, east, north)
-            bbox_east = (west, south, 180.0, north)
+            bbox_west = (self.bbox.left, south, east, north)
+            bbox_east = (west, south, self.bbox.right, north)
             bboxes = [bbox_west, bbox_east]
         else:
             bboxes = [(west, south, east, north)]
 
         for w, s, e, n in bboxes:
+            # Clamp bounding values.
+            w = max(self.bbox.left, w)
+            s = max(self.bbox.bottom, s)
+            e = min(self.bbox.right, e)
+            n = min(self.bbox.top, n)
+
             for z in zooms:
-                ul_tile = self.tile(w + LL_EPSILON, n - LL_EPSILON, z)
+                ul_tile = self.tile(
+                    w + LL_EPSILON, n - LL_EPSILON, z
+                )  # Not in mercantile
                 lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
 
                 for i in range(ul_tile.x, lr_tile.x + 1):

@@ -1,7 +1,7 @@
 """morecantile utils."""
 
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from pyproj import CRS
 
@@ -54,26 +54,6 @@ def meters_per_unit(crs: CRS) -> float:
     return (
         1.0 if crs.axis_info[0].unit_name == "metre" else 2 * math.pi * 6378137 / 360.0
     )
-
-
-def truncate_lnglat(lng: float, lat: float) -> Tuple[float, float]:
-    """
-    Truncate Lat Lon Geographic coordinates.
-
-    Copy from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py
-
-    """
-    if lng > 180.0:
-        lng = 180.0
-    elif lng < -180.0:
-        lng = -180.0
-
-    if lat > 90.0:
-        lat = 90.0
-    elif lat < -90.0:
-        lat = -90.0
-
-    return lng, lat
 
 
 def bbox_to_feature(west: float, south: float, east: float, north: float) -> Dict:
