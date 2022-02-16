@@ -1,4 +1,10 @@
 
+## 3.1.0 (TBD)
+
+**breaking changes**
+
+* update `WebMercatorQuad` TMS to match `mercantile` and `GDAL` definition of the half-earth value
+
 ## 3.0.5 (2022-02-16)
 
 * truncate geographic Lon/Lat inputs to the TMS geographic bbox instead of `-180., -90., 180., 90.` (https://github.com/developmentseed/morecantile/pull/79)

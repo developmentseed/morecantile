@@ -1,5 +1,5 @@
 """
-morecantile is an adpatation of mapbox/mercantile to work with custom projection.
+morecantile is an adaptation of mapbox/mercantile to work with custom projection.
 
 Refs:
     - mapproxy: https://github.com/mapproxy/mapproxy
