@@ -269,7 +269,7 @@ def test_xy_north_pole():
 def test_xy_truncate():
     """Input is truncated"""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert tms.xy(-181.0, 0.0, truncate=True) == tms.xy(-180.0, 0.0)
+    assert tms.xy(-181.0, 0.0, truncate=True) == tms.xy(tms.bbox.left, 0.0)
 
 
 @pytest.mark.xfail
@@ -371,6 +371,13 @@ def test_tiles():
     assert list(tms.tiles(-181.0, 0.0, -170.0, 10.0, zooms=[2], truncate=True)) == list(
         tms.tiles(-180.0, 0.0, -170.0, 10.0, zooms=[2])
     )
+
+    assert list(tms.tiles(-180.0, -90.0, 180.0, 90.0, zooms=[0])) == [
+        morecantile.Tile(x=0, y=0, z=0)
+    ]
+    assert list(tms.tiles(-180.0, -90.0, 180.0, 90.0, zooms=[0], truncate=True)) == [
+        morecantile.Tile(x=0, y=0, z=0)
+    ]
 
     # Antimeridian-crossing bounding boxes are handled
     bounds = (175.0, 5.0, -175.0, 10.0)
