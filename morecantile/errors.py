@@ -27,3 +27,7 @@ class NoQuadkeySupport(MorecantileError):
 
 class QuadKeyError(MorecantileError):
     """Raised when errors occur in computing or parsing quad keys"""
+
+
+class InvalidZoomError(MorecantileError):
+    """Raised when input zoom is invalid."""

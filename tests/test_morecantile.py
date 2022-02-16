@@ -5,7 +5,11 @@ import pytest
 from pyproj import CRS
 
 import morecantile
-from morecantile.errors import InvalidIdentifier, PointOutsideTMSBounds
+from morecantile.errors import (
+    InvalidIdentifier,
+    InvalidZoomError,
+    PointOutsideTMSBounds,
+)
 from morecantile.utils import is_power_of_two, meters_per_unit
 
 DEFAULT_GRID_COUNT = 12
@@ -451,3 +455,119 @@ def test_extend_zoom():
 def test_is_power_of_two():
     assert is_power_of_two(8)
     assert not is_power_of_two(7)
+
+
+@pytest.mark.parametrize(
+    "t,res",
+    [
+        (morecantile.Tile(0, 0, 0), True),
+        (morecantile.Tile(1, 0, 0), False),
+        (morecantile.Tile(0, 0, -1), False),
+    ],
+)
+def test_is_valid_tile(t, res):
+    """test if tile are valid."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert tms.is_valid(t) == res
+
+
+def test_neighbors():
+    """test neighbors."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    x, y, z = 243, 166, 9
+    tiles = tms.neighbors(x, y, z)
+    assert len(tiles) == 8
+    assert all(t.z == z for t in tiles)
+    assert all(t.x - x in (-1, 0, 1) for t in tiles)
+    assert all(t.y - y in (-1, 0, 1) for t in tiles)
+
+
+def test_neighbors_invalid():
+    """test neighbors."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    x, y, z = 0, 166, 9
+    tiles = tms.neighbors(x, y, z)
+    assert len(tiles) == 8 - 3  # no top-left, left, bottom-left
+    assert all(t.z == z for t in tiles)
+    assert all(t.x - x in (-1, 0, 1) for t in tiles)
+    assert all(t.y - y in (-1, 0, 1) for t in tiles)
+
+
+def test_root_neighbors_invalid():
+    """test neighbors."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    x, y, z = 0, 0, 0
+    tiles = tms.neighbors(x, y, z)
+    assert len(tiles) == 0  # root tile has no neighbors
+
+
+def test_parent():
+    """test parent"""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    parent = tms.parent(486, 332, 10)
+    assert parent[0] == morecantile.Tile(243, 166, 9)
+
+    with pytest.raises(InvalidZoomError):
+        tms.parent(486, 332, 10, zoom=11)
+
+    assert tms.parent(0, 0, 0) == []
+
+
+def test_parent_multi():
+    """test parent"""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    parent = tms.parent(486, 332, 10, zoom=8)
+    assert parent[0] == morecantile.Tile(121, 83, 8)
+
+
+def test_children():
+    """test children."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    x, y, z = 243, 166, 9
+    children = tms.children(x, y, z)
+    assert len(children) == 4
+    assert morecantile.Tile(2 * x, 2 * y, z + 1) in children
+    assert morecantile.Tile(2 * x + 1, 2 * y, z + 1) in children
+    assert morecantile.Tile(2 * x + 1, 2 * y + 1, z + 1) in children
+    assert morecantile.Tile(2 * x, 2 * y + 1, z + 1) in children
+
+
+def test_children_multi():
+    """test children multizoom."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    children = tms.children(243, 166, 9, zoom=11)
+    assert len(children) == 16
+    targets = [
+        (972, 664, 11),
+        (973, 664, 11),
+        (973, 665, 11),
+        (972, 665, 11),
+        (974, 664, 11),
+        (975, 664, 11),
+        (975, 665, 11),
+        (974, 665, 11),
+        (974, 666, 11),
+        (975, 666, 11),
+        (975, 667, 11),
+        (974, 667, 11),
+        (972, 666, 11),
+        (973, 666, 11),
+        (973, 667, 11),
+        (972, 667, 11),
+    ]
+    for target in targets:
+        assert target in children
+
+
+def test_children_invalid_zoom():
+    """invalid zoom."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    with pytest.raises(InvalidZoomError):
+        tms.children(243, 166, 9, zoom=8)
+
+    with pytest.raises(InvalidZoomError):
+        tms.children((243, 166, 9), zoom=8)

@@ -10,7 +10,12 @@ from pyproj.enums import WktVersion
 from pyproj.exceptions import ProjError
 
 from .commons import BoundingBox, Coords, Tile
-from .errors import NoQuadkeySupport, PointOutsideTMSBounds, QuadKeyError
+from .errors import (
+    InvalidZoomError,
+    NoQuadkeySupport,
+    PointOutsideTMSBounds,
+    QuadKeyError,
+)
 from .utils import (
     _parse_tile_arg,
     bbox_to_feature,
@@ -925,3 +930,154 @@ class TileMatrixSet(BaseModel):
                 raise QuadKeyError("Unexpected quadkey digit: %r", digit)
 
         return Tile(xtile, ytile, i + 1)
+
+    def extrema(self, zoom: int) -> Dict:
+        """Return TileMatrix Extrema.
+
+        Note: Equivalent of `mercantile.minmax`
+
+        Parameters
+        ----------
+        zoom : int
+            The zoom level.
+
+        Returns
+        -------
+        Dict
+
+        """
+        m = self.matrix(zoom)
+        return {
+            "x": {"min": 0, "max": m.matrixWidth - 1},
+            "y": {"min": 0, "max": m.matrixHeight - 1},
+        }
+
+    def is_valid(self, *tile: Tile) -> bool:
+        """Check if a tile is valid."""
+        t = _parse_tile_arg(*tile)
+
+        if t.z < self.minzoom:
+            return False
+
+        extrema = self.extrema(t.z)
+        validx = extrema["x"]["min"] <= t.x <= extrema["x"]["max"]
+        validy = extrema["y"]["min"] <= t.y <= extrema["y"]["max"]
+
+        return validx and validy
+
+    def neighbors(self, *tile: Tile) -> List[Tile]:
+        """The neighbors of a tile
+
+        The neighbors function makes no guarantees regarding neighbor tile
+        ordering.
+
+        The neighbors function returns up to eight neighboring tiles, where
+        tiles will be omitted when they are not valid.
+
+        Parameters
+        ----------
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+
+        Returns
+        -------
+        list
+
+        """
+        t = _parse_tile_arg(*tile)
+        extrema = self.extrema(t.z)
+
+        tiles = []
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
+                if i == 0 and j == 0:
+                    continue
+                elif t.x + i < extrema["x"]["min"] or t.y + j < extrema["y"]["min"]:
+                    continue
+
+                elif t.x + i > extrema["x"]["max"] or t.y + j > extrema["y"]["max"]:
+                    continue
+
+                tiles.append(Tile(x=t.x + i, y=t.y + j, z=t.z))
+
+        return tiles
+
+    def parent(self, *tile: Tile, zoom: int = None):
+        """Get the parent of a tile
+
+        The parent is the tile of one zoom level lower that contains the
+        given "child" tile.
+
+        Parameters
+        ----------
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+        zoom : int, optional
+            Determines the *zoom* level of the returned parent tile.
+            This defaults to one lower than the tile (the immediate parent).
+
+        Returns
+        -------
+        list: list of Tile
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        if t.z == self.minzoom:
+            return []
+
+        if zoom is not None and t.z <= zoom:
+            raise InvalidZoomError("zoom must be less than that of the input tile")
+
+        target_zoom = t.z - 1 if zoom is None else zoom
+
+        res = self._resolution(self.matrix(t.z)) / 10.0
+
+        bbox = self.xy_bounds(t)
+        ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
+        lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
+
+        tiles = []
+        for i in range(ul_tile.x, lr_tile.x + 1):
+            for j in range(ul_tile.y, lr_tile.y + 1):
+                tiles.append(Tile(i, j, target_zoom))
+
+        return tiles
+
+    def children(self, *tile: Tile, zoom: int = None):
+        """Get the children of a tile
+
+        The children are ordered: top-left, top-right, bottom-right, bottom-left.
+
+        Parameters
+        ----------
+        tile : Tile or sequence of int
+            May be be either an instance of Tile or 3 ints, X, Y, Z.
+        zoom : int, optional
+            Determines the *zoom* level of the returned parent tile.
+            This defaults to one lower than the tile (the immediate parent).
+
+        Returns
+        -------
+        list: list of Tile
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        if zoom is not None and t.z > zoom:
+            raise InvalidZoomError("zoom must be greater than that of the input tile")
+
+        target_zoom = t.z + 1 if zoom is None else zoom
+
+        bbox = self.xy_bounds(t)
+        res = self._resolution(self.matrix(t.z)) / 10.0
+
+        ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
+        lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
+
+        tiles = []
+        for i in range(ul_tile.x, lr_tile.x + 1):
+            for j in range(ul_tile.y, lr_tile.y + 1):
+                tiles.append(Tile(i, j, target_zoom))
+
+        return tiles
