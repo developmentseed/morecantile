@@ -384,22 +384,10 @@ def test_tiles():
     assert len(list(tms.tiles(*bounds, zooms=[2]))) == 2
 
 
-@pytest.mark.xfail
 def test_global_tiles_clamped():
     """Y is clamped to (0, 2 ** zoom - 1)."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    with pytest.warns(PointOutsideTMSBounds):
-        tiles = list(tms.tiles(-180, -90, 180, 90, [1]))
-        assert len(tiles) == 4
-        assert min(t.y for t in tiles) == 0
-        assert max(t.y for t in tiles) == 1
-
-
-def test_global_tiles():
-    """get 4 tiles at zoom 0"""
-    tms = morecantile.tms.get("WebMercatorQuad")
-
-    tiles = list(tms.tiles(*tms.bbox, [1]))
+    tiles = list(tms.tiles(-180, -90, 180, 90, [1]))
     assert len(tiles) == 4
     assert min(t.y for t in tiles) == 0
     assert max(t.y for t in tiles) == 1

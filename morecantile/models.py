@@ -540,7 +540,7 @@ class TileMatrixSet(BaseModel):
         lng, lat : float
             A longitude and latitude pair in geographic coordinate reference system.
         zoom : int
-            The web mercator zoom level.
+            The zoom level.
         truncate : bool
             Whether or not to truncate inputs to limits of TMS geographic bounds.
 
