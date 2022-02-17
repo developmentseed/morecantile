@@ -1,6 +1,8 @@
 
 ## 3.1.0 (TBD)
 
+* add `parent`, `children`, `neighbors`, `extrema`, `is_valid` methods (https://github.com/developmentseed/morecantile/pull/82)
+
 **breaking changes**
 
 * update `WebMercatorQuad` TMS to match `mercantile` and `GDAL` definition of the half-earth value
