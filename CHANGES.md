@@ -1,7 +1,7 @@
 
 ## 3.1.0 (TBD)
 
-* add `parent`, `children`, `neighbors`, `extrema`, `is_valid` methods (https://github.com/developmentseed/morecantile/pull/82)
+* add `parent`, `children`, `neighbors`, `minmax`, `is_valid` methods (https://github.com/developmentseed/morecantile/pull/82)
 
 **breaking changes**
 

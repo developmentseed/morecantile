@@ -931,10 +931,8 @@ class TileMatrixSet(BaseModel):
 
         return Tile(xtile, ytile, i + 1)
 
-    def extrema(self, zoom: int) -> Dict:
+    def minmax(self, zoom: int) -> Dict:
         """Return TileMatrix Extrema.
-
-        Note: Equivalent of `mercantile.minmax`
 
         Parameters
         ----------
@@ -959,7 +957,7 @@ class TileMatrixSet(BaseModel):
         if t.z < self.minzoom:
             return False
 
-        extrema = self.extrema(t.z)
+        extrema = self.minmax(t.z)
         validx = extrema["x"]["min"] <= t.x <= extrema["x"]["max"]
         validy = extrema["y"]["min"] <= t.y <= extrema["y"]["max"]
 
@@ -985,7 +983,7 @@ class TileMatrixSet(BaseModel):
 
         """
         t = _parse_tile_arg(*tile)
-        extrema = self.extrema(t.z)
+        extrema = self.minmax(t.z)
 
         tiles = []
         for i in [-1, 0, 1]:
