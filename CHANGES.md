@@ -1,5 +1,5 @@
 
-## 3.1.0 (TBD)
+## 3.1.0 (2022-02-18)
 
 * add `parent`, `children`, `neighbors`, `minmax`, `is_valid` methods (https://github.com/developmentseed/morecantile/pull/82)
 

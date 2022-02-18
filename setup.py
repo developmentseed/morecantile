@@ -16,7 +16,6 @@ extra_reqs = {
 
 setup(
     name="morecantile",
-    version="3.0.5",
     python_requires=">=3.7",
     description=u"""Construct and use map tile grids (a.k.a TileMatrixSet / TMS).""",
     long_description=long_description,
@@ -41,8 +40,9 @@ setup(
     zip_safe=False,
     install_requires=inst_reqs,
     extras_require=extra_reqs,
-    entry_points="""
-      [console_scripts]
-      morecantile=morecantile.scripts.cli:cli
-      """,
+    entry_points={
+        "console_scripts": [
+            "morecantile=morecantile.scripts.cli:cli",
+        ]
+    },
 )
