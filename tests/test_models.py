@@ -269,6 +269,7 @@ def test_zoom_for_res():
         extent, crs, identifier="MyCustomTmsEPSG3857", minzoom=6
     )
     assert tms.zoom_for_res(10) == 14
+    assert tms.zoom_for_res(5_000) == 6
 
 
 def test_schema():

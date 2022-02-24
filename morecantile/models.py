@@ -418,14 +418,14 @@ class TileMatrixSet(BaseModel):
 
         if zoom_level > 0 and abs(res - matrix_res) / matrix_res > 1e-8:
             if zoom_level_strategy.lower() == "lower":
-                zoom_level -= 1
+                zoom_level = max(zoom_level - 1, min_z)
             elif zoom_level_strategy.lower() == "upper":
-                pass
+                zoom_level = min(zoom_level, max_z)
             elif zoom_level_strategy.lower() == "auto":
-                if (self._resolution(self.matrix(zoom_level - 1)) / res) < (
+                if (self._resolution(self.matrix(max(zoom_level - 1, min_z))) / res) < (
                     res / matrix_res
                 ):
-                    zoom_level -= 1
+                    zoom_level = max(zoom_level - 1, min_z)
             else:
                 raise ValueError(
                     f"Invalid strategy: {zoom_level_strategy}. Should be one of lower|upper|auto"
