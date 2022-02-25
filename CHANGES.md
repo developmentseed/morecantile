@@ -1,4 +1,8 @@
 
+## 3.1.1 (2022-02-25)
+
+* fix issue with `zoom_for_res` when resolution is smaller than minzoom (author @samn, https://github.com/developmentseed/morecantile/pull/84)
+
 ## 3.1.0 (2022-02-18)
 
 * add `parent`, `children`, `neighbors`, `minmax`, `is_valid` methods (https://github.com/developmentseed/morecantile/pull/82)
