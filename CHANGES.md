@@ -1,5 +1,5 @@
 
-## 3.1.2 (2022-03-22)
+## 3.1.2 (2022-03-21)
 
 * add support for `foot` and `US survey foot` CRS (https://github.com/developmentseed/morecantile/pull/86)
 
