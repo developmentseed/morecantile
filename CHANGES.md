@@ -1,4 +1,8 @@
 
+## 3.1.2 (2022-03-22)
+
+* add support for `foot` and `US survey foot` CRS (https://github.com/developmentseed/morecantile/pull/86)
+
 ## 3.1.1 (2022-02-25)
 
 * fix issue with `zoom_for_res` when resolution is smaller than minzoom (author @samn, https://github.com/developmentseed/morecantile/pull/84)

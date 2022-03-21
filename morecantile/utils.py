@@ -50,10 +50,19 @@ def meters_per_unit(crs: CRS) -> float:
         (a is the Earth maximum radius of the ellipsoid).
 
     """
-    # crs.linear_units_factor[1]  GDAL 3.0
-    return (
-        1.0 if crs.axis_info[0].unit_name == "metre" else 2 * math.pi * 6378137 / 360.0
-    )
+    unit_factors = {
+        "metre": 1.0,
+        "degree": 2 * math.pi * 6378137 / 360.0,
+        "foot": 0.3048,
+        "US survey foot": 0.30480060960121924,
+    }
+    unit_name = crs.axis_info[0].unit_name
+    try:
+        return unit_factors[unit_name]
+    except KeyError:
+        raise Exception(
+            f"CRS {crs} is not supported, please fill an issue in developmentseed/morecantile"
+        )
 
 
 def bbox_to_feature(west: float, south: float, east: float, north: float) -> Dict:
