@@ -17,7 +17,7 @@ extra_reqs = {
 setup(
     name="morecantile",
     python_requires=">=3.7",
-    description=u"""Construct and use map tile grids (a.k.a TileMatrixSet / TMS).""",
+    description="""Construct and use map tile grids (a.k.a TileMatrixSet / TMS).""",
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
@@ -30,7 +30,7 @@ setup(
         "Topic :: Scientific/Engineering :: GIS",
     ],
     keywords="GIS",
-    author=u"Vincent Sarago",
+    author="Vincent Sarago",
     author_email="vincent@developmentseed.org",
     url="https://github.com/developmentseed/morecantile",
     license="MIT",

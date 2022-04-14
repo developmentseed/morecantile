@@ -304,8 +304,8 @@ class TileMatrixSet(BaseModel):
         mpu = meters_per_unit(crs)
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
-                width / (tile_width * matrix_scale[0]) / 2.0 ** zoom,
-                height / (tile_height * matrix_scale[1]) / 2.0 ** zoom,
+                width / (tile_width * matrix_scale[0]) / 2.0**zoom,
+                height / (tile_height * matrix_scale[1]) / 2.0**zoom,
             )
             tms["tileMatrix"].append(
                 TileMatrix(
@@ -315,8 +315,8 @@ class TileMatrixSet(BaseModel):
                         topLeftCorner=[x_origin, y_origin],
                         tileWidth=tile_width,
                         tileHeight=tile_height,
-                        matrixWidth=matrix_scale[0] * 2 ** zoom,
-                        matrixHeight=matrix_scale[1] * 2 ** zoom,
+                        matrixWidth=matrix_scale[0] * 2**zoom,
+                        matrixHeight=matrix_scale[1] * 2**zoom,
                     )
                 )
             )
