@@ -53,15 +53,15 @@ def normalize_source(input):
     first_line = next(src)
 
     # If input is RS-delimited JSON sequence.
-    if first_line.startswith(u"\x1e"):
+    if first_line.startswith("\x1e"):
 
         def feature_gen():
-            buffer = first_line.strip(u"\x1e")
+            buffer = first_line.strip("\x1e")
             for line in src:
-                if line.startswith(u"\x1e"):
+                if line.startswith("\x1e"):
                     if buffer:
                         yield json.loads(buffer)
-                    buffer = line.strip(u"\x1e")
+                    buffer = line.strip("\x1e")
                 else:
                     buffer += line
             else:
@@ -262,7 +262,7 @@ def shapes(
             click.echo(" ".join(map(str, bbox)))
         else:
             if seq:
-                click.echo(u"\x1e")
+                click.echo("\x1e")
             if output_mode == "bbox":
                 click.echo(json.dumps(bbox, **dump_kwds))
             elif output_mode == "feature":
@@ -366,7 +366,7 @@ def tiles(ctx, zoom, input, identifier, seq):
             vals = (tile.x, tile.y, zoom)
             output = json.dumps(vals)
             if seq:
-                click.echo(u"\x1e")
+                click.echo("\x1e")
 
             click.echo(output)
 
@@ -545,7 +545,7 @@ def tms_to_geojson(
                 click.echo(" ".join(map(str, bbox)))
             else:
                 if seq:
-                    click.echo(u"\x1e")
+                    click.echo("\x1e")
                 if output_mode == "bbox":
                     click.echo(json.dumps(bbox, **dump_kwds))
                 elif output_mode == "feature":
