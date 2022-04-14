@@ -29,7 +29,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install numpy
-          python -m pip install -e .["docs"]
+          python -m pip install .["docs"]
 
       - name: Deploy docs
-        run: mkdocs gh-deploy --force
+        run: mkdocs gh-deploy --force -f docs/mkdocs.yml

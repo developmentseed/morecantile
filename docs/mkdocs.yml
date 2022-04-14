@@ -2,7 +2,7 @@
 site_name: 'morecantile'
 site_description: 'Construct and use map tile grids (a.k.a TileMatrixSet / TMS).'
 
-docs_dir: 'docs'
+docs_dir: 'src'
 site_dir: 'build'
 
 # Repository

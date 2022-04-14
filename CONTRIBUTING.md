@@ -29,12 +29,12 @@ $ pip install -e .["docs"]
 Hot-reloading docs:
 
 ```bash
-$ mkdocs serve
+$ mkdocs serve -f docs/mkdocs.yml
 ```
 
 To manually deploy docs (note you should never need to do this because Github
 Actions deploys automatically for new commits.):
 
 ```bash
-$ mkdocs gh-deploy
+$ mkdocs gh-deploy -f docs/mkdocs.yml
 ```
