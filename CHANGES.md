@@ -1,4 +1,9 @@
 
+## 3.1.3 (TBD)
+
+* support python 3.10
+* switch to pyproject.toml
+
 ## 3.1.2 (2022-03-21)
 
 * add support for `foot` and `US survey foot` CRS (https://github.com/developmentseed/morecantile/pull/86)
