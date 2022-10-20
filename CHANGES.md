@@ -1,5 +1,5 @@
 
-## 3.1.3 (TBD)
+## 3.1.3 (2022-10-20)
 
 * support python 3.10
 * switch to pyproject.toml

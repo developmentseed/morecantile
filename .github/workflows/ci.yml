@@ -73,7 +73,7 @@ jobs:
       - name: Set module version
         id: module
         # https://stackoverflow.com/questions/58177786/get-the-current-pushed-tag-in-github-actions
-        run: echo ::set-output name=version::$(python -c 'from importlib.metadata import version; print(version("rio_cogeo"))')
+        run: echo ::set-output name=version::$(python -c 'from importlib.metadata import version; print(version("morecantile"))')
 
       - name: Build and publish
         if: steps.tag.outputs.tag == steps.module.outputs.version
