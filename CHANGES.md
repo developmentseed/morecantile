@@ -1,7 +1,8 @@
 
-## 3.1.3 (2022-10-20)
+## 3.2.0 (2022-10-20)
 
-* support python 3.10
+* add python 3.10 support
+* remove python 3.7 support
 * switch to pyproject.toml
 
 ## 3.1.2 (2022-03-21)
