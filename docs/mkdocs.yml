@@ -8,7 +8,7 @@ site_dir: 'build'
 # Repository
 repo_name: 'developmentseed/morecantile'
 repo_url: 'https://github.com/developmentseed/morecantile'
-edit_uri: 'blob/master/src/'
+edit_uri: 'blob/main/src/'
 site_url: 'https://developmentseed.org/morecantile/'
 
 # Social links

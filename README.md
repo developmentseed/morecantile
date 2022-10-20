@@ -26,7 +26,7 @@ xmin                            xmax
       <img src="https://github.com/developmentseed/morecantile/workflows/CI/badge.svg" alt="Test">
   </a>
   <a href="https://codecov.io/gh/developmentseed/morecantile" target="_blank">
-      <img src="https://codecov.io/gh/developmentseed/morecantile/branch/master/graph/badge.svg" alt="Coverage">
+      <img src="https://codecov.io/gh/developmentseed/morecantile/branch/main/graph/badge.svg" alt="Coverage">
   </a>
   <a href="https://pypi.org/project/morecantile" target="_blank">
       <img src="https://img.shields.io/pypi/v/morecantile?color=%2334D058&label=pypi%20package" alt="Package version">
@@ -34,7 +34,7 @@ xmin                            xmax
   <a href="https://pypistats.org/packages/morecantile" target="_blank">
       <img src="https://img.shields.io/pypi/dm/morecantile.svg" alt="Downloads">
   </a>
-  <a href="https://github.com/developmentseed/morecantile/blob/master/LICENSE" target="_blank">
+  <a href="https://github.com/developmentseed/morecantile/blob/main/LICENSE" target="_blank">
       <img src="https://img.shields.io/github/license/developmentseed/morecantile.svg" alt="License">
   </a>
 </p>
@@ -88,15 +88,15 @@ ref: http://schemas.opengis.net/tms/1.0/json/examples/
 
 ## Changes
 
-See [CHANGES.md](https://github.com/developmentseed/morecantile/blob/master/CHANGES.md).
+See [CHANGES.md](https://github.com/developmentseed/morecantile/blob/main/CHANGES.md).
 
 ## Contribution & Development
 
-See [CONTRIBUTING.md](https://github.com/developmentseed/morecantile/blob/master/CONTRIBUTING.md)
+See [CONTRIBUTING.md](https://github.com/developmentseed/morecantile/blob/main/CONTRIBUTING.md)
 
 ## License
 
-See [LICENSE](https://github.com/developmentseed/morecantile/blob/master/LICENSE)
+See [LICENSE](https://github.com/developmentseed/morecantile/blob/main/LICENSE)
 
 ## Authors
 
