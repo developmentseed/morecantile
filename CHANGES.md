@@ -1,4 +1,8 @@
 
+## 3.2.1 (2022-10-25)
+
+* add python 3.11 support
+
 ## 3.2.0 (2022-10-20)
 
 * add python 3.10 support
