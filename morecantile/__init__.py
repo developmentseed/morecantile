@@ -11,5 +11,5 @@ Refs:
 __version__ = "3.2.1"
 
 from .commons import BoundingBox, Coords, Tile  # noqa
-from .defaults import tms  # noqa
+from .defaults import TileMatrixSets, tms  # noqa
 from .models import TileMatrixSet  # noqa

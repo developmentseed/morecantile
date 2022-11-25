@@ -1,4 +1,8 @@
 
+## 3.2.2 (2022-11-25)
+
+* add `morecantile.defaults.TileMatrixSets` in export
+
 ## 3.2.1 (2022-10-25)
 
 * add python 3.11 support
