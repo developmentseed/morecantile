@@ -71,8 +71,12 @@ class CRSType(CRS, str):
 
 def CRS_to_uri(crs: CRS) -> str:
     """Convert CRS to URI."""
-    epsg_code = crs.to_epsg()
-    return f"http://www.opengis.net/def/crs/EPSG/0/{epsg_code}"
+    version = 0
+    authority, code = crs.to_authority()
+    # if we have a version number in the authority, split it out
+    if '_' in authority:
+        authority, version = authority
+    return f"http://www.opengis.net/def/crs/{authority}/{version}/{code}"
 
 
 def crs_axis_inverted(crs: CRS) -> bool:
