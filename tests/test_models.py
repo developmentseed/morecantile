@@ -379,3 +379,18 @@ def test_mars_local_tms():
 def test_inverted_tms(id, result):
     """Make sure _invert_axis return the correct result."""
     assert morecantile.tms.get(id)._invert_axis == result
+
+
+@pytest.mark.parametrize(
+    "authority,code,result",
+    [
+        ("EPSG", "4326", "EPSG/0/4326"),
+        ("ESRI", "102001", "ESRI/0/102001"),
+        ("IAU_2015", "49910", "IAU/2015/49910"),
+        ("IGNF", "AMANU49", "IGNF/0/AMANU49"),
+        ("NKG", "ETRF00", "NKG/0/ETRF00"),
+        ("OGC", "CRS84", "OGC/0/CRS84")
+    ],
+)
+def test_crs_uris(authority, code, result):
+    assert morecantile.models.CRS_to_uri(CRS((authority, code))) == f'http://www.opengis.net/def/crs/{result}'
