@@ -292,8 +292,7 @@ def test_schema():
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
     json_doc = json.loads(tms.json(exclude_none=True))
-    # We cannot translate PROJ4 to epsg so it's set to None
-    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/None"
+    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
