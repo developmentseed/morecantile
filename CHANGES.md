@@ -1,4 +1,8 @@
 
+## NEXT (TDB)
+
+* fix `utils.meters_per_unit` for non earth bodies (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/92)
+
 ## 3.2.2 (2022-11-25)
 
 * add `morecantile.defaults.TileMatrixSets` in export
