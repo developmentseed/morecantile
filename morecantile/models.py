@@ -71,9 +71,9 @@ class CRSType(CRS, str):
 
 def CRS_to_uri(crs: CRS) -> str:
     """Convert CRS to URI."""
-    authority = 'EPSG'
+    authority = "EPSG"
     code = None
-    version = 0
+    version = "0"
     # attempt to grab the authority, version, and code from the CRS
     authority_code = crs.to_authority(min_confidence=20)
     if authority_code is not None:
