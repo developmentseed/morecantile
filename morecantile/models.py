@@ -72,7 +72,7 @@ class CRSType(CRS, str):
 def CRS_to_uri(crs: CRS) -> str:
     """Convert CRS to URI."""
     version = 0
-    authority, code = crs.to_authority()
+    authority, code = crs.to_authority(min_confidence=20)
     # if we have a version number in the authority, split it out
     if '_' in authority:
         authority, version = authority
