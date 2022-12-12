@@ -9,7 +9,7 @@ from morecantile import utils
 
 
 @pytest.mark.parametrize(
-    "epsg,unit",
+    "crs,unit",
     [
         (CRS.from_epsg(4326), 2 * math.pi * 6378137 / 360.0),
         (CRS.from_epsg(3857), 1.0),
