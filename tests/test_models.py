@@ -389,8 +389,11 @@ def test_inverted_tms(id, result):
         ("IAU_2015", "49910", "IAU/2015/49910"),
         ("IGNF", "AMANU49", "IGNF/0/AMANU49"),
         ("NKG", "ETRF00", "NKG/0/ETRF00"),
-        ("OGC", "CRS84", "OGC/0/CRS84")
+        ("OGC", "CRS84", "OGC/0/CRS84"),
     ],
 )
 def test_crs_uris(authority, code, result):
-    assert morecantile.models.CRS_to_uri(CRS((authority, code))) == f'http://www.opengis.net/def/crs/{result}'
+    assert (
+        morecantile.models.CRS_to_uri(CRS((authority, code)))
+        == f"http://www.opengis.net/def/crs/{result}"
+    )
