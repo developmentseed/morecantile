@@ -75,7 +75,7 @@ def CRS_to_uri(crs: CRS) -> str:
     authority, code = crs.to_authority(min_confidence=20)
     # if we have a version number in the authority, split it out
     if '_' in authority:
-        authority, version = authority
+        authority, version = authority.split('_')
     return f"http://www.opengis.net/def/crs/{authority}/{version}/{code}"
 
 
