@@ -71,11 +71,16 @@ class CRSType(CRS, str):
 
 def CRS_to_uri(crs: CRS) -> str:
     """Convert CRS to URI."""
+    authority = 'EPSG'
+    code = None
     version = 0
-    authority, code = crs.to_authority(min_confidence=20)
-    # if we have a version number in the authority, split it out
-    if '_' in authority:
-        authority, version = authority.split('_')
+    # attempt to grab the authority, version, and code from the CRS
+    authority_code = crs.to_authority(min_confidence=20)
+    if authority_code is not None:
+        authority, code = authority_code
+        # if we have a version number in the authority, split it out
+        if "_" in authority:
+            authority, version = authority.split("_")
     return f"http://www.opengis.net/def/crs/{authority}/{version}/{code}"
 
 
