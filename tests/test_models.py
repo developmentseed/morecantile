@@ -397,3 +397,9 @@ def test_crs_uris(authority, code, result):
         morecantile.models.CRS_to_uri(CRS((authority, code)))
         == f"http://www.opengis.net/def/crs/{result}"
     )
+
+
+@pytest.mark.parametrize("tilematrixset", morecantile.tms.list())
+def test_crs_uris_for_defaults(tilematrixset):
+    t = morecantile.tms.get(tilematrixset)
+    assert t.supportedCRS == morecantile.models.CRS_to_uri(t.crs)
