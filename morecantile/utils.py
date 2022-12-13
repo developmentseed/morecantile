@@ -52,7 +52,7 @@ def meters_per_unit(crs: CRS) -> float:
     """
     unit_factors = {
         "metre": 1.0,
-        "degree": 2 * math.pi * 6378137 / 360.0,
+        "degree": 2 * math.pi * crs.ellipsoid.semi_major_metre / 360.0,
         "foot": 0.3048,
         "US survey foot": 0.30480060960121924,
     }
