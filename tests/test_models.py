@@ -292,8 +292,7 @@ def test_schema():
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
     json_doc = json.loads(tms.json(exclude_none=True))
-    # We cannot translate PROJ4 to epsg so it's set to None
-    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/None"
+    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
@@ -380,3 +379,27 @@ def test_mars_local_tms():
 def test_inverted_tms(id, result):
     """Make sure _invert_axis return the correct result."""
     assert morecantile.tms.get(id)._invert_axis == result
+
+
+@pytest.mark.parametrize(
+    "authority,code,result",
+    [
+        ("EPSG", "4326", "EPSG/0/4326"),
+        ("ESRI", "102001", "ESRI/0/102001"),
+        ("IAU_2015", "49910", "IAU/2015/49910"),
+        ("IGNF", "AMANU49", "IGNF/0/AMANU49"),
+        ("NKG", "ETRF00", "NKG/0/ETRF00"),
+        ("OGC", "CRS84", "OGC/0/CRS84"),
+    ],
+)
+def test_crs_uris(authority, code, result):
+    assert (
+        morecantile.models.CRS_to_uri(CRS((authority, code)))
+        == f"http://www.opengis.net/def/crs/{result}"
+    )
+
+
+@pytest.mark.parametrize("tilematrixset", morecantile.tms.list())
+def test_crs_uris_for_defaults(tilematrixset):
+    t = morecantile.tms.get(tilematrixset)
+    assert t.supportedCRS == morecantile.models.CRS_to_uri(t.crs)

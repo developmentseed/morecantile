@@ -1,7 +1,8 @@
 
-## NEXT (TDB)
+## 3.2.3 (2022-12-13)
 
 * fix `utils.meters_per_unit` for non earth bodies (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/92)
+* fix `CRS_to_uri` function to adds ability to export non-EPSG CRSs URIs (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/93)
 
 ## 3.2.2 (2022-11-25)
 
