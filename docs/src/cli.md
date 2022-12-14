@@ -132,6 +132,7 @@ Options:
   --tile-width INTEGER   Width of each tile.
   --tile-height INTEGER  Height of each tile.
   --extent-epsg INTEGER  EPSG number for the bounding box.
+  --title TEXT           Tile Matrix Set title.
   --help                 Show this message and exit.
 ```
 
@@ -191,7 +192,7 @@ Options:
 ## Examples
 
 ```
-$ rio bounds eu.tif| morecantile tiles --zoom 1  # like mercantiles
+$ rio bounds eu.tif | morecantile tiles --zoom 1  # like mercantiles
 
 $ morecantile custom --epsg 3413 --extent -4194300 -4194300 4194300 4194300 --minzoom 0 --maxzoom 8 --tile-width 512 --tile-height 512 | morecantile tms-to-geojson --level 3 --projected --collect > l3.geojson
 

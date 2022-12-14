@@ -417,7 +417,14 @@ def tms(identifier):
     type=int,
     help="EPSG number for the bounding box.",
 )
-def custom(epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent_epsg):
+@click.option(
+    "--title",
+    type=str,
+    help="Tile Matrix Set title.",
+)
+def custom(
+    epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent_epsg, title
+):
     """Create Custom TMS."""
     extent_crs = CRS.from_epsg(extent_epsg) if extent_epsg else None
 
@@ -430,6 +437,7 @@ def custom(epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent
         tile_width=tile_width,
         tile_height=tile_height,
         extent_crs=extent_crs,
+        title=title or "Custom TileMatrixSet",
     )
     click.echo(tms.json(exclude_none=True))
 
