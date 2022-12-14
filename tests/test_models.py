@@ -94,12 +94,26 @@ def test_invalid_tms():
         morecantile.tms.get("ANotValidName")
 
 
-def test_quadkey_support():
-    tms = morecantile.tms.get("CanadianNAD83_LCC")
-    assert not tms._is_quadtree
-
-    tms = morecantile.tms.get("UPSArcticWGS84Quad")
-    assert tms._is_quadtree
+@pytest.mark.parametrize(
+    "name,result",
+    [
+        ("LINZAntarticaMapTilegrid", False),
+        ("EuropeanETRS89_LAEAQuad", True),
+        ("CanadianNAD83_LCC", False),
+        ("UPSArcticWGS84Quad", True),
+        ("NZTM2000", False),
+        ("NZTM2000Quad", True),
+        ("UTM31WGS84Quad", False),
+        ("UPSAntarcticWGS84Quad", True),
+        ("WorldMercatorWGS84Quad", True),
+        ("WGS1984Quad", False),
+        ("WorldCRS84Quad", False),
+        ("WebMercatorQuad", True),
+    ],
+)
+def test_quadkey_support(name, result):
+    tms = morecantile.tms.get(name)
+    assert tms._is_quadtree == result
 
 
 def test_quadkey():

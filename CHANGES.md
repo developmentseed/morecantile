@@ -1,4 +1,9 @@
 
+## 3.2.4 (2022-12-14)
+
+* fix `CanadianNAD83_LCC`, `WorldMercatorWGS84Quad` and `EuropeanETRS89_LAEAQuad` TMS
+* add `title` option in `morecantile custom` CLI
+
 ## 3.2.3 (2022-12-13)
 
 * fix `utils.meters_per_unit` for non earth bodies (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/92)
