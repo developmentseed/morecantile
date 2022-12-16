@@ -17,8 +17,8 @@ user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
 if user_tms_dir:
     tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))
 
-default_tms: Dict[str, TileMatrixSet] = {
-    tms.stem: TileMatrixSet.parse_file(tms) for tms in tms_paths
+default_tms: Dict[str, Union[TileMatrixSet, pathlib.Path]] = {
+    tms.stem: tms for tms in tms_paths
 }
 
 
@@ -33,7 +33,12 @@ class TileMatrixSets:
         if identifier not in self.tms:
             raise InvalidIdentifier(f"Invalid identifier: {identifier}")
 
-        return self.tms[identifier]
+        tms = self.tms[identifier]
+        if isinstance(tms, pathlib.Path):
+            tms = TileMatrixSet.parse_file(tms)
+            self.tms[identifier] = tms
+
+        return tms
 
     def list(self) -> List[str]:
         """List registered TMS."""
