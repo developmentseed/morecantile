@@ -1,4 +1,4 @@
-## 3.2.4 (2022-12-16)
+## 3.2.5 (2022-12-16)
 
 * Do not parse TMS json files automatically but wait for the TMS to be used
 
