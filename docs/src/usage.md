@@ -154,10 +154,11 @@ Since the release of morecantile `1.3.1`, users can automatically extend morecan
 ### Export TMS definiton to JSON dictionary
 
 ```
+import json
 import morecantile
 
 tms = morecantile.tms.get("WebMercatorQuad")
-tms_json = tms.json()
+tms_json = json.loads(tms.json()) # the .json() func does not return JSON dict directly
 ```
 
 You may write this `tms_json` variable to your JSON file later.
