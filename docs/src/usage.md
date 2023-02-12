@@ -150,17 +150,19 @@ Since the release of morecantile `1.3.1`, users can automatically extend morecan
 
     - Filename HAVE TO be the same as the TMS identifer
     - Filename HAVE TO be *without special characters* `[a-zA-Z0-9_]`
+    
+### Export TMS definiton to JSON dictionary
 
-## Morecantile + Pydantic
+```
+import morecantile
 
-Morecantile uses [Pydantic](https://pydantic-docs.helpmanual.io) to define and validate TileMatrixSet documents.
+tms = morecantile.tms.get("WebMercatorQuad")
+tms_json = tms.json()
+```
 
-From Pydantic docs:
-> Define how data should be in pure, canonical python; validate it with pydantic.
+You may write this `tms_json` variable to your JSON file later.
 
-Pydantic model enforce the TileMatrixSet OGC specification for the whole project by validating each items.
-
-Because we use pydantic model to handle the TileMatrixSets you can uses pydantic's [helper functions](https://pydantic-docs.helpmanual.io/usage/models/#helper-functions) directly.
+### Load TMS definition from JSON TileMatrixSet document
 
 ```python
 import morecantile
@@ -169,3 +171,9 @@ my_tms_doc = "~/a_tms_doc.json"
 
 tms = morecantile.TileMatrixSet.parse_file(my_tms_doc)
 ```
+
+#### Technical details on TMS JSON document parsing (Pydantic)
+
+Morecantile enforces (with help of Pydantic models) that all the loading JSON definitions are compliant with [TileMatrixSet OGC specification](https://docs.opengeospatial.org/is/17-083r4/17-083r4.html#toc18)
+
+You can use Pydantic's [helper functions](https://pydantic-docs.helpmanual.io/usage/models/#helper-functions) directly.
