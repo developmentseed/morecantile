@@ -16,10 +16,8 @@ tms_paths = list(pathlib.Path(morecantile_tms_dir).glob("*.json"))
 user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
 if user_tms_dir:
     tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))
-    # Sort as users an add a large number of TMS
-    tms_paths.sort()
 default_tms: Dict[str, Union[TileMatrixSet, pathlib.Path]] = {
-    tms.stem: tms for tms in tms_paths
+    tms.stem: tms for tms in tms_paths.sort()
 }
 
 
