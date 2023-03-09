@@ -100,6 +100,32 @@ tms.feature(morecantile.Tile(10, 10, 4))
 
 ### Define custom grid
 
+You can create custom TMS grid using `morecantile.TileMatrixSet.custom` method.
+
+Here are the available options:
+- **extent** (*list of float, REQUIRED*]: a list of coordinates in form of `[xmin, ymin, xmax, ymax]` describing the extend of the TMS
+
+- **crs** (*pyproj.CRS, REQUIRED*): Coordinate reference system of the grid
+
+- **tile_width** (*int, defaults to `256`*): Width of each tile of this tile matrix in pixels (variable width is not supported)
+
+- **tile_height** (*int, defaults to `256`*): Height of each tile of this tile matrix in pixels (variable height is not supported)
+
+- **matrix_scale** (*list of int, default to `[1, 1]`*): Tiling schema coalescence coefficient (see http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#14)
+
+- **extent_crs** (*pyproj.CRS, defaults to TMS CRS*): `extent`'s coordinate reference system
+
+- **minzoom** (*int, defaults to `0`*): Tile Matrix Set minimum zoom level
+
+- **maxzoom** (*int, defaults to `24`*): Tile Matrix Set maximum zoom level
+
+- **title** (*str, defaults to `Custom TileMatrixSet`*): Tile Matrix Set title
+
+- **identifier** (*str, defaults to `Custom`*): Tile Matrix Set identifier
+
+- **geographic_crs** (*pyproj.CRS, defaults to `EPSG:4326`*): Geographic (lat,lon) coordinate reference system
+
+
 ```python
 import morecantile
 from pyproj import CRS

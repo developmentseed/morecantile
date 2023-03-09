@@ -56,12 +56,13 @@ Morecantile is like [mercantile](https://github.com/mapbox/mercantile) (the best
 ## Install
 
 ```bash
-$ pip install -U pip
-$ pip install morecantile
+$ python -m pip install -U pip
+$ python -m pip install morecantile
 
 # Or install from source:
 
-$ pip install git+https://github.com/developmentseed/morecantile.git
+$ python -m pip install -U pip
+$ python -m pip install git+https://github.com/developmentseed/morecantile.git
 ```
 
 ### Defaults Grids
@@ -85,6 +86,7 @@ ref: http://schemas.opengis.net/tms/1.0/json/examples/
 
 - [rio-tiler](https://github.com/cogeotiff/rio-tiler): Create tile from raster using Morecantile TMS.
 - [timvt](https://github.com/developmentseed/timvt): A lightweight PostGIS based dynamic vector tile server.
+- [planetcantile](https://github.com/AndrewAnnex/planetcantile): Tile matrix sets for other planets.
 
 ## Changes
 
