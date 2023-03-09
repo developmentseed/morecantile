@@ -103,6 +103,7 @@ tms.feature(morecantile.Tile(10, 10, 4))
 You can create custom TMS grid using `morecantile.TileMatrixSet.custom` method.
 
 Here are the available options:
+
 - **extent** (*list of float, REQUIRED*]: a list of coordinates in form of `[xmin, ymin, xmax, ymax]` describing the extend of the TMS
 
 - **crs** (*pyproj.CRS, REQUIRED*): Coordinate reference system of the grid
