@@ -1,7 +1,8 @@
 
-## Next (TBD)
+## 3.3.0 (2023-03-09)
 
 * sort default TMS (author @jlaura, https://github.com/developmentseed/morecantile/pull/98)
+* Switch to ruff for linting and fixing linting issues
 
 ## 3.2.5 (2022-12-16)
 

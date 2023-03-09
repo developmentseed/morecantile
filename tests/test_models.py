@@ -60,6 +60,7 @@ def test_tile_matrix_order():
 
 
 def test_tile_matrix():
+    """SHould raise Validation error with unsupported variable size TMS."""
     variable_matrix = {
         "type": "TileMatrixType",
         "identifier": "3",
@@ -112,17 +113,20 @@ def test_invalid_tms():
     ],
 )
 def test_quadkey_support(name, result):
+    """test for Quadkey support."""
     tms = morecantile.tms.get(name)
     assert tms._is_quadtree == result
 
 
 def test_quadkey():
+    """Test tile to quadkey."""
     tms = morecantile.tms.get("WebMercatorQuad")
     expected = "0313102310"
     assert tms.quadkey(486, 332, 10) == expected
 
 
 def test_quadkey_to_tile():
+    """Test quadkey to tile."""
     tms = morecantile.tms.get("WebMercatorQuad")
     qk = "0313102310"
     expected = Tile(486, 332, 10)
@@ -130,6 +134,7 @@ def test_quadkey_to_tile():
 
 
 def test_empty_quadkey_to_tile():
+    """Empty qk should give tile 0,0,0."""
     tms = morecantile.tms.get("WebMercatorQuad")
     qk = ""
     expected = Tile(0, 0, 0)
@@ -137,18 +142,21 @@ def test_empty_quadkey_to_tile():
 
 
 def test_quadkey_failure():
+    """makde sure we don't support stupid quadkeys."""
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.raises(morecantile.errors.QuadKeyError):
         tms.quadkey_to_tile("lolwut")
 
 
 def test_quadkey_not_supported_failure():
+    """Raise error when not supporting quadkeys."""
     tms = morecantile.tms.get("NZTM2000")
     with pytest.raises(morecantile.errors.NoQuadkeySupport):
         tms.quadkey(1, 1, 1)
 
 
 def test_quadkey_to_tile_not_supported_failure():
+    """Raise error when not supporting quadkeys."""
     tms = morecantile.tms.get("NZTM2000")
     with pytest.raises(morecantile.errors.NoQuadkeySupport):
         tms.quadkey_to_tile("3")
@@ -219,6 +227,7 @@ def test_custom_tms_bounds_user_crs():
 
 
 def test_nztm_quad_is_quad():
+    """Test NZTM2000Quad."""
     tms = morecantile.tms.get("NZTM2000Quad")
     bound = tms.xy_bounds(morecantile.Tile(0, 0, 0))
     expected = (-3260586.7284, 419435.9938, 6758167.443, 10438190.1652)
@@ -228,6 +237,7 @@ def test_nztm_quad_is_quad():
 
 # NZTM2000Quad should use all the WebMercatorQuad zoom scales
 def test_nztm_quad_scales():
+    """Test NZTM2000Quad."""
     nztm_tms = morecantile.tms.get("NZTM2000Quad")
     google_tms = morecantile.tms.get("WebMercatorQuad")
     for z in range(2, nztm_tms.maxzoom + 2):
@@ -407,6 +417,7 @@ def test_inverted_tms(id, result):
     ],
 )
 def test_crs_uris(authority, code, result):
+    """Test CRS URIS."""
     assert (
         morecantile.models.CRS_to_uri(CRS((authority, code)))
         == f"http://www.opengis.net/def/crs/{result}"
@@ -415,5 +426,6 @@ def test_crs_uris(authority, code, result):
 
 @pytest.mark.parametrize("tilematrixset", morecantile.tms.list())
 def test_crs_uris_for_defaults(tilematrixset):
+    """Test CRS URIS."""
     t = morecantile.tms.get(tilematrixset)
     assert t.supportedCRS == morecantile.models.CRS_to_uri(t.crs)

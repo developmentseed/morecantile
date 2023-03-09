@@ -185,7 +185,7 @@ def cli(ctx, verbose, quiet):
     help="Shift shape x and y values by a constant number",
 )
 @click.pass_context
-def shapes(
+def shapes(  # noqa: C901
     ctx,
     input,
     identifier,
@@ -230,7 +230,7 @@ def shapes(
     col_xs = []
     col_ys = []
 
-    for i, line in enumerate(iter_lines(src)):
+    for _i, line in enumerate(iter_lines(src)):
         obj = json.loads(line)
         if isinstance(obj, dict):
             x, y, z = obj["tile"][:3]
@@ -303,7 +303,7 @@ def shapes(
     help="Write a RS-delimited JSON sequence (default is LF).",
 )
 @click.pass_context
-def tiles(ctx, zoom, input, identifier, seq):
+def tiles(ctx, zoom, input, identifier, seq):  # noqa: C901
     """
     Lists TMS tiles at ZOOM level intersecting
     GeoJSON [west, south, east, north] bounding boxen, features, or
@@ -507,7 +507,7 @@ def custom(
     default=None,
     help="Shift shape x and y values by a constant number",
 )
-def tms_to_geojson(
+def tms_to_geojson(  # noqa: C901
     input,
     level,
     precision,

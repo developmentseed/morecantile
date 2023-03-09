@@ -7,8 +7,8 @@ from typing import Dict, List, Sequence, Union
 
 import attr
 
-from .errors import InvalidIdentifier
-from .models import TileMatrixSet
+from morecantile.errors import InvalidIdentifier
+from morecantile.models import TileMatrixSet
 
 morecantile_tms_dir = pathlib.Path(__file__).parent.joinpath("data")
 tms_paths = list(pathlib.Path(morecantile_tms_dir).glob("*.json"))

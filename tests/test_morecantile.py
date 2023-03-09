@@ -453,6 +453,7 @@ def test_extend_zoom():
 
 
 def test_is_power_of_two():
+    """is power ot 2?"""
     assert is_power_of_two(8)
     assert not is_power_of_two(7)
 
