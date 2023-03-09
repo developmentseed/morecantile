@@ -9,14 +9,15 @@ from pyproj import CRS, Transformer
 from pyproj.enums import WktVersion
 from pyproj.exceptions import ProjError
 
-from .commons import BoundingBox, Coords, Tile
-from .errors import (
+from morecantile.commons import BoundingBox, Coords, Tile
+from morecantile.errors import (
     InvalidZoomError,
+    MorecantileError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
     QuadKeyError,
 )
-from .utils import (
+from morecantile.utils import (
     _parse_tile_arg,
     bbox_to_feature,
     check_quadkey_support,
@@ -229,7 +230,7 @@ class TileMatrixSet(BaseModel):
         crs: CRS,
         tile_width: int = 256,
         tile_height: int = 256,
-        matrix_scale: List = [1, 1],
+        matrix_scale: Optional[List] = None,
         extent_crs: Optional[CRS] = None,
         minzoom: int = 0,
         maxzoom: int = 24,
@@ -273,6 +274,8 @@ class TileMatrixSet(BaseModel):
         TileMatrixSet
 
         """
+        matrix_scale = matrix_scale or [1, 1]
+
         tms: Dict[str, Any] = {
             "title": title,
             "identifier": identifier,
@@ -318,15 +321,15 @@ class TileMatrixSet(BaseModel):
             )
             tms["tileMatrix"].append(
                 TileMatrix(
-                    **dict(
-                        identifier=str(zoom),
-                        scaleDenominator=res * mpu / 0.00028,
-                        topLeftCorner=[x_origin, y_origin],
-                        tileWidth=tile_width,
-                        tileHeight=tile_height,
-                        matrixWidth=matrix_scale[0] * 2**zoom,
-                        matrixHeight=matrix_scale[1] * 2**zoom,
-                    )
+                    **{
+                        "identifier": str(zoom),
+                        "scaleDenominator": res * mpu / 0.00028,
+                        "topLeftCorner": [x_origin, y_origin],
+                        "tileWidth": tile_width,
+                        "tileHeight": tile_height,
+                        "matrixWidth": matrix_scale[0] * 2**zoom,
+                        "matrixHeight": matrix_scale[1] * 2**zoom,
+                    }
                 )
             )
 
@@ -334,45 +337,44 @@ class TileMatrixSet(BaseModel):
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
-        try:
-            tile_matrix = list(
-                filter(lambda m: m.identifier == str(zoom), self.tileMatrix)
-            )[0]
-        except IndexError:
-            matrix_scale = list(
-                {
-                    round(
-                        self.tileMatrix[idx].scaleDenominator
-                        / self.tileMatrix[idx - 1].scaleDenominator,
-                        2,
-                    )
-                    for idx in range(1, len(self.tileMatrix))
+        for m in self.tileMatrix:
+            if m.identifier == str(zoom):
+                return m
+
+        matrix_scale = list(
+            {
+                round(
+                    self.tileMatrix[idx].scaleDenominator
+                    / self.tileMatrix[idx - 1].scaleDenominator,
+                    2,
+                )
+                for idx in range(1, len(self.tileMatrix))
+            }
+        )
+        if len(matrix_scale) > 1:
+            raise InvalidZoomError(
+                f"TileMatrix not found for level: {zoom} - Unable to construct tileMatrix for TMS with variable scale"
+            )
+
+        warnings.warn(
+            f"TileMatrix not found for level: {zoom} - Creating values from TMS Scale.",
+            UserWarning,
+        )
+
+        tile_matrix = self.tileMatrix[-1]
+        factor = 1 / matrix_scale[0]
+        while not str(zoom) == tile_matrix.identifier:
+            tile_matrix = TileMatrix(
+                **{
+                    "identifier": str(int(tile_matrix.identifier) + 1),
+                    "scaleDenominator": tile_matrix.scaleDenominator / factor,
+                    "topLeftCorner": tile_matrix.topLeftCorner,
+                    "tileWidth": tile_matrix.tileWidth,
+                    "tileHeight": tile_matrix.tileHeight,
+                    "matrixWidth": int(tile_matrix.matrixWidth * factor),
+                    "matrixHeight": int(tile_matrix.matrixHeight * factor),
                 }
             )
-            if len(matrix_scale) > 1:
-                raise Exception(
-                    f"TileMatrix not found for level: {zoom} - Unable to construct tileMatrix for TMS with variable scale"
-                )
-
-            warnings.warn(
-                f"TileMatrix not found for level: {zoom} - Creating values from TMS Scale.",
-                UserWarning,
-            )
-
-            tile_matrix = self.tileMatrix[-1]
-            factor = 1 / matrix_scale[0]
-            while not str(zoom) == tile_matrix.identifier:
-                tile_matrix = TileMatrix(
-                    **dict(
-                        identifier=str(int(tile_matrix.identifier) + 1),
-                        scaleDenominator=tile_matrix.scaleDenominator / factor,
-                        topLeftCorner=tile_matrix.topLeftCorner,
-                        tileWidth=tile_matrix.tileWidth,
-                        tileHeight=tile_matrix.tileHeight,
-                        matrixWidth=int(tile_matrix.matrixWidth * factor),
-                        matrixHeight=int(tile_matrix.matrixHeight * factor),
-                    )
-                )
 
         return tile_matrix
 
@@ -789,7 +791,7 @@ class TileMatrixSet(BaseModel):
         self,
         tile: Tile,
         fid: Optional[str] = None,
-        props: Dict = {},
+        props: Optional[Dict] = None,
         buffer: Optional[NumType] = None,
         precision: Optional[int] = None,
         projected: bool = False,
