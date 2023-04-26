@@ -14,7 +14,7 @@ from morecantile.utils import is_power_of_two, meters_per_unit
 
 DEFAULT_GRID_COUNT = 12
 
-
+# TODO: Add more tests for TMS 2.0
 def test_default_grids():
     """Morecantile.default_grids should return the correct list of grids."""
     assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT

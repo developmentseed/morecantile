@@ -45,7 +45,6 @@ class CRSType(CRS, str):
     def validate(cls, value: Union[CRS, str]) -> CRS:
         """Validate CRS."""
         # If input is a string we translate it to CRS
-        # TODO: Support ISO 19115 MD_ReferenceSystem CRS definition
         if not isinstance(value, CRS):
             return CRS.from_user_input(value)
 
@@ -60,7 +59,6 @@ class CRSType(CRS, str):
                 {"type": "string", "minLength": 1, "maxLength": 65536},
             ],
             examples=[
-                # TODO: Add CRS by WKT2 or ISO 19115 MD_ReferenceSystem
                 "CRS.from_epsg(4326)",
                 "http://www.opengis.net/def/crs/EPSG/0/3978",
                 "urn:ogc:def:crs:EPSG::2193",
