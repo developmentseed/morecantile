@@ -15,7 +15,7 @@ from morecantile.errors import (
     MorecantileError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
-    QuadKeyError,
+    QuadKeyError, DeprecationError,
 )
 from morecantile.utils import (
     _parse_tile_arg,
@@ -166,6 +166,9 @@ class TileMatrixSet(BaseModel):
 
     def __init__(self, **data):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
+        if {"supportedCRS", "topLeftCorner"}.intersection(data):
+            raise DeprecationError("Tile Matrix Set must be version 2.0. Use morecantile <4.0 for TMS 1.0 support")
+
         super().__init__(**data)
 
         self._is_quadtree = check_quadkey_support(self.tileMatrices)
