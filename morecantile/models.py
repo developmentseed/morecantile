@@ -44,7 +44,8 @@ class CRSType(CRS, str):
     @classmethod
     def validate(cls, value: Union[CRS, str]) -> CRS:
         """Validate CRS."""
-        # If input is a string we tranlate it to CRS
+        # If input is a string we translate it to CRS
+        # TODO: Support ISO 19115 MD_ReferenceSystem CRS definition
         if not isinstance(value, CRS):
             return CRS.from_user_input(value)
 
@@ -59,6 +60,7 @@ class CRSType(CRS, str):
                 {"type": "string", "minLength": 1, "maxLength": 65536},
             ],
             examples=[
+                # TODO: Add CRS by WKT2 or ISO 19115 MD_ReferenceSystem
                 "CRS.from_epsg(4326)",
                 "http://www.opengis.net/def/crs/EPSG/0/3978",
                 "urn:ogc:def:crs:EPSG::2193",
@@ -88,6 +90,11 @@ def CRS_to_uri(crs: CRS) -> str:
 def crs_axis_inverted(crs: CRS) -> bool:
     """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
     return crs.axis_info[0].abbrev.upper() in ["Y", "LAT", "N"]
+
+
+def ordered_axis_inverted(ordered_axes: List[str]) -> bool:
+    """Check if ordered axes have inverted AXIS (lat,lon) instead of (lon,lat)."""
+    return ordered_axes[0] in ["Y", "LAT", "N"]
 
 
 class TMSBoundingBox(BaseModel):
@@ -140,6 +147,7 @@ class TileMatrixSet(BaseModel):
     crs: CRSType
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
+    orderedAxes: Optional[List[str]]
     tileMatrices: List[TileMatrix]
 
     # Private attributes
@@ -234,6 +242,7 @@ class TileMatrixSet(BaseModel):
         maxzoom: int = 24,
         title: str = "Custom TileMatrixSet",
         id: str = "Custom",
+        ordered_axes: Optional[List[str]] = None,
         geographic_crs: CRS = WGS84_CRS,
     ):
         """
@@ -282,7 +291,10 @@ class TileMatrixSet(BaseModel):
             "_geographic_crs": geographic_crs,
         }
 
-        is_inverted = crs_axis_inverted(crs)
+        if ordered_axes:
+            is_inverted = ordered_axis_inverted(ordered_axes)
+        else:
+            is_inverted = crs_axis_inverted(crs)
 
         if is_inverted:
             tms["boundingBox"] = TMSBoundingBox(
@@ -305,6 +317,9 @@ class TileMatrixSet(BaseModel):
             )
         else:
             bbox = BoundingBox(*extent)
+
+
+
 
         x_origin = bbox.left if not is_inverted else bbox.top
         y_origin = bbox.top if not is_inverted else bbox.left
