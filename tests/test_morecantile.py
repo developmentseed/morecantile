@@ -29,7 +29,7 @@ def test_register():
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomGrid3031")
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomGrid3031")
 
     _ = morecantile.tms.register(tms)
     assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
@@ -54,7 +54,7 @@ def test_register():
     assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT
 
     # add tms in morecantile defaults (not something to do anyway)
-    epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, identifier="epsg3031")
+    epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, id="epsg3031")
     morecantile.defaults.default_tms["epsg3031"] = epsg3031
     assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT + 1
 

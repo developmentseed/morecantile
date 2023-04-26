@@ -431,7 +431,7 @@ def custom(
     tms = morecantile.TileMatrixSet.custom(
         extent,
         CRS.from_epsg(epsg),
-        identifier=name,
+        id=name,
         minzoom=minzoom,
         maxzoom=maxzoom,
         tile_width=tile_width,

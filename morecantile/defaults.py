@@ -54,10 +54,10 @@ class TileMatrixSets:
             custom_tms = (custom_tms,)
 
         for tms in custom_tms:
-            if tms.identifier in self.tms and not overwrite:
-                raise Exception(f"{tms.identifier} is already a registered TMS.")
+            if tms.id in self.tms and not overwrite:
+                raise Exception(f"{tms.id} is already a registered TMS.")
 
-        new_tms = {tms.identifier: tms for tms in custom_tms}
+        new_tms = {tms.id: tms for tms in custom_tms}
         return TileMatrixSets({**self.tms, **new_tms})
 
 
