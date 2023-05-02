@@ -45,6 +45,7 @@ class CRSType(CRS, str):
     def validate(cls, value: Union[CRS, str]) -> CRS:
         """Validate CRS."""
         # If input is a string we translate it to CRS
+        # TODO: add NotImplementedError for ISO 19115
         if not isinstance(value, CRS):
             return CRS.from_user_input(value)
 
