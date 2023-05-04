@@ -12,7 +12,6 @@ from pyproj.exceptions import ProjError
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
     InvalidZoomError,
-    MorecantileError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
     QuadKeyError,
@@ -782,16 +781,11 @@ class TileMatrixSet(BaseModel):
                     w + LL_EPSILON, n - LL_EPSILON, z
                 )  # Not in mercantile
                 se_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
-                minx, maxx = (
-                    (nw_tile.x, se_tile.x)
-                    if nw_tile.x < se_tile.x
-                    else (se_tile.x, nw_tile.x)
-                )
-                miny, maxy = (
-                    (nw_tile.y, se_tile.y)
-                    if nw_tile.y < se_tile.y
-                    else (se_tile.y, nw_tile.y)
-                )
+
+                minx = min(nw_tile.x, se_tile.x)
+                maxx = max(nw_tile.x, se_tile.x)
+                miny = min(nw_tile.y, se_tile.y)
+                maxy = max(nw_tile.y, se_tile.y)
 
                 for i in range(minx, maxx + 1):
                     for j in range(miny, maxy + 1):

@@ -390,7 +390,9 @@ def test_tiles():
 
 def test_tiles_for_tms_with_non_standard_row_col_order():
     """Test tiles from bbox when TMS has non-standard row/col alignment with lat/lon."""
-    crs = CRS.from_proj4(f"+proj=s2 +lat_0=0.0 +lon_0=-90.0 +ellps=WGS84 +UVtoST=quadratic")
+    crs = CRS.from_proj4(
+        "+proj=s2 +lat_0=0.0 +lon_0=-90.0 +ellps=WGS84 +UVtoST=quadratic"
+    )
     extent = [0.0, 0.0, 1.0, 1.0]
     s2f4 = morecantile.TileMatrixSet.custom(extent, crs, identifier="S2F4")
     overlapping_tiles = s2f4.tiles(-100, 27, -95, 33, [6])
