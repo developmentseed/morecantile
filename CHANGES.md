@@ -1,4 +1,8 @@
 
+## Next (TBD)
+
+* Remove assumption tile rows/cols are ordered in `TileMatrixSet.tiles()` method (author @fsvenson, https://github.com/developmentseed/morecantile/pull/104)
+
 ## 3.3.0 (2023-03-09)
 
 * sort default TMS (author @jlaura, https://github.com/developmentseed/morecantile/pull/98)
