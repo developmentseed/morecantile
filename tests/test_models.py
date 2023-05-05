@@ -54,9 +54,7 @@ def test_tile_matrix_order():
     ]
 
     # Confirm sort direction
-    assert int(tms_ordered.tileMatrices[-1].id) > int(
-        tms_ordered.tileMatrices[0].id
-    )
+    assert int(tms_ordered.tileMatrices[-1].id) > int(tms_ordered.tileMatrices[0].id)
 
 
 def test_tile_matrix():
@@ -256,7 +254,7 @@ def test_InvertedLatLonGrids():
     tms = morecantile.tms.get("NZTM2000")
     bound = tms.xy_bounds(morecantile.Tile(1, 2, 0))
     assert bound == (1293760.0, 3118720.0, 3587520.0, 5412480.0)
-    assert tms.xy_bbox == (274000.0, 3087000.0, 3327000.0, 7173000.0)
+    assert tms.xy_bbox == (-1000000.0, 824960.0, 3587520.0, 10000000.0)
 
     tms = morecantile.tms.get("LINZAntarticaMapTilegrid")
     assert tms.xy_bbox == (
@@ -309,9 +307,7 @@ def test_schema():
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
     with pytest.warns(UserWarning):
-        tms = morecantile.TileMatrixSet.custom(
-            extent, crs, id="MarsNPolek2MOLA5k"
-        )
+        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     assert tms.schema()
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
@@ -320,9 +316,7 @@ def test_schema():
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-    tms = morecantile.TileMatrixSet.custom(
-        extent, crs, id="MyCustomTmsEPSG3031"
-    )
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
     assert tms.schema()
     assert tms.schema_json()
     assert tms.json(exclude_none=True)

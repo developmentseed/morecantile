@@ -11,10 +11,11 @@ from pyproj.exceptions import ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
+    DeprecationError,
     InvalidZoomError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
-    QuadKeyError, DeprecationError,
+    QuadKeyError,
 )
 from morecantile.utils import (
     _parse_tile_arg,
@@ -164,7 +165,9 @@ class TileMatrixSet(BaseModel):
     def __init__(self, **data):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
         if {"supportedCRS", "topLeftCorner"}.intersection(data):
-            raise DeprecationError("Tile Matrix Set must be version 2.0. Use morecantile <4.0 for TMS 1.0 support")
+            raise DeprecationError(
+                "Tile Matrix Set must be version 2.0. Use morecantile <4.0 for TMS 1.0 support"
+            )
 
         super().__init__(**data)
 
@@ -317,9 +320,6 @@ class TileMatrixSet(BaseModel):
             )
         else:
             bbox = BoundingBox(*extent)
-
-
-
 
         x_origin = bbox.left if not is_inverted else bbox.top
         y_origin = bbox.top if not is_inverted else bbox.left
@@ -669,46 +669,11 @@ class TileMatrixSet(BaseModel):
     @property
     def xy_bbox(self):
         """Return TMS bounding box in TileMatrixSet's CRS."""
-        if self.boundingBox:
-            left = (
-                self.boundingBox.lowerCorner[1]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[0]
-            )
-            bottom = (
-                self.boundingBox.lowerCorner[0]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[1]
-            )
-            right = (
-                self.boundingBox.upperCorner[1]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[0]
-            )
-            top = (
-                self.boundingBox.upperCorner[0]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[1]
-            )
-            if self.boundingBox.crs != self.crs:
-                transform = Transformer.from_crs(
-                    self.boundingBox.crs, self.crs, always_xy=True
-                )
-                left, bottom, right, top = transform.transform_bounds(
-                    left,
-                    bottom,
-                    right,
-                    top,
-                    densify_pts=21,
-                )
+        zoom = self.minzoom
+        matrix = self.matrix(zoom)
 
-        else:
-            zoom = self.minzoom
-            matrix = self.matrix(zoom)
-            left, top = self._ul(Tile(0, 0, zoom))
-            right, bottom = self._ul(
-                Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
-            )
+        left, top = self._ul(Tile(0, 0, zoom))
+        right, bottom = self._ul(Tile(matrix.matrixWidth, matrix.matrixHeight, zoom))
 
         return BoundingBox(left, bottom, right, top)
 
