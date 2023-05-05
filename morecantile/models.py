@@ -12,7 +12,6 @@ from pyproj.exceptions import ProjError
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
     InvalidZoomError,
-    MorecantileError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
     QuadKeyError,
@@ -744,7 +743,7 @@ class TileMatrixSet(BaseModel):
         zooms : int or sequence of int
             One or more zoom levels.
         truncate : bool, optional
-            Whether or not to truncate inputs to web mercator limits.
+            Whether or not to truncate inputs to TMS limits.
 
         Yields
         ------
@@ -778,13 +777,18 @@ class TileMatrixSet(BaseModel):
             n = min(self.bbox.top, n)
 
             for z in zooms:
-                ul_tile = self.tile(
+                nw_tile = self.tile(
                     w + LL_EPSILON, n - LL_EPSILON, z
                 )  # Not in mercantile
-                lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
+                se_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
 
-                for i in range(ul_tile.x, lr_tile.x + 1):
-                    for j in range(ul_tile.y, lr_tile.y + 1):
+                minx = min(nw_tile.x, se_tile.x)
+                maxx = max(nw_tile.x, se_tile.x)
+                miny = min(nw_tile.y, se_tile.y)
+                maxy = max(nw_tile.y, se_tile.y)
+
+                for i in range(minx, maxx + 1):
+                    for j in range(miny, maxy + 1):
                         yield Tile(i, j, z)
 
     def feature(
