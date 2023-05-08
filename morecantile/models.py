@@ -1032,8 +1032,8 @@ class TileMatrixSet(BaseModel):
         tile : Tile or sequence of int
             May be be either an instance of Tile or 3 ints, X, Y, Z.
         zoom : int, optional
-            Determines the *zoom* level of the returned parent tile.
-            This defaults to one lower than the tile (the immediate parent).
+            Determines the *zoom* level of the returned child tiles.
+            This defaults to one higher than the tile (the immediate children).
 
         Returns
         -------
