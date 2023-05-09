@@ -3,8 +3,10 @@
 import json
 import os
 import random
+import urllib
 from collections.abc import Iterable
 
+import pyproj
 import pytest
 from pydantic import ValidationError
 from pyproj import CRS
@@ -362,6 +364,26 @@ def test_mars_local_tms():
     center = syrtis_tms.ul(1, 1, 1)
     assert round(center.x, 6) == 76.5
     assert round(center.y, 6) == 17
+
+
+@pytest.mark.parametrize(
+    "identifier, url, crs", [
+        ("UPSAntarcticWGS84Quad", "https://raw.githubusercontent.com/vincentsarago/TileMatrixSets/master/UPSAntarcticWGS84Quad.json", 5042),
+        ("CanadianNAD83_LCC", "https://raw.githubusercontent.com/vincentsarago/TileMatrixSets/master/CanadianNAD83_LCC.json", 3978),
+        ("WebMercatorQuad", "https://raw.githubusercontent.com/vincentsarago/TileMatrixSets/master/WebMercatorQuad.json", 3857)
+    ]
+)
+def test_from_v1(identifier, url, crs):
+    """
+    Test from_v1 class method
+    """
+    with urllib.request.urlopen(url) as f:
+        data = json.load(f)
+
+    tms = TileMatrixSet.from_v1(**data)
+    assert tms.id == identifier
+    assert tms.crs == pyproj.CRS.from_epsg(crs)
+
 
 
 @pytest.mark.parametrize(
