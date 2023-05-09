@@ -22,7 +22,7 @@ from .utils import (
     check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
-    to_rasterio_crs
+    to_rasterio_crs,
 )
 
 NumType = Union[float, int]

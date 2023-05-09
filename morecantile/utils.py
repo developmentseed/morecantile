@@ -107,6 +107,7 @@ def to_rasterio_crs(incrs: CRS):
     """Convert a pyproj CRS to a rasterio CRS"""
     from rasterio import crs
     from rasterio.env import GDALVersion
+
     if GDALVersion.runtime().major < 3:
         return crs.CRS.from_wkt(incrs.to_wkt(WktVersion.WKT1_GDAL))
     else:
