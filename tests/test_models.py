@@ -100,7 +100,6 @@ def test_invalid_tms():
         ("EuropeanETRS89_LAEAQuad", True),
         ("CanadianNAD83_LCC", False),
         ("UPSArcticWGS84Quad", True),
-        ("NZTM2000", False),
         ("NZTM2000Quad", True),
         ("UTM31WGS84Quad", False),
         ("UPSAntarcticWGS84Quad", True),
@@ -146,18 +145,6 @@ def test_quadkey_failure():
         tms.quadkey_to_tile("lolwut")
 
 
-def test_quadkey_not_supported_failure():
-    """Raise error when not supporting quadkeys."""
-    tms = morecantile.tms.get("NZTM2000")
-    with pytest.raises(morecantile.errors.NoQuadkeySupport):
-        tms.quadkey(1, 1, 1)
-
-
-def test_quadkey_to_tile_not_supported_failure():
-    """Raise error when not supporting quadkeys."""
-    tms = morecantile.tms.get("NZTM2000")
-    with pytest.raises(morecantile.errors.NoQuadkeySupport):
-        tms.quadkey_to_tile("3")
 
 
 def test_findMatrix():
@@ -251,10 +238,6 @@ def test_nztm_quad_scales():
 
 def test_InvertedLatLonGrids():
     """Check Inverted LatLon grids."""
-    tms = morecantile.tms.get("NZTM2000")
-    bound = tms.xy_bounds(morecantile.Tile(1, 2, 0))
-    assert bound == (1293760.0, 3118720.0, 3587520.0, 5412480.0)
-    assert tms.xy_bbox == (-1000000.0, 824960.0, 3587520.0, 10000000.0)
 
     tms = morecantile.tms.get("LINZAntarticaMapTilegrid")
     assert tms.xy_bbox == (
@@ -388,7 +371,6 @@ def test_mars_local_tms():
         ("EuropeanETRS89_LAEAQuad", True),
         ("CanadianNAD83_LCC", False),
         ("UPSArcticWGS84Quad", False),
-        ("NZTM2000", True),
         ("NZTM2000Quad", True),
         ("UTM31WGS84Quad", False),
         ("UPSAntarcticWGS84Quad", False),
