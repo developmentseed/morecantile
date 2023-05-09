@@ -294,6 +294,15 @@ def test_lnglat():
         assert round(lnglat.x, 5) == -180.0  # in Mercantile (105.17731 in Morecantile)
         assert round(lnglat.y, 5) == -14.70462  # in Mercantile
 
+@pytest.mark.parametrize(
+    "tms_name", morecantile.tms.list()
+)
+def test_axis_inverted(tms_name):
+    """Test axis inversion check"""
+    tms = morecantile.tms.get(tms_name)
+    if tms.orderedAxes:
+        assert morecantile.models.crs_axis_inverted(tms.crs) == \
+               morecantile.models.ordered_axis_inverted(tms.orderedAxes)
 
 def test_lnglat_gdal3():
     """test lnglat."""

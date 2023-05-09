@@ -93,7 +93,7 @@ def crs_axis_inverted(crs: CRS) -> bool:
 
 def ordered_axis_inverted(ordered_axes: List[str]) -> bool:
     """Check if ordered axes have inverted AXIS (lat,lon) instead of (lon,lat)."""
-    return ordered_axes[0] in ["Y", "LAT", "N"]
+    return ordered_axes[0].upper() in ["Y", "LAT", "N"]
 
 
 class TMSBoundingBox(BaseModel):

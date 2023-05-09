@@ -307,7 +307,9 @@ def test_schema():
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
     with pytest.warns(UserWarning):
-        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
+        tms = morecantile.TileMatrixSet.custom(
+            extent, crs, id="MarsNPolek2MOLA5k"
+        )
     assert tms.schema()
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
@@ -316,7 +318,9 @@ def test_schema():
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
+    tms = morecantile.TileMatrixSet.custom(
+        extent, crs, id="MyCustomTmsEPSG3031"
+    )
     assert tms.schema()
     assert tms.schema_json()
     assert tms.json(exclude_none=True)
