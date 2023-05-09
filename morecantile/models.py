@@ -237,6 +237,29 @@ class TileMatrixSet(BaseModel):
     def from_v1(cls, **kwargs) -> "TileMatrixSet":
         """
         Makes a TMS from a v1 TMS definition
+
+                Attributes
+        ----------
+        supportedCRS: CRSType
+            Tile Matrix Set coordinate reference system
+        title: str
+            Title of TMS
+        abstract: str (optional)
+            Abstract of CRS
+        keywords: str (optional)
+            Keywords
+        identifier: str
+            TMS Identifier
+        wellKnownScaleSet: AnyHttpUrl (optional)
+            WKSS URL
+        boundingBox: TMSBoundingBox (optional)
+            Bounding box of TMS
+        tileMatrix: List[TileMatrix]
+            List of Tile Matrices
+
+        Returns:
+        --------
+        TileMatrixSet
         """
         v2_kwargs = kwargs.copy()
 
