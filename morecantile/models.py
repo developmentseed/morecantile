@@ -237,28 +237,33 @@ class TileMatrixSet(BaseModel):
     def from_v1(cls, **kwargs) -> "TileMatrixSet":
         """
         Makes a TMS from a v1 TMS definition
-
-
         """
+        v2_kwargs = kwargs.copy()
 
+        v2_kwargs["crs"] = v2_kwargs.pop("supportedCRS")
+        v2_kwargs["tileMatrices"] = v2_kwargs.pop("tileMatrix")
+        v2_kwargs["id"] = v2_kwargs.pop("identifier")
+        for i in range(len(v2_kwargs["tileMatrices"])):
+            v2_kwargs["tileMatrices"][i]["pointOfOrigin"] = v2_kwargs["tileMatrices"][i].pop("topLeftCorner")
+            v2_kwargs["tileMatrices"][i]["id"] = v2_kwargs["tileMatrices"][i].pop("identifier")
 
-        pass
+        return TileMatrixSet(**v2_kwargs)
 
     @classmethod
     def custom(
-        cls,
-        extent: List[float],
-        crs: CRS,
-        tile_width: int = 256,
-        tile_height: int = 256,
-        matrix_scale: Optional[List] = None,
-        extent_crs: Optional[CRS] = None,
-        minzoom: int = 0,
-        maxzoom: int = 24,
-        title: str = "Custom TileMatrixSet",
-        id: str = "Custom",
-        ordered_axes: Optional[List[str]] = None,
-        geographic_crs: CRS = WGS84_CRS,
+            cls,
+            extent: List[float],
+            crs: CRS,
+            tile_width: int = 256,
+            tile_height: int = 256,
+            matrix_scale: Optional[List] = None,
+            extent_crs: Optional[CRS] = None,
+            minzoom: int = 0,
+            maxzoom: int = 24,
+            title: str = "Custom TileMatrixSet",
+            id: str = "Custom",
+            ordered_axes: Optional[List[str]] = None,
+            geographic_crs: CRS = WGS84_CRS,
     ):
         """
         Construct a custom TileMatrixSet.
@@ -341,8 +346,8 @@ class TileMatrixSet(BaseModel):
         mpu = meters_per_unit(crs)
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
-                width / (tile_width * matrix_scale[0]) / 2.0**zoom,
-                height / (tile_height * matrix_scale[1]) / 2.0**zoom,
+                width / (tile_width * matrix_scale[0]) / 2.0 ** zoom,
+                height / (tile_height * matrix_scale[1]) / 2.0 ** zoom,
             )
             tms["tileMatrices"].append(
                 TileMatrix(
@@ -352,8 +357,8 @@ class TileMatrixSet(BaseModel):
                         "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
-                        "matrixWidth": matrix_scale[0] * 2**zoom,
-                        "matrixHeight": matrix_scale[1] * 2**zoom,
+                        "matrixWidth": matrix_scale[0] * 2 ** zoom,
+                        "matrixHeight": matrix_scale[1] * 2 ** zoom,
                     }
                 )
             )
@@ -415,11 +420,11 @@ class TileMatrixSet(BaseModel):
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
     def zoom_for_res(
-        self,
-        res: float,
-        max_z: Optional[int] = None,
-        zoom_level_strategy: str = "auto",
-        min_z: Optional[int] = None,
+            self,
+            res: float,
+            max_z: Optional[int] = None,
+            zoom_level_strategy: str = "auto",
+            min_z: Optional[int] = None,
     ) -> int:
         """Get TMS zoom level corresponding to a specific resolution.
 
@@ -459,7 +464,7 @@ class TileMatrixSet(BaseModel):
                 zoom_level = min(zoom_level, max_z)
             elif zoom_level_strategy.lower() == "auto":
                 if (self._resolution(self.matrix(max(zoom_level - 1, min_z))) / res) < (
-                    res / matrix_res
+                        res / matrix_res
                 ):
                     zoom_level = max(zoom_level - 1, min_z)
             else:
@@ -707,20 +712,20 @@ class TileMatrixSet(BaseModel):
         """Check if a bounds intersects with the TMS bounds."""
         tms_bounds = self.xy_bbox
         return (
-            (bbox[0] < tms_bounds[2])
-            and (bbox[2] > tms_bounds[0])
-            and (bbox[3] > tms_bounds[1])
-            and (bbox[1] < tms_bounds[3])
+                (bbox[0] < tms_bounds[2])
+                and (bbox[2] > tms_bounds[0])
+                and (bbox[3] > tms_bounds[1])
+                and (bbox[1] < tms_bounds[3])
         )
 
     def tiles(
-        self,
-        west: float,
-        south: float,
-        east: float,
-        north: float,
-        zooms: Sequence[int],
-        truncate: bool = False,
+            self,
+            west: float,
+            south: float,
+            east: float,
+            north: float,
+            zooms: Sequence[int],
+            truncate: bool = False,
     ) -> Iterator[Tile]:
         """
         Get the tiles overlapped by a geographic bounding box
@@ -783,13 +788,13 @@ class TileMatrixSet(BaseModel):
                         yield Tile(i, j, z)
 
     def feature(
-        self,
-        tile: Tile,
-        fid: Optional[str] = None,
-        props: Optional[Dict] = None,
-        buffer: Optional[NumType] = None,
-        precision: Optional[int] = None,
-        projected: bool = False,
+            self,
+            tile: Tile,
+            fid: Optional[str] = None,
+            props: Optional[Dict] = None,
+            buffer: Optional[NumType] = None,
+            precision: Optional[int] = None,
+            projected: bool = False,
     ) -> Dict:
         """
         Get the GeoJSON feature corresponding to a tile.
