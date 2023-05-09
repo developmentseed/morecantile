@@ -234,6 +234,17 @@ class TileMatrixSet(BaseModel):
         return crs_axis_inverted(self.crs)
 
     @classmethod
+    def from_v1(cls, **kwargs) -> "TileMatrixSet":
+        """
+        Makes a TMS from a v1 TMS definition
+
+
+        """
+
+
+        pass
+
+    @classmethod
     def custom(
         cls,
         extent: List[float],
