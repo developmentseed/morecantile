@@ -231,7 +231,7 @@ class TileMatrixSet(BaseModel):
     @property
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
-        return crs_axis_inverted(self.crs)
+        return ordered_axis_inverted(self.orderedAxes) if self.orderedAxes else crs_axis_inverted(self.crs)
 
     @classmethod
     def custom(
