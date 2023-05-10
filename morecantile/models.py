@@ -234,7 +234,7 @@ class TileMatrixSet(BaseModel):
         return crs_axis_inverted(self.crs)
 
     @classmethod
-    def from_v1(cls, **kwargs) -> "TileMatrixSet":
+    def from_v1(cls, tms: Dict) -> "TileMatrixSet":
         """
         Makes a TMS from a v1 TMS definition
 
@@ -261,16 +261,16 @@ class TileMatrixSet(BaseModel):
         --------
         TileMatrixSet
         """
-        v2_kwargs = kwargs.copy()
+        v2_tms = tms.copy()
 
-        v2_kwargs["crs"] = v2_kwargs.pop("supportedCRS")
-        v2_kwargs["tileMatrices"] = v2_kwargs.pop("tileMatrix")
-        v2_kwargs["id"] = v2_kwargs.pop("identifier")
-        for i in range(len(v2_kwargs["tileMatrices"])):
-            v2_kwargs["tileMatrices"][i]["pointOfOrigin"] = v2_kwargs["tileMatrices"][i].pop("topLeftCorner")
-            v2_kwargs["tileMatrices"][i]["id"] = v2_kwargs["tileMatrices"][i].pop("identifier")
+        v2_tms["crs"] = v2_tms.pop("supportedCRS")
+        v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
+        v2_tms["id"] = v2_tms.pop("identifier")
+        for i in range(len(v2_tms["tileMatrices"])):
+            v2_tms["tileMatrices"][i]["pointOfOrigin"] = v2_tms["tileMatrices"][i].pop("topLeftCorner")
+            v2_tms["tileMatrices"][i]["id"] = v2_tms["tileMatrices"][i].pop("identifier")
 
-        return TileMatrixSet(**v2_kwargs)
+        return TileMatrixSet(**v2_tms)
 
     @classmethod
     def custom(
