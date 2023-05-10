@@ -234,20 +234,62 @@ class TileMatrixSet(BaseModel):
         return ordered_axis_inverted(self.orderedAxes) if self.orderedAxes else crs_axis_inverted(self.crs)
 
     @classmethod
+    def from_v1(cls, tms: Dict) -> "TileMatrixSet":
+        """
+        Makes a TMS from a v1 TMS definition
+
+                Attributes
+        ----------
+        supportedCRS: CRSType
+            Tile Matrix Set coordinate reference system
+        title: str
+            Title of TMS
+        abstract: str (optional)
+            Abstract of CRS
+        keywords: str (optional)
+            Keywords
+        identifier: str
+            TMS Identifier
+        wellKnownScaleSet: AnyHttpUrl (optional)
+            WKSS URL
+        boundingBox: TMSBoundingBox (optional)
+            Bounding box of TMS
+        tileMatrix: List[TileMatrix]
+            List of Tile Matrices
+
+        Returns:
+        --------
+        TileMatrixSet
+        """
+        v2_tms = tms.copy()
+
+        del v2_tms["type"]
+
+        v2_tms["crs"] = v2_tms.pop("supportedCRS")
+        v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
+        v2_tms["id"] = v2_tms.pop("identifier")
+        for i in range(len(v2_tms["tileMatrices"])):
+            v2_tms["tileMatrices"][i]["pointOfOrigin"] = v2_tms["tileMatrices"][i].pop("topLeftCorner")
+            v2_tms["tileMatrices"][i]["id"] = v2_tms["tileMatrices"][i].pop("identifier")
+            del v2_tms["tileMatrices"][i]["type"]
+
+        return TileMatrixSet(**v2_tms)
+
+    @classmethod
     def custom(
-        cls,
-        extent: List[float],
-        crs: CRS,
-        tile_width: int = 256,
-        tile_height: int = 256,
-        matrix_scale: Optional[List] = None,
-        extent_crs: Optional[CRS] = None,
-        minzoom: int = 0,
-        maxzoom: int = 24,
-        title: str = "Custom TileMatrixSet",
-        id: str = "Custom",
-        ordered_axes: Optional[List[str]] = None,
-        geographic_crs: CRS = WGS84_CRS,
+            cls,
+            extent: List[float],
+            crs: CRS,
+            tile_width: int = 256,
+            tile_height: int = 256,
+            matrix_scale: Optional[List] = None,
+            extent_crs: Optional[CRS] = None,
+            minzoom: int = 0,
+            maxzoom: int = 24,
+            title: str = "Custom TileMatrixSet",
+            id: str = "Custom",
+            ordered_axes: Optional[List[str]] = None,
+            geographic_crs: CRS = WGS84_CRS,
     ):
         """
         Construct a custom TileMatrixSet.
@@ -330,8 +372,8 @@ class TileMatrixSet(BaseModel):
         mpu = meters_per_unit(crs)
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
-                width / (tile_width * matrix_scale[0]) / 2.0**zoom,
-                height / (tile_height * matrix_scale[1]) / 2.0**zoom,
+                width / (tile_width * matrix_scale[0]) / 2.0 ** zoom,
+                height / (tile_height * matrix_scale[1]) / 2.0 ** zoom,
             )
             tms["tileMatrices"].append(
                 TileMatrix(
@@ -341,8 +383,8 @@ class TileMatrixSet(BaseModel):
                         "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
-                        "matrixWidth": matrix_scale[0] * 2**zoom,
-                        "matrixHeight": matrix_scale[1] * 2**zoom,
+                        "matrixWidth": matrix_scale[0] * 2 ** zoom,
+                        "matrixHeight": matrix_scale[1] * 2 ** zoom,
                     }
                 )
             )
@@ -404,11 +446,11 @@ class TileMatrixSet(BaseModel):
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
 
     def zoom_for_res(
-        self,
-        res: float,
-        max_z: Optional[int] = None,
-        zoom_level_strategy: str = "auto",
-        min_z: Optional[int] = None,
+            self,
+            res: float,
+            max_z: Optional[int] = None,
+            zoom_level_strategy: str = "auto",
+            min_z: Optional[int] = None,
     ) -> int:
         """Get TMS zoom level corresponding to a specific resolution.
 
@@ -448,7 +490,7 @@ class TileMatrixSet(BaseModel):
                 zoom_level = min(zoom_level, max_z)
             elif zoom_level_strategy.lower() == "auto":
                 if (self._resolution(self.matrix(max(zoom_level - 1, min_z))) / res) < (
-                    res / matrix_res
+                        res / matrix_res
                 ):
                     zoom_level = max(zoom_level - 1, min_z)
             else:
@@ -696,20 +738,20 @@ class TileMatrixSet(BaseModel):
         """Check if a bounds intersects with the TMS bounds."""
         tms_bounds = self.xy_bbox
         return (
-            (bbox[0] < tms_bounds[2])
-            and (bbox[2] > tms_bounds[0])
-            and (bbox[3] > tms_bounds[1])
-            and (bbox[1] < tms_bounds[3])
+                (bbox[0] < tms_bounds[2])
+                and (bbox[2] > tms_bounds[0])
+                and (bbox[3] > tms_bounds[1])
+                and (bbox[1] < tms_bounds[3])
         )
 
     def tiles(
-        self,
-        west: float,
-        south: float,
-        east: float,
-        north: float,
-        zooms: Sequence[int],
-        truncate: bool = False,
+            self,
+            west: float,
+            south: float,
+            east: float,
+            north: float,
+            zooms: Sequence[int],
+            truncate: bool = False,
     ) -> Iterator[Tile]:
         """
         Get the tiles overlapped by a geographic bounding box
@@ -772,13 +814,13 @@ class TileMatrixSet(BaseModel):
                         yield Tile(i, j, z)
 
     def feature(
-        self,
-        tile: Tile,
-        fid: Optional[str] = None,
-        props: Optional[Dict] = None,
-        buffer: Optional[NumType] = None,
-        precision: Optional[int] = None,
-        projected: bool = False,
+            self,
+            tile: Tile,
+            fid: Optional[str] = None,
+            props: Optional[Dict] = None,
+            buffer: Optional[NumType] = None,
+            precision: Optional[int] = None,
+            projected: bool = False,
     ) -> Dict:
         """
         Get the GeoJSON feature corresponding to a tile.

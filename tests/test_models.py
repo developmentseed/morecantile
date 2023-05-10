@@ -4,7 +4,9 @@ import json
 import os
 import random
 from collections.abc import Iterable
+from pathlib import Path
 
+import pyproj
 import pytest
 from pydantic import ValidationError
 from pyproj import CRS
@@ -362,6 +364,26 @@ def test_mars_local_tms():
     center = syrtis_tms.ul(1, 1, 1)
     assert round(center.x, 6) == 76.5
     assert round(center.y, 6) == 17
+
+
+@pytest.mark.parametrize(
+    "identifier, file, crs", [
+        ("UPSAntarcticWGS84Quad", Path("data/v1_tms/UPSAntarcticWGS84Quad.json"), 5042),
+        ("CanadianNAD83_LCC", Path("data/v1_tms/CanadianNAD83_LCC.json"), 3978),
+        ("WebMercatorQuad", Path("data/v1_tms//WebMercatorQuad.json"), 3857)
+    ]
+)
+def test_from_v1(identifier, file, crs):
+    """
+    Test from_v1 class method
+    """
+    with open(file) as fp:
+        v1_tms = json.load(fp)
+
+    tms = TileMatrixSet.from_v1(v1_tms)
+    assert tms.id == identifier
+    assert tms.crs == pyproj.CRS.from_epsg(crs)
+
 
 
 @pytest.mark.parametrize(
