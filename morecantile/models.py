@@ -263,12 +263,15 @@ class TileMatrixSet(BaseModel):
         """
         v2_tms = tms.copy()
 
+        del v2_tms["type"]
+
         v2_tms["crs"] = v2_tms.pop("supportedCRS")
         v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
         v2_tms["id"] = v2_tms.pop("identifier")
         for i in range(len(v2_tms["tileMatrices"])):
             v2_tms["tileMatrices"][i]["pointOfOrigin"] = v2_tms["tileMatrices"][i].pop("topLeftCorner")
             v2_tms["tileMatrices"][i]["id"] = v2_tms["tileMatrices"][i].pop("identifier")
+            del v2_tms["tileMatrices"][i]["type"]
 
         return TileMatrixSet(**v2_tms)
 

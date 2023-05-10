@@ -3,8 +3,8 @@
 import json
 import os
 import random
-import urllib
 from collections.abc import Iterable
+from pathlib import Path
 
 import pyproj
 import pytest
@@ -367,20 +367,20 @@ def test_mars_local_tms():
 
 
 @pytest.mark.parametrize(
-    "identifier, url, crs", [
-        ("UPSAntarcticWGS84Quad", "https://raw.githubusercontent.com/vincentsarago/TileMatrixSets/master/UPSAntarcticWGS84Quad.json", 5042),
-        ("CanadianNAD83_LCC", "https://raw.githubusercontent.com/vincentsarago/TileMatrixSets/master/CanadianNAD83_LCC.json", 3978),
-        ("WebMercatorQuad", "https://raw.githubusercontent.com/vincentsarago/TileMatrixSets/master/WebMercatorQuad.json", 3857)
+    "identifier, file, crs", [
+        ("UPSAntarcticWGS84Quad", Path("data/v1_tms/UPSAntarcticWGS84Quad.json"), 5042),
+        ("CanadianNAD83_LCC", Path("data/v1_tms/CanadianNAD83_LCC.json"), 3978),
+        ("WebMercatorQuad", Path("data/v1_tms//WebMercatorQuad.json"), 3857)
     ]
 )
-def test_from_v1(identifier, url, crs):
+def test_from_v1(identifier, file, crs):
     """
     Test from_v1 class method
     """
-    with urllib.request.urlopen(url) as f:
-        data = json.load(f)
+    with open(file) as fp:
+        v1_tms = json.load(fp)
 
-    tms = TileMatrixSet.from_v1(**data)
+    tms = TileMatrixSet.from_v1(v1_tms)
     assert tms.id == identifier
     assert tms.crs == pyproj.CRS.from_epsg(crs)
 
