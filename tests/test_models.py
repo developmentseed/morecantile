@@ -4,7 +4,6 @@ import json
 import os
 import random
 from collections.abc import Iterable
-from pathlib import Path
 
 import pyproj
 import pytest
@@ -20,6 +19,7 @@ data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
     os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(".json")
 ]
+tms_v1_dir = os.path.join(os.path.dirname(__file__), "fixtures", "v1_tms")
 
 
 @pytest.mark.parametrize("tileset", tilesets)
@@ -145,8 +145,6 @@ def test_quadkey_failure():
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.raises(morecantile.errors.QuadKeyError):
         tms.quadkey_to_tile("lolwut")
-
-
 
 
 def test_findMatrix():
@@ -292,9 +290,7 @@ def test_schema():
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
     with pytest.warns(UserWarning):
-        tms = morecantile.TileMatrixSet.custom(
-            extent, crs, id="MarsNPolek2MOLA5k"
-        )
+        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     assert tms.schema()
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
@@ -303,9 +299,7 @@ def test_schema():
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-    tms = morecantile.TileMatrixSet.custom(
-        extent, crs, id="MyCustomTmsEPSG3031"
-    )
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
     assert tms.schema()
     assert tms.schema_json()
     assert tms.json(exclude_none=True)
@@ -367,11 +361,16 @@ def test_mars_local_tms():
 
 
 @pytest.mark.parametrize(
-    "identifier, file, crs", [
-        ("UPSAntarcticWGS84Quad", Path("data/v1_tms/UPSAntarcticWGS84Quad.json"), 5042),
-        ("CanadianNAD83_LCC", Path("data/v1_tms/CanadianNAD83_LCC.json"), 3978),
-        ("WebMercatorQuad", Path("data/v1_tms//WebMercatorQuad.json"), 3857)
-    ]
+    "identifier, file, crs",
+    [
+        (
+            "UPSAntarcticWGS84Quad",
+            os.path.join(tms_v1_dir, "UPSAntarcticWGS84Quad.json"),
+            5042,
+        ),
+        ("CanadianNAD83_LCC", os.path.join(tms_v1_dir, "CanadianNAD83_LCC.json"), 3978),
+        ("WebMercatorQuad", os.path.join(tms_v1_dir, "WebMercatorQuad.json"), 3857),
+    ],
 )
 def test_from_v1(identifier, file, crs):
     """
@@ -383,7 +382,6 @@ def test_from_v1(identifier, file, crs):
     tms = TileMatrixSet.from_v1(v1_tms)
     assert tms.id == identifier
     assert tms.crs == pyproj.CRS.from_epsg(crs)
-
 
 
 @pytest.mark.parametrize(
