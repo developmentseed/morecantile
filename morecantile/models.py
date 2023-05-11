@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
-from pyproj.enums import WktVersion
 from pyproj.exceptions import ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
@@ -23,6 +22,7 @@ from morecantile.utils import (
     check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
+    to_rasterio_crs,
 )
 
 NumType = Union[float, int]
@@ -209,14 +209,12 @@ class TileMatrixSet(BaseModel):
     @property
     def rasterio_crs(self):
         """Return rasterio CRS."""
+        return to_rasterio_crs(self.crs)
 
-        import rasterio
-        from rasterio.env import GDALVersion
-
-        if GDALVersion.runtime().major < 3:
-            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
-        else:
-            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt())
+    @property
+    def rasterio_geographic_crs(self):
+        """Return the geographic CRS as a rasterio CRS."""
+        return to_rasterio_crs(self._geographic_crs)
 
     @property
     def minzoom(self) -> int:
