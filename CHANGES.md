@@ -4,6 +4,7 @@
 * Remove assumption tile rows/cols are ordered in `TileMatrixSet.tiles()` method (author @fsvenson, https://github.com/developmentseed/morecantile/pull/104)
 * switch to **TMS 2.0** specification (author @dchirst, https://github.com/developmentseed/morecantile/pull/101)
 * remove `NZTM2000` TileMatrixSet (ref: https://github.com/developmentseed/morecantile/issues/103)
+* add `rasterio_geographic_crs` to export TMS's geographic CRS to Rasterio's CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/109)
 
 ## 3.3.0 (2023-03-09)
 
