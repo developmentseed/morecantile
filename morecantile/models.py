@@ -198,6 +198,11 @@ class TileMatrixSet(BaseModel):
         return self.supportedCRS
 
     @property
+    def geographic_crs(self) -> CRSType:
+        """Return the TMS's geographic CRS."""
+        return self._geographic_crs
+
+    @property
     def rasterio_crs(self):
         """Return rasterio CRS."""
         return to_rasterio_crs(self.crs)
