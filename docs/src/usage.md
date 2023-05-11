@@ -25,7 +25,7 @@ import morecantile
 
 tms = morecantile.tms.get("WebMercatorQuad")
 tms
->>> <TileMatrixSet title='Google Maps Compatible for the World' identifier='WebMercatorQuad'>
+>>> <TileMatrixSet title='Google Maps Compatible for the World' id='WebMercatorQuad'>
 ```
 
 ### Create tile and get bounds
@@ -121,7 +121,7 @@ Here are the available options:
 
 - **title** (*str, defaults to `Custom TileMatrixSet`*): Tile Matrix Set title
 
-- **identifier** (*str, defaults to `Custom`*): Tile Matrix Set identifier
+- **id** (*str, defaults to `Custom`*): Tile Matrix Set identifier
 
 - **geographic_crs** (*pyproj.CRS, defaults to `EPSG:4326`*): Geographic (lat,lon) coordinate reference system
 
@@ -132,14 +132,17 @@ from pyproj import CRS
 
 crs = CRS.from_epsg(3031)
 extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-customEPGS3031 = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomTmsEPSG3031")
+customEPGS3031 = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
 
 print(customEPGS3031.matrix(0).dict(exclude_none=True))
 >>> {
     "type": "TileMatrixType",
-    "identifier": "0",
+    "id": "0",
     "scaleDenominator": 38916524.55357144,
-    "topLeftCorner": [-948.75, -3333128.95],
+    "pointOfOrigin": [
+        -948.75,
+        -3333128.95
+    ],
     "tileWidth": 256,
     "tileHeight": 256,
     "matrixWidth": 1,
@@ -152,7 +155,7 @@ And register the TMS
 default_tms = morecantile.tms.register(customEPGS3031)
 tms = default_tms.get("MyCustomTmsEPSG3031")
 tms
->>> <TileMatrixSet title='Custom TileMatrixSet' identifier='MyCustomTmsEPSG3031'>
+>>> <TileMatrixSet title='Custom TileMatrixSet' id='MyCustomTmsEPSG3031'>
 ```
 
 !!! important
@@ -164,7 +167,7 @@ tms
 
     crs = CRS.from_proj4("+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs")
     extent = [-13584760.000,-13585240.000,13585240.000,13584760.000]
-    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     ```
 
 ### Extend morecantile default TMS

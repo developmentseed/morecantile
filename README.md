@@ -49,7 +49,12 @@ xmin                            xmax
 
 Morecantile is like [mercantile](https://github.com/mapbox/mercantile) (the best tool to work with Web Mercator tile indexes), but with support for other TileMatrixSet grids.
 
-**Morecantile** follows the **OGC Two Dimensional Tile Matrix Set** specification found in [http://docs.opengeospatial.org/is/17-083r2/17-083r2.html](http://docs.opengeospatial.org/is/17-083r2/17-083r2.html)
+**Morecantile** follows the **OGC Two Dimensional Tile Matrix Set** specification **2.0** found in [https://docs.ogc.org/is/17-083r4/17-083r4.html](https://docs.ogc.org/is/17-083r4/17-083r4.html)
+
+| Morecantile Version | OGC Specification Version | Link
+| ------------------- | ------------------------- |---------
+| 4.0                 | 2.0                       | https://docs.ogc.org/is/17-083r4/17-083r4.html
+| 3.0 and earlier     | 1.0                       | http://docs.opengeospatial.org/is/17-083r2/17-083r2.html
 
 **Note**: Variable matrix width tile set are not supported.
 
@@ -79,13 +84,16 @@ $ python -m pip install git+https://github.com/developmentseed/morecantile.git
 - **WorldCRS84Quad**: CRS84 for the World
 - **WorldMercatorWGS84Quad**: Elliptical Mercator projection - EPGS:3395
 
-ref: http://schemas.opengis.net/tms/1.0/json/examples/
+ref: https://schemas.opengis.net/tms/2.0/json/examples/tilematrixset/
 
 ## Implementations
 
 - [rio-tiler](https://github.com/cogeotiff/rio-tiler): Create tile from raster using Morecantile TMS.
-- [timvt](https://github.com/developmentseed/timvt): A lightweight PostGIS based dynamic vector tile server.
+- [titiler](https://github.com/developmentseed/titiler): A modern dynamic tile server built on top of FastAPI and Rasterio/GDAL.
+- [tipg](https://github.com/developmentseed/tipg): OGC Features and Tiles API.
 - [planetcantile](https://github.com/AndrewAnnex/planetcantile): Tile matrix sets for other planets.
+- [supermorecado](https://github.com/developmentseed/supermorecado): Extend the functionality of morecantile with additional commands.
+
 
 ## Changes
 
