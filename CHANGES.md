@@ -5,6 +5,7 @@
 * switch to **TMS 2.0** specification (author @dchirst, https://github.com/developmentseed/morecantile/pull/101)
 * remove `NZTM2000` TileMatrixSet (ref: https://github.com/developmentseed/morecantile/issues/103)
 * add `rasterio_geographic_crs` to export TMS's geographic CRS to Rasterio's CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/109)
+* add `geographic_crs` property in the TileMatrixSet model to return the private `_geographic_crs` attribute
 
 ## 3.3.0 (2023-03-09)
 
