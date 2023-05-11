@@ -23,6 +23,7 @@ extra:
 nav:
   - Home: 'index.md'
   - Usage: 'usage.md'
+  - TMS v2: 'tms-v2.md'
   - CLI: 'cli.md'
   - Development - Contributing: 'contributing.md'
   - Release: 'release-notes.md'

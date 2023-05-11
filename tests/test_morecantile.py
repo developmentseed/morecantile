@@ -12,7 +12,7 @@ from morecantile.errors import (
 )
 from morecantile.utils import is_power_of_two, meters_per_unit
 
-DEFAULT_GRID_COUNT = 12
+DEFAULT_GRID_COUNT = 11
 
 
 def test_default_grids():
@@ -29,7 +29,7 @@ def test_register():
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomGrid3031")
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomGrid3031")
 
     _ = morecantile.tms.register(tms)
     assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
@@ -54,7 +54,7 @@ def test_register():
     assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT
 
     # add tms in morecantile defaults (not something to do anyway)
-    epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, identifier="epsg3031")
+    epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, id="epsg3031")
     morecantile.defaults.default_tms["epsg3031"] = epsg3031
     assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT + 1
 
@@ -295,6 +295,16 @@ def test_lnglat():
         assert round(lnglat.y, 5) == -14.70462  # in Mercantile
 
 
+@pytest.mark.parametrize("tms_name", morecantile.tms.list())
+def test_axis_inverted(tms_name):
+    """Test axis inversion check"""
+    tms = morecantile.tms.get(tms_name)
+    if tms.orderedAxes:
+        assert morecantile.models.crs_axis_inverted(
+            tms.crs
+        ) == morecantile.models.ordered_axis_inverted(tms.orderedAxes)
+
+
 def test_lnglat_gdal3():
     """test lnglat."""
     # PROJ>=7 returns (105.17731317609572, -14.704620000000013)
@@ -394,7 +404,7 @@ def test_tiles_for_tms_with_non_standard_row_col_order():
         "+proj=s2 +lat_0=0.0 +lon_0=-90.0 +ellps=WGS84 +UVtoST=quadratic"
     )
     extent = [0.0, 0.0, 1.0, 1.0]
-    s2f4 = morecantile.TileMatrixSet.custom(extent, crs, identifier="S2F4")
+    s2f4 = morecantile.TileMatrixSet.custom(extent, crs, id="S2F4")
     overlapping_tiles = s2f4.tiles(-100, 27, -95, 33, [6])
     assert len(list(overlapping_tiles)) == 30
 

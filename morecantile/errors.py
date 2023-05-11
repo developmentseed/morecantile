@@ -31,3 +31,7 @@ class QuadKeyError(MorecantileError):
 
 class InvalidZoomError(MorecantileError):
     """Raised when input zoom is invalid."""
+
+
+class DeprecationError(MorecantileError):
+    """Raised when TMS version is not 2.0"""

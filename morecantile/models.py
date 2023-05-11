@@ -11,6 +11,7 @@ from pyproj.exceptions import ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
+    DeprecationError,
     InvalidZoomError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
@@ -43,7 +44,8 @@ class CRSType(CRS, str):
     @classmethod
     def validate(cls, value: Union[CRS, str]) -> CRS:
         """Validate CRS."""
-        # If input is a string we tranlate it to CRS
+        # If input is a string we translate it to CRS
+        # TODO: add NotImplementedError for ISO 19115
         if not isinstance(value, CRS):
             return CRS.from_user_input(value)
 
@@ -89,6 +91,11 @@ def crs_axis_inverted(crs: CRS) -> bool:
     return crs.axis_info[0].abbrev.upper() in ["Y", "LAT", "N"]
 
 
+def ordered_axis_inverted(ordered_axes: List[str]) -> bool:
+    """Check if ordered axes have inverted AXIS (lat,lon) instead of (lon,lat)."""
+    return ordered_axes[0].upper() in ["Y", "LAT", "N"]
+
+
 class TMSBoundingBox(BaseModel):
     """Bounding box"""
 
@@ -111,16 +118,18 @@ class TileMatrix(BaseModel):
     title: Optional[str]
     abstract: Optional[str]
     keywords: Optional[List[str]]
-    identifier: str = Field(..., regex=r"^[0-9]+$")
+    id: str = Field(..., regex=r"^[0-9]+$")
     scaleDenominator: float
-    topLeftCorner: BoundsType
+    pointOfOrigin: BoundsType
     tileWidth: int
     tileHeight: int
     matrixWidth: int
     matrixHeight: int
+    cellSize: Optional[float]
+    cornerOfOrigin: Optional[BoundsType]
 
     class Config:
-        """Forbid additional items like variableMatrixWidth."""
+        """Forbid additional items like variableMatrixWidths."""
 
         extra = "forbid"
 
@@ -129,14 +138,16 @@ class TileMatrixSet(BaseModel):
     """Tile matrix set"""
 
     type: str = Field("TileMatrixSetType", const=True)
+    uri: Optional[str]
     title: str
     abstract: Optional[str]
     keywords: Optional[List[str]]
-    identifier: str = Field(..., regex=r"^[\w\d_\-]+$")
-    supportedCRS: CRSType
+    id: str = Field(..., regex=r"^[\w\d_\-]+$")
+    crs: CRSType
     wellKnownScaleSet: Optional[AnyHttpUrl] = None
     boundingBox: Optional[TMSBoundingBox]
-    tileMatrix: List[TileMatrix]
+    orderedAxes: Optional[List[str]]
+    tileMatrices: List[TileMatrix]
 
     # Private attributes
     _is_quadtree: bool = PrivateAttr()
@@ -154,18 +165,23 @@ class TileMatrixSet(BaseModel):
 
     def __init__(self, **data):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
+        if {"supportedCRS", "topLeftCorner"}.intersection(data):
+            raise DeprecationError(
+                "Tile Matrix Set must be version 2.0. Use morecantile <4.0 for TMS 1.0 support"
+            )
+
         super().__init__(**data)
 
-        self._is_quadtree = check_quadkey_support(self.tileMatrix)
+        self._is_quadtree = check_quadkey_support(self.tileMatrices)
 
         self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
 
         try:
             self._to_geographic = Transformer.from_crs(
-                self.supportedCRS, self._geographic_crs, always_xy=True
+                self.crs, self._geographic_crs, always_xy=True
             )
             self._from_geographic = Transformer.from_crs(
-                self._geographic_crs, self.supportedCRS, always_xy=True
+                self._geographic_crs, self.crs, always_xy=True
             )
         except ProjError:
             warnings.warn(
@@ -176,24 +192,19 @@ class TileMatrixSet(BaseModel):
             self._to_geographic = None
             self._from_geographic = None
 
-    @validator("tileMatrix")
+    @validator("tileMatrices")
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
-        return sorted(v, key=lambda m: int(m.identifier))
+        return sorted(v, key=lambda m: int(m.id))
 
     def __iter__(self):
         """Iterate over matrices"""
-        for matrix in self.tileMatrix:
+        for matrix in self.tileMatrices:
             yield matrix
 
     def __repr__(self):
         """Simplify default pydantic model repr."""
-        return f"<TileMatrixSet title='{self.title}' identifier='{self.identifier}'>"
-
-    @property
-    def crs(self) -> CRS:
-        """Fetch CRS from epsg"""
-        return self.supportedCRS
+        return f"<TileMatrixSet title='{self.title}' id='{self.id}'>"
 
     @property
     def rasterio_crs(self):
@@ -210,17 +221,67 @@ class TileMatrixSet(BaseModel):
     @property
     def minzoom(self) -> int:
         """TileMatrixSet minimum TileMatrix identifier"""
-        return int(self.tileMatrix[0].identifier)
+        return int(self.tileMatrices[0].id)
 
     @property
     def maxzoom(self) -> int:
         """TileMatrixSet maximum TileMatrix identifier"""
-        return int(self.tileMatrix[-1].identifier)
+        return int(self.tileMatrices[-1].id)
 
     @property
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
-        return crs_axis_inverted(self.crs)
+        return (
+            ordered_axis_inverted(self.orderedAxes)
+            if self.orderedAxes
+            else crs_axis_inverted(self.crs)
+        )
+
+    @classmethod
+    def from_v1(cls, tms: Dict) -> "TileMatrixSet":
+        """
+        Makes a TMS from a v1 TMS definition
+
+                Attributes
+        ----------
+        supportedCRS: CRSType
+            Tile Matrix Set coordinate reference system
+        title: str
+            Title of TMS
+        abstract: str (optional)
+            Abstract of CRS
+        keywords: str (optional)
+            Keywords
+        identifier: str
+            TMS Identifier
+        wellKnownScaleSet: AnyHttpUrl (optional)
+            WKSS URL
+        boundingBox: TMSBoundingBox (optional)
+            Bounding box of TMS
+        tileMatrix: List[TileMatrix]
+            List of Tile Matrices
+
+        Returns:
+        --------
+        TileMatrixSet
+        """
+        v2_tms = tms.copy()
+
+        del v2_tms["type"]
+
+        v2_tms["crs"] = v2_tms.pop("supportedCRS")
+        v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
+        v2_tms["id"] = v2_tms.pop("identifier")
+        for i in range(len(v2_tms["tileMatrices"])):
+            v2_tms["tileMatrices"][i]["pointOfOrigin"] = v2_tms["tileMatrices"][i].pop(
+                "topLeftCorner"
+            )
+            v2_tms["tileMatrices"][i]["id"] = v2_tms["tileMatrices"][i].pop(
+                "identifier"
+            )
+            del v2_tms["tileMatrices"][i]["type"]
+
+        return TileMatrixSet(**v2_tms)
 
     @classmethod
     def custom(
@@ -234,7 +295,8 @@ class TileMatrixSet(BaseModel):
         minzoom: int = 0,
         maxzoom: int = 24,
         title: str = "Custom TileMatrixSet",
-        identifier: str = "Custom",
+        id: str = "Custom",
+        ordered_axes: Optional[List[str]] = None,
         geographic_crs: CRS = WGS84_CRS,
     ):
         """
@@ -263,7 +325,7 @@ class TileMatrixSet(BaseModel):
             Tile Matrix Set maximum zoom level (default is 24).
         title: str
             Tile Matrix Set title (default is 'Custom TileMatrixSet')
-        identifier: str
+        id: str
             Tile Matrix Set identifier (default is 'Custom')
         geographic_crs: pyproj.CRS
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
@@ -277,13 +339,16 @@ class TileMatrixSet(BaseModel):
 
         tms: Dict[str, Any] = {
             "title": title,
-            "identifier": identifier,
-            "supportedCRS": crs,
-            "tileMatrix": [],
+            "id": id,
+            "crs": crs,
+            "tileMatrices": [],
             "_geographic_crs": geographic_crs,
         }
 
-        is_inverted = crs_axis_inverted(crs)
+        if ordered_axes:
+            is_inverted = ordered_axis_inverted(ordered_axes)
+        else:
+            is_inverted = crs_axis_inverted(crs)
 
         if is_inverted:
             tms["boundingBox"] = TMSBoundingBox(
@@ -318,12 +383,12 @@ class TileMatrixSet(BaseModel):
                 width / (tile_width * matrix_scale[0]) / 2.0**zoom,
                 height / (tile_height * matrix_scale[1]) / 2.0**zoom,
             )
-            tms["tileMatrix"].append(
+            tms["tileMatrices"].append(
                 TileMatrix(
                     **{
-                        "identifier": str(zoom),
+                        "id": str(zoom),
                         "scaleDenominator": res * mpu / 0.00028,
-                        "topLeftCorner": [x_origin, y_origin],
+                        "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
                         "matrixWidth": matrix_scale[0] * 2**zoom,
@@ -336,18 +401,18 @@ class TileMatrixSet(BaseModel):
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
-        for m in self.tileMatrix:
-            if m.identifier == str(zoom):
+        for m in self.tileMatrices:
+            if m.id == str(zoom):
                 return m
 
         matrix_scale = list(
             {
                 round(
-                    self.tileMatrix[idx].scaleDenominator
-                    / self.tileMatrix[idx - 1].scaleDenominator,
+                    self.tileMatrices[idx].scaleDenominator
+                    / self.tileMatrices[idx - 1].scaleDenominator,
                     2,
                 )
-                for idx in range(1, len(self.tileMatrix))
+                for idx in range(1, len(self.tileMatrices))
             }
         )
         if len(matrix_scale) > 1:
@@ -360,14 +425,14 @@ class TileMatrixSet(BaseModel):
             UserWarning,
         )
 
-        tile_matrix = self.tileMatrix[-1]
+        tile_matrix = self.tileMatrices[-1]
         factor = 1 / matrix_scale[0]
-        while not str(zoom) == tile_matrix.identifier:
+        while not str(zoom) == tile_matrix.id:
             tile_matrix = TileMatrix(
                 **{
-                    "identifier": str(int(tile_matrix.identifier) + 1),
+                    "id": str(int(tile_matrix.id) + 1),
                     "scaleDenominator": tile_matrix.scaleDenominator / factor,
-                    "topLeftCorner": tile_matrix.topLeftCorner,
+                    "pointOfOrigin": tile_matrix.pointOfOrigin,
                     "tileWidth": tile_matrix.tileWidth,
                     "tileHeight": tile_matrix.tileHeight,
                     "matrixWidth": int(tile_matrix.matrixWidth * factor),
@@ -514,10 +579,10 @@ class TileMatrixSet(BaseModel):
         res = self._resolution(matrix)
 
         origin_x = (
-            matrix.topLeftCorner[1] if self._invert_axis else matrix.topLeftCorner[0]
+            matrix.pointOfOrigin[1] if self._invert_axis else matrix.pointOfOrigin[0]
         )
         origin_y = (
-            matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
+            matrix.pointOfOrigin[0] if self._invert_axis else matrix.pointOfOrigin[1]
         )
 
         xtile = (
@@ -586,10 +651,10 @@ class TileMatrixSet(BaseModel):
         res = self._resolution(matrix)
 
         origin_x = (
-            matrix.topLeftCorner[1] if self._invert_axis else matrix.topLeftCorner[0]
+            matrix.pointOfOrigin[1] if self._invert_axis else matrix.pointOfOrigin[0]
         )
         origin_y = (
-            matrix.topLeftCorner[0] if self._invert_axis else matrix.topLeftCorner[1]
+            matrix.pointOfOrigin[0] if self._invert_axis else matrix.pointOfOrigin[1]
         )
 
         xcoord = origin_x + t.x * res * matrix.tileWidth
@@ -655,46 +720,11 @@ class TileMatrixSet(BaseModel):
     @property
     def xy_bbox(self):
         """Return TMS bounding box in TileMatrixSet's CRS."""
-        if self.boundingBox:
-            left = (
-                self.boundingBox.lowerCorner[1]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[0]
-            )
-            bottom = (
-                self.boundingBox.lowerCorner[0]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[1]
-            )
-            right = (
-                self.boundingBox.upperCorner[1]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[0]
-            )
-            top = (
-                self.boundingBox.upperCorner[0]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[1]
-            )
-            if self.boundingBox.crs != self.crs:
-                transform = Transformer.from_crs(
-                    self.boundingBox.crs, self.crs, always_xy=True
-                )
-                left, bottom, right, top = transform.transform_bounds(
-                    left,
-                    bottom,
-                    right,
-                    top,
-                    densify_pts=21,
-                )
+        zoom = self.minzoom
+        matrix = self.matrix(zoom)
 
-        else:
-            zoom = self.minzoom
-            matrix = self.matrix(zoom)
-            left, top = self._ul(Tile(0, 0, zoom))
-            right, bottom = self._ul(
-                Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
-            )
+        left, top = self._ul(Tile(0, 0, zoom))
+        right, bottom = self._ul(Tile(matrix.matrixWidth, matrix.matrixHeight, zoom))
 
         return BoundingBox(left, bottom, right, top)
 
@@ -855,7 +885,7 @@ class TileMatrixSet(BaseModel):
             "geometry": geom,
             "properties": {
                 "title": f"XYZ tile {xyz}",
-                "grid_name": self.identifier,
+                "grid_name": self.id,
                 "grid_crs": self.crs.to_string(),
             },
         }

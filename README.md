@@ -70,7 +70,6 @@ $ python -m pip install git+https://github.com/developmentseed/morecantile.git
 - **CanadianNAD83_LCC**: Lambert conformal conic NAD83 for Canada - EPSG:3978
 - **EuropeanETRS89_LAEAQuad**: ETRS89-extended / LAEA Europe - EPGS:3035
 - **LINZAntarticaMapTilegrid**: LINZ Antarctic Map Tile Grid (Ross Sea Region) - EPSG:5482
-- **NZTM2000**: LINZ NZTM2000 Map Tile Grid - EPSG:2193
 - **NZTM2000Quad**: LINZ NZTM2000 Map Tile Grid - EPSG:2193
 - **UPSAntarcticWGS84Quad**: Universal Polar Stereographic WGS 84 Quad for Antarctic - EPSG:5042
 - **UPSArcticWGS84Quad**: Universal Polar Stereographic WGS 84 Quad for Arctic - EPSG:5041
