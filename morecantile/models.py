@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
-from pyproj.enums import WktVersion
 from pyproj.exceptions import ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
@@ -210,12 +209,12 @@ class TileMatrixSet(BaseModel):
     @property
     def rasterio_crs(self):
         """Return rasterio CRS."""
-        to_rasterio_crs(self.crs)
+        return to_rasterio_crs(self.crs)
 
     @property
     def rasterio_geographic_crs(self):
         """Return the geographic CRS as a rasterio CRS."""
-        to_rasterio_crs(self._geographic_crs)
+        return to_rasterio_crs(self._geographic_crs)
 
     @property
     def minzoom(self) -> int:
