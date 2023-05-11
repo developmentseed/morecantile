@@ -5,6 +5,7 @@ import os
 import random
 from collections.abc import Iterable
 
+import pyproj
 import pytest
 from pydantic import ValidationError
 from pyproj import CRS
@@ -18,6 +19,7 @@ data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
     os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(".json")
 ]
+tms_v1_dir = os.path.join(os.path.dirname(__file__), "fixtures", "v1_tms")
 
 
 @pytest.mark.parametrize("tileset", tilesets)
@@ -25,7 +27,7 @@ def test_tile_matrix_set(tileset):
     """Load TileMatrixSet in models."""
     # Confirm model validation is working
     ts = TileMatrixSet.parse_file(tileset)
-    # This would fail if `supportedCRS` isn't supported by PROJ
+    # This would fail if `crs` isn't supported by PROJ
     isinstance(ts.crs, CRS)
 
 
@@ -40,31 +42,30 @@ def test_tile_matrix_iter():
 def test_tile_matrix_order():
     """Test matrix order"""
     tms = morecantile.tms.get("WebMercatorQuad")
-    matrices = tms.tileMatrix[:]
+    matrices = tms.tileMatrices[:]
     random.shuffle(matrices)
     tms_ordered = TileMatrixSet(
         title=tms.title,
-        identifier=tms.identifier,
-        supportedCRS=tms.supportedCRS,
-        tileMatrix=matrices,
+        id=tms.id,
+        crs=tms.crs,
+        tileMatrices=matrices,
     )
     # Confirm sort
-    assert [matrix.identifier for matrix in tms.tileMatrix] == [
-        matrix.identifier for matrix in tms_ordered.tileMatrix
+    assert [matrix.id for matrix in tms.tileMatrices] == [
+        matrix.id for matrix in tms_ordered.tileMatrices
     ]
 
     # Confirm sort direction
-    assert int(tms_ordered.tileMatrix[-1].identifier) > int(
-        tms_ordered.tileMatrix[0].identifier
-    )
+    assert int(tms_ordered.tileMatrices[-1].id) > int(tms_ordered.tileMatrices[0].id)
 
 
 def test_tile_matrix():
+    """SHould raise Validation error with unsupported variable size TMS."""
     variable_matrix = {
         "type": "TileMatrixType",
-        "identifier": "3",
+        "id": "3",
         "scaleDenominator": 34942641.5017948,
-        "topLeftCorner": [-180, 90],
+        "pointOfOrigin": [-180, 90],
         "tileWidth": 256,
         "tileHeight": 256,
         "matrixWidth": 16,
@@ -101,7 +102,6 @@ def test_invalid_tms():
         ("EuropeanETRS89_LAEAQuad", True),
         ("CanadianNAD83_LCC", False),
         ("UPSArcticWGS84Quad", True),
-        ("NZTM2000", False),
         ("NZTM2000Quad", True),
         ("UTM31WGS84Quad", False),
         ("UPSAntarcticWGS84Quad", True),
@@ -112,17 +112,20 @@ def test_invalid_tms():
     ],
 )
 def test_quadkey_support(name, result):
+    """test for Quadkey support."""
     tms = morecantile.tms.get(name)
     assert tms._is_quadtree == result
 
 
 def test_quadkey():
+    """Test tile to quadkey."""
     tms = morecantile.tms.get("WebMercatorQuad")
     expected = "0313102310"
     assert tms.quadkey(486, 332, 10) == expected
 
 
 def test_quadkey_to_tile():
+    """Test quadkey to tile."""
     tms = morecantile.tms.get("WebMercatorQuad")
     qk = "0313102310"
     expected = Tile(486, 332, 10)
@@ -130,6 +133,7 @@ def test_quadkey_to_tile():
 
 
 def test_empty_quadkey_to_tile():
+    """Empty qk should give tile 0,0,0."""
     tms = morecantile.tms.get("WebMercatorQuad")
     qk = ""
     expected = Tile(0, 0, 0)
@@ -137,28 +141,17 @@ def test_empty_quadkey_to_tile():
 
 
 def test_quadkey_failure():
+    """makde sure we don't support stupid quadkeys."""
     tms = morecantile.tms.get("WebMercatorQuad")
     with pytest.raises(morecantile.errors.QuadKeyError):
         tms.quadkey_to_tile("lolwut")
-
-
-def test_quadkey_not_supported_failure():
-    tms = morecantile.tms.get("NZTM2000")
-    with pytest.raises(morecantile.errors.NoQuadkeySupport):
-        tms.quadkey(1, 1, 1)
-
-
-def test_quadkey_to_tile_not_supported_failure():
-    tms = morecantile.tms.get("NZTM2000")
-    with pytest.raises(morecantile.errors.NoQuadkeySupport):
-        tms.quadkey_to_tile("3")
 
 
 def test_findMatrix():
     """Should raise an error when TileMatrix is not found."""
     tms = morecantile.tms.get("WebMercatorQuad")
     m = tms.matrix(0)
-    assert m.identifier == "0"
+    assert m.id == "0"
 
     with pytest.warns(UserWarning):
         tms.matrix(26)
@@ -179,7 +172,7 @@ def test_Custom():
     assert wmMat.matrixWidth == cusMat.matrixWidth
     assert wmMat.matrixHeight == cusMat.matrixHeight
     assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
-    assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
+    assert round(wmMat.pointOfOrigin[0], 6) == round(cusMat.pointOfOrigin[0], 6)
 
     extent = (-180.0, -85.051128779806, 180.0, 85.051128779806)
     custom_tms = TileMatrixSet.custom(
@@ -193,7 +186,7 @@ def test_Custom():
     assert wmMat.matrixWidth == cusMat.matrixWidth
     assert wmMat.matrixHeight == cusMat.matrixHeight
     assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
-    assert round(wmMat.topLeftCorner[0], 6) == round(cusMat.topLeftCorner[0], 6)
+    assert round(wmMat.pointOfOrigin[0], 6) == round(cusMat.pointOfOrigin[0], 6)
 
 
 def test_custom_tms_bounds_epsg4326():
@@ -219,6 +212,7 @@ def test_custom_tms_bounds_user_crs():
 
 
 def test_nztm_quad_is_quad():
+    """Test NZTM2000Quad."""
     tms = morecantile.tms.get("NZTM2000Quad")
     bound = tms.xy_bounds(morecantile.Tile(0, 0, 0))
     expected = (-3260586.7284, 419435.9938, 6758167.443, 10438190.1652)
@@ -228,6 +222,7 @@ def test_nztm_quad_is_quad():
 
 # NZTM2000Quad should use all the WebMercatorQuad zoom scales
 def test_nztm_quad_scales():
+    """Test NZTM2000Quad."""
     nztm_tms = morecantile.tms.get("NZTM2000Quad")
     google_tms = morecantile.tms.get("WebMercatorQuad")
     for z in range(2, nztm_tms.maxzoom + 2):
@@ -243,10 +238,6 @@ def test_nztm_quad_scales():
 
 def test_InvertedLatLonGrids():
     """Check Inverted LatLon grids."""
-    tms = morecantile.tms.get("NZTM2000")
-    bound = tms.xy_bounds(morecantile.Tile(1, 2, 0))
-    assert bound == (1293760.0, 3118720.0, 3587520.0, 5412480.0)
-    assert tms.xy_bbox == (274000.0, 3087000.0, 3327000.0, 7173000.0)
 
     tms = morecantile.tms.get("LINZAntarticaMapTilegrid")
     assert tms.xy_bbox == (
@@ -280,7 +271,7 @@ def test_zoom_for_res():
     crs = CRS.from_epsg(3857)
     extent = [-20026376.39, -20048966.10, 20026376.39, 20048966.10]
     tms = morecantile.TileMatrixSet.custom(
-        extent, crs, identifier="MyCustomTmsEPSG3857", minzoom=6
+        extent, crs, id="MyCustomTmsEPSG3857", minzoom=6
     )
     assert tms.zoom_for_res(10) == 14
     assert tms.zoom_for_res(5000) == 6
@@ -299,25 +290,21 @@ def test_schema():
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
     with pytest.warns(UserWarning):
-        tms = morecantile.TileMatrixSet.custom(
-            extent, crs, identifier="MarsNPolek2MOLA5k"
-        )
+        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     assert tms.schema()
     assert tms.schema_json()
     assert tms.dict(exclude_none=True)
     json_doc = json.loads(tms.json(exclude_none=True))
-    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
+    assert json_doc["crs"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-    tms = morecantile.TileMatrixSet.custom(
-        extent, crs, identifier="MyCustomTmsEPSG3031"
-    )
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
     assert tms.schema()
     assert tms.schema_json()
     assert tms.json(exclude_none=True)
     json_doc = json.loads(tms.json(exclude_none=True))
-    assert json_doc["supportedCRS"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
+    assert json_doc["crs"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
 
 
 MARS2000_SPHERE = CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
@@ -374,13 +361,36 @@ def test_mars_local_tms():
 
 
 @pytest.mark.parametrize(
+    "identifier, file, crs",
+    [
+        (
+            "UPSAntarcticWGS84Quad",
+            os.path.join(tms_v1_dir, "UPSAntarcticWGS84Quad.json"),
+            5042,
+        ),
+        ("CanadianNAD83_LCC", os.path.join(tms_v1_dir, "CanadianNAD83_LCC.json"), 3978),
+        ("WebMercatorQuad", os.path.join(tms_v1_dir, "WebMercatorQuad.json"), 3857),
+    ],
+)
+def test_from_v1(identifier, file, crs):
+    """
+    Test from_v1 class method
+    """
+    with open(file) as fp:
+        v1_tms = json.load(fp)
+
+    tms = TileMatrixSet.from_v1(v1_tms)
+    assert tms.id == identifier
+    assert tms.crs == pyproj.CRS.from_epsg(crs)
+
+
+@pytest.mark.parametrize(
     "id,result",
     [
         ("LINZAntarticaMapTilegrid", True),
         ("EuropeanETRS89_LAEAQuad", True),
         ("CanadianNAD83_LCC", False),
         ("UPSArcticWGS84Quad", False),
-        ("NZTM2000", True),
         ("NZTM2000Quad", True),
         ("UTM31WGS84Quad", False),
         ("UPSAntarcticWGS84Quad", False),
@@ -407,6 +417,7 @@ def test_inverted_tms(id, result):
     ],
 )
 def test_crs_uris(authority, code, result):
+    """Test CRS URIS."""
     assert (
         morecantile.models.CRS_to_uri(CRS((authority, code)))
         == f"http://www.opengis.net/def/crs/{result}"
@@ -415,5 +426,6 @@ def test_crs_uris(authority, code, result):
 
 @pytest.mark.parametrize("tilematrixset", morecantile.tms.list())
 def test_crs_uris_for_defaults(tilematrixset):
+    """Test CRS URIS."""
     t = morecantile.tms.get(tilematrixset)
-    assert t.supportedCRS == morecantile.models.CRS_to_uri(t.crs)
+    assert t.crs == morecantile.models.CRS_to_uri(t.crs)

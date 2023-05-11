@@ -7,8 +7,8 @@ from typing import Dict, List, Sequence, Union
 
 import attr
 
-from .errors import InvalidIdentifier
-from .models import TileMatrixSet
+from morecantile.errors import InvalidIdentifier
+from morecantile.models import TileMatrixSet
 
 morecantile_tms_dir = pathlib.Path(__file__).parent.joinpath("data")
 tms_paths = list(pathlib.Path(morecantile_tms_dir).glob("*.json"))
@@ -18,7 +18,7 @@ if user_tms_dir:
     tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))
 
 default_tms: Dict[str, Union[TileMatrixSet, pathlib.Path]] = {
-    tms.stem: tms for tms in tms_paths
+    tms.stem: tms for tms in sorted(tms_paths)
 }
 
 
@@ -54,10 +54,10 @@ class TileMatrixSets:
             custom_tms = (custom_tms,)
 
         for tms in custom_tms:
-            if tms.identifier in self.tms and not overwrite:
-                raise Exception(f"{tms.identifier} is already a registered TMS.")
+            if tms.id in self.tms and not overwrite:
+                raise Exception(f"{tms.id} is already a registered TMS.")
 
-        new_tms = {tms.identifier: tms for tms in custom_tms}
+        new_tms = {tms.id: tms for tms in custom_tms}
         return TileMatrixSets({**self.tms, **new_tms})
 
 

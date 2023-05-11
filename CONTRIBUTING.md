@@ -7,7 +7,13 @@ Issues and pull requests are more than welcome.
 ```bash
 $ git clone https://github.com/developmentseed/morecantile.git
 $ cd morecantile
-$ pip install -e .["dev"]
+$ python -m pip install -e .["dev"]
+```
+
+You can then run the tests with the following command:
+
+```sh
+python -m pytest --cov morecantile --cov-report term-missing -s -vv
 ```
 
 ### pre-commit
@@ -23,7 +29,7 @@ $ pre-commit install
 ```bash
 $ git clone https://github.com/developmentseed/morecantile.git
 $ cd morecantile
-$ pip install -e .["docs"]
+$ python -m pip install -e .["docs"]
 ```
 
 Hot-reloading docs:

@@ -9,7 +9,6 @@ print(morecantile.tms.list())
     'EuropeanETRS89_LAEAQuad',
     'CanadianNAD83_LCC',
     'UPSArcticWGS84Quad',
-    'NZTM2000',
     'NZTM2000Quad',
     'UTM31WGS84Quad',
     'UPSAntarcticWGS84Quad',
@@ -26,7 +25,7 @@ import morecantile
 
 tms = morecantile.tms.get("WebMercatorQuad")
 tms
->>> <TileMatrixSet title='Google Maps Compatible for the World' identifier='WebMercatorQuad'>
+>>> <TileMatrixSet title='Google Maps Compatible for the World' id='WebMercatorQuad'>
 ```
 
 ### Create tile and get bounds
@@ -100,20 +99,50 @@ tms.feature(morecantile.Tile(10, 10, 4))
 
 ### Define custom grid
 
+You can create custom TMS grid using `morecantile.TileMatrixSet.custom` method.
+
+Here are the available options:
+
+- **extent** (*list of float, REQUIRED*]: a list of coordinates in form of `[xmin, ymin, xmax, ymax]` describing the extend of the TMS
+
+- **crs** (*pyproj.CRS, REQUIRED*): Coordinate reference system of the grid
+
+- **tile_width** (*int, defaults to `256`*): Width of each tile of this tile matrix in pixels (variable width is not supported)
+
+- **tile_height** (*int, defaults to `256`*): Height of each tile of this tile matrix in pixels (variable height is not supported)
+
+- **matrix_scale** (*list of int, default to `[1, 1]`*): Tiling schema coalescence coefficient (see http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#14)
+
+- **extent_crs** (*pyproj.CRS, defaults to TMS CRS*): `extent`'s coordinate reference system
+
+- **minzoom** (*int, defaults to `0`*): Tile Matrix Set minimum zoom level
+
+- **maxzoom** (*int, defaults to `24`*): Tile Matrix Set maximum zoom level
+
+- **title** (*str, defaults to `Custom TileMatrixSet`*): Tile Matrix Set title
+
+- **id** (*str, defaults to `Custom`*): Tile Matrix Set identifier
+
+- **geographic_crs** (*pyproj.CRS, defaults to `EPSG:4326`*): Geographic (lat,lon) coordinate reference system
+
+
 ```python
 import morecantile
 from pyproj import CRS
 
 crs = CRS.from_epsg(3031)
 extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
-customEPGS3031 = morecantile.TileMatrixSet.custom(extent, crs, identifier="MyCustomTmsEPSG3031")
+customEPGS3031 = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
 
 print(customEPGS3031.matrix(0).dict(exclude_none=True))
 >>> {
     "type": "TileMatrixType",
-    "identifier": "0",
+    "id": "0",
     "scaleDenominator": 38916524.55357144,
-    "topLeftCorner": [-948.75, -3333128.95],
+    "pointOfOrigin": [
+        -948.75,
+        -3333128.95
+    ],
     "tileWidth": 256,
     "tileHeight": 256,
     "matrixWidth": 1,
@@ -126,7 +155,7 @@ And register the TMS
 default_tms = morecantile.tms.register(customEPGS3031)
 tms = default_tms.get("MyCustomTmsEPSG3031")
 tms
->>> <TileMatrixSet title='Custom TileMatrixSet' identifier='MyCustomTmsEPSG3031'>
+>>> <TileMatrixSet title='Custom TileMatrixSet' id='MyCustomTmsEPSG3031'>
 ```
 
 !!! important
@@ -138,7 +167,7 @@ tms
 
     crs = CRS.from_proj4("+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs")
     extent = [-13584760.000,-13585240.000,13585240.000,13584760.000]
-    tms = morecantile.TileMatrixSet.custom(extent, crs, identifier="MarsNPolek2MOLA5k")
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     ```
 
 ### Extend morecantile default TMS

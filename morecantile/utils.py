@@ -6,8 +6,8 @@ from typing import Dict, List
 from pyproj import CRS
 from pyproj.enums import WktVersion
 
-from .commons import BoundingBox, Coords, Tile
-from .errors import TileArgParsingError
+from morecantile.commons import BoundingBox, Coords, Tile
+from morecantile.errors import TileArgParsingError
 
 
 def _parse_tile_arg(*args) -> Tile:
@@ -60,10 +60,10 @@ def meters_per_unit(crs: CRS) -> float:
     unit_name = crs.axis_info[0].unit_name
     try:
         return unit_factors[unit_name]
-    except KeyError:
+    except KeyError as e:
         raise Exception(
-            f"CRS {crs} is not supported, please fill an issue in developmentseed/morecantile"
-        )
+            f"CRS {crs} with Unit Name `{unit_name}` is not supported, please fill an issue in developmentseed/morecantile"
+        ) from e
 
 
 def bbox_to_feature(west: float, south: float, east: float, north: float) -> Dict:

@@ -24,8 +24,7 @@ def test_bounds(zoom: int):
     # get random x,y index
     x = sample(range(0, tms.matrix(zoom).matrixWidth), 1)[0]
     y = sample(range(0, tms.matrix(zoom).matrixHeight), 1)[0]
-
     for a, b in zip(
         mercantile.xy_bounds(x, y, zoom), tms.xy_bounds(morecantile.Tile(x, y, zoom))
     ):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0

@@ -1,3 +1,15 @@
+
+## 4.0.0 (TBD)
+
+* Remove assumption tile rows/cols are ordered in `TileMatrixSet.tiles()` method (author @fsvenson, https://github.com/developmentseed/morecantile/pull/104)
+* switch to **TMS 2.0** specification (author @dchirst, https://github.com/developmentseed/morecantile/pull/101)
+* remove `NZTM2000` TileMatrixSet (ref: https://github.com/developmentseed/morecantile/issues/103)
+
+## 3.3.0 (2023-03-09)
+
+* sort default TMS (author @jlaura, https://github.com/developmentseed/morecantile/pull/98)
+* Switch to ruff for linting and fixing linting issues
+
 ## 3.2.5 (2022-12-16)
 
 * Do not parse TMS json files automatically but wait for the TMS to be used
