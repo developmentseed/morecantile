@@ -4,6 +4,8 @@ import math
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+from cachetools import LRUCache, cached
+from cachetools.keys import hashkey
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
 from pyproj.exceptions import ProjError
@@ -732,6 +734,10 @@ class TileMatrixSet(BaseModel):
         return BoundingBox(left, bottom, right, top)
 
     @property
+    @cached(  # type: ignore
+        LRUCache(maxsize=512),
+        key=lambda self: hashkey(self.id, self.tileMatrices[0].pointOfOrigin),
+    )
     def bbox(self):
         """Return TMS bounding box in geographic coordinate reference system."""
         left, bottom, right, top = self.xy_bbox
