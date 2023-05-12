@@ -1,25 +1,9 @@
 # Morecantile
 
-```
-    +-------------+-------------+  ymax
-    |             |             |
-    |    x: 0     |    x: 1     |
-    |    y: 0     |    y: 0     |
-    |    z: 1     |    z: 1     |
-    |             |             |
-    +-------------+-------------+
-    |             |             |
-    |    x: 0     |    x: 1     |
-    |    y: 1     |    y: 1     |
-    |    z: 1     |    z: 1     |
-    |             |             |
-    +-------------+-------------+  ymin
-
-xmin                            xmax
-```
-
 <p align="center">
-  <em>Construct and use map tile grids (a.k.a TileMatrixSet / TMS).</em>
+  <img height="500" src="https://github.com/developmentseed/morecantile/assets/10407788/a1523c6d-e255-4dc6-a201-20029715858a"/>
+  <p align="center">Construct and use map tile grids (a.k.a TileMatrixSet / TMS).</p>
+
 </p>
 <p align="center">
   <a href="https://github.com/developmentseed/morecantile/actions?query=workflow%3ACI" target="_blank">
