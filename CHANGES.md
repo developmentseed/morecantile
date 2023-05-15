@@ -1,5 +1,5 @@
 
-## 4.0.0 (TBD)
+## 4.0.0a0 (2023-05-15)
 
 * Remove assumption tile rows/cols are ordered in `TileMatrixSet.tiles()` method (author @fsvenson, https://github.com/developmentseed/morecantile/pull/104)
 * switch to **TMS 2.0** specification (author @dchirst, https://github.com/developmentseed/morecantile/pull/101). See https://developmentseed.org/morecantile/tms-v2/ for more info.
