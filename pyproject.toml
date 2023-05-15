@@ -23,6 +23,7 @@ dependencies = [
     "attrs",
     "pyproj~=3.1",
     "pydantic",
+    "cachetools",
 ]
 
 [project.optional-dependencies]

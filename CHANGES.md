@@ -1,4 +1,11 @@
 
+
+## 3.4.0 (TBD)
+
+* [backported from 4.0] add `rasterio_geographic_crs` to export TMS's geographic CRS to Rasterio's CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/109)
+* [backported from 4.0] add `geographic_crs` property in the TileMatrixSet model to return the private `_geographic_crs` attribute
+* [backported from 4.0] add cache LRU layer on top of `TileMatrixSet.bbox` method
+
 ## 3.3.0 (2023-03-09)
 
 * sort default TMS (author @jlaura, https://github.com/developmentseed/morecantile/pull/98)
