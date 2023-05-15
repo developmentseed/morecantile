@@ -3,7 +3,7 @@
 import os
 import pathlib
 from copy import copy
-from typing import Dict, List, Sequence, Union
+from typing import Dict, List, Union
 
 import attr
 
@@ -34,6 +34,8 @@ class TileMatrixSets:
             raise InvalidIdentifier(f"Invalid identifier: {identifier}")
 
         tms = self.tms[identifier]
+
+        # We lazyload the TMS document only when called
         if isinstance(tms, pathlib.Path):
             tms = TileMatrixSet.parse_file(tms)
             self.tms[identifier] = tms
@@ -46,19 +48,15 @@ class TileMatrixSets:
 
     def register(
         self,
-        custom_tms: Union[TileMatrixSet, Sequence[TileMatrixSet]],
+        custom_tms: Dict[str, TileMatrixSet],
         overwrite: bool = False,
     ) -> "TileMatrixSets":
         """Register TileMatrixSet(s)."""
-        if isinstance(custom_tms, TileMatrixSet):
-            custom_tms = (custom_tms,)
+        for identifier in custom_tms.keys():
+            if identifier in self.tms and not overwrite:
+                raise Exception(f"{identifier} is already a registered TMS.")
 
-        for tms in custom_tms:
-            if tms.id in self.tms and not overwrite:
-                raise Exception(f"{tms.id} is already a registered TMS.")
-
-        new_tms = {tms.id: tms for tms in custom_tms}
-        return TileMatrixSets({**self.tms, **new_tms})
+        return TileMatrixSets({**self.tms, **custom_tms})
 
 
 tms = TileMatrixSets(copy(default_tms))  # noqa

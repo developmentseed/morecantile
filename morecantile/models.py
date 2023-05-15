@@ -2,7 +2,7 @@
 
 import math
 import warnings
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
 
 from cachetools import LRUCache, cached
 from cachetools.keys import hashkey
@@ -113,22 +113,76 @@ class TMSBoundingBox(BaseModel):
         json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
 
-class TileMatrix(BaseModel):
-    """Tile matrix"""
+# class variableMatrixWidth(BaseModel):
+#     """Variable Matrix Width Definition
 
-    type: str = Field("TileMatrixType", const=True)
-    title: Optional[str]
-    abstract: Optional[str]
-    keywords: Optional[List[str]]
-    id: str = Field(..., regex=r"^[0-9]+$")
-    scaleDenominator: float
-    pointOfOrigin: BoundsType
-    tileWidth: int
-    tileHeight: int
-    matrixWidth: int
-    matrixHeight: int
-    cellSize: Optional[float]
-    cornerOfOrigin: Optional[BoundsType]
+
+#     ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/variableMatrixWidth.json
+#     """
+
+#     coalesce: int = Field(..., ge=2, multiple_of=1, description="Number of tiles in width that coalesce in a single tile for these rows")
+#     minTileRow: int = Field(..., ge=0, multiple_of=1, description="First tile row where the coalescence factor applies for this tilematrix")
+#     maxTileRow: int = Field(..., ge=0, multiple_of=1, description="Last tile row where the coalescence factor applies for this tilematrix")
+
+
+class TileMatrix(BaseModel):
+    """Tile Matrix Definition
+
+    A tile matrix, usually corresponding to a particular zoom level of a TileMatrixSet.
+
+    ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/tileMatrix.json
+    """
+
+    title: Optional[str] = Field(
+        description="Title of this tile matrix, normally used for display to a human"
+    )
+    description: Optional[str] = Field(
+        description="Brief narrative description of this tile matrix set, normally available for display to a human"
+    )
+    keywords: Optional[List[str]] = Field(
+        description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset"
+    )
+    id: str = Field(
+        ...,
+        regex=r"^[0-9]+$",
+        description="Identifier selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile. Implementation of 'identifier'",
+    )
+    scaleDenominator: float = Field(
+        ..., description="Scale denominator of this tile matrix"
+    )
+    cellSize: float = Field(..., description="Cell size of this tile matrix")
+    cornerOfOrigin: Optional[Literal["topLeft", "bottomLeft"]] = Field(
+        description="The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile."
+    )
+    pointOfOrigin: BoundsType = Field(
+        ...,
+        description="Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist.",
+    )
+    tileWidth: int = Field(
+        ...,
+        ge=1,
+        multiple_of=1,
+        description="Width of each tile of this tile matrix in pixels",
+    )
+    tileHeight: int = Field(
+        ...,
+        ge=1,
+        multiple_of=1,
+        description="Height of each tile of this tile matrix in pixels",
+    )
+    matrixWidth: int = Field(
+        ...,
+        ge=1,
+        multiple_of=1,
+        description="Width of the matrix (number of tiles in width)",
+    )
+    matrixHeight: int = Field(
+        ...,
+        ge=1,
+        multiple_of=1,
+        description="Height of the matrix (number of tiles in height)",
+    )
+    # variableMatrixWidths: Optional[List[variableMatrixWidth]] = Field(description="Describes the rows that has variable matrix width")
 
     class Config:
         """Forbid additional items like variableMatrixWidths."""
@@ -137,24 +191,46 @@ class TileMatrix(BaseModel):
 
 
 class TileMatrixSet(BaseModel):
-    """Tile matrix set"""
+    """Tile Matrix Set Definition
 
-    type: str = Field("TileMatrixSetType", const=True)
-    uri: Optional[str]
-    title: str
-    abstract: Optional[str]
-    keywords: Optional[List[str]]
-    id: str = Field(..., regex=r"^[\w\d_\-]+$")
-    crs: CRSType
-    wellKnownScaleSet: Optional[AnyHttpUrl] = None
-    boundingBox: Optional[TMSBoundingBox]
+    A definition of a tile matrix set following the Tile Matrix Set standard.
+    For tileset metadata, such a description (in `tileMatrixSet` property) is only required for offline use,
+    as an alternative to a link with a `http://www.opengis.net/def/rel/ogc/1.0/tiling-scheme` relation type.
+
+    ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/tileMatrixSet.json
+
+    """
+
+    title: Optional[str] = Field(
+        description="Title of this tile matrix set, normally used for display to a human"
+    )
+    description: Optional[str] = Field(
+        description="Brief narrative description of this tile matrix set, normally available for display to a human"
+    )
+    keywords: Optional[List[str]] = Field(
+        description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set"
+    )
+    id: Optional[str] = Field(
+        regex=r"^[\w\d_\-]+$",
+        description="Tile matrix set identifier. Implementation of 'identifier'",
+    )
+    uri: Optional[str] = Field(
+        description="Reference to an official source for this tileMatrixSet"
+    )
     orderedAxes: Optional[List[str]]
-    tileMatrices: List[TileMatrix]
+    crs: CRSType = Field(..., description="Coordinate Reference System (CRS)")
+    wellKnownScaleSet: Optional[AnyHttpUrl] = Field(
+        description="Reference to a well-known scale set"
+    )
+    boundingBox: Optional[TMSBoundingBox] = Field(
+        description="Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS"
+    )
+    tileMatrices: List[TileMatrix] = Field(
+        ..., description="Describes scale levels and its tile matrices"
+    )
 
     # Private attributes
     _is_quadtree: bool = PrivateAttr()
-
-    # CRS transformation attributes
     _geographic_crs: CRSType = PrivateAttr(default=WGS84_CRS)
     _to_geographic: Transformer = PrivateAttr()
     _from_geographic: Transformer = PrivateAttr()
@@ -277,7 +353,11 @@ class TileMatrixSet(BaseModel):
         v2_tms["crs"] = v2_tms.pop("supportedCRS")
         v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
         v2_tms["id"] = v2_tms.pop("identifier")
+        mpu = meters_per_unit(CRS.from_user_input(v2_tms["crs"]))
         for i in range(len(v2_tms["tileMatrices"])):
+            v2_tms["tileMatrices"][i]["cellSize"] = (
+                v2_tms["tileMatrices"][i]["scaleDenominator"] * 0.00028 / mpu
+            )
             v2_tms["tileMatrices"][i]["pointOfOrigin"] = v2_tms["tileMatrices"][i].pop(
                 "topLeftCorner"
             )
@@ -299,10 +379,11 @@ class TileMatrixSet(BaseModel):
         extent_crs: Optional[CRS] = None,
         minzoom: int = 0,
         maxzoom: int = 24,
-        title: str = "Custom TileMatrixSet",
-        id: str = "Custom",
+        title: Optional[str] = None,
+        id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
         geographic_crs: CRS = WGS84_CRS,
+        **kwargs: Any,
     ):
         """
         Construct a custom TileMatrixSet.
@@ -328,12 +409,14 @@ class TileMatrixSet(BaseModel):
             Tile Matrix Set minimum zoom level (default is 0).
         maxzoom: int
             Tile Matrix Set maximum zoom level (default is 24).
-        title: str
-            Tile Matrix Set title (default is 'Custom TileMatrixSet')
-        id: str
-            Tile Matrix Set identifier (default is 'Custom')
+        title: str, optional
+            Tile Matrix Set title
+        id: str, optional
+            Tile Matrix Set identifier
         geographic_crs: pyproj.CRS
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+        kwargs: Any
+            Attributes to forward to the TileMatrixSet
 
         Returns:
         --------
@@ -342,57 +425,34 @@ class TileMatrixSet(BaseModel):
         """
         matrix_scale = matrix_scale or [1, 1]
 
-        tms: Dict[str, Any] = {
-            "title": title,
-            "id": id,
-            "crs": crs,
-            "tileMatrices": [],
-            "_geographic_crs": geographic_crs,
-        }
-
         if ordered_axes:
             is_inverted = ordered_axis_inverted(ordered_axes)
         else:
             is_inverted = crs_axis_inverted(crs)
 
-        if is_inverted:
-            tms["boundingBox"] = TMSBoundingBox(
-                crs=extent_crs or crs,
-                lowerCorner=[extent[1], extent[0]],
-                upperCorner=[extent[3], extent[2]],
-            )
-        else:
-            tms["boundingBox"] = TMSBoundingBox(
-                crs=extent_crs or crs,
-                lowerCorner=[extent[0], extent[1]],
-                upperCorner=[extent[2], extent[3]],
-            )
-
         if extent_crs:
             transform = Transformer.from_crs(extent_crs, crs, always_xy=True)
-            left, bottom, right, top = extent
-            bbox = BoundingBox(
-                *transform.transform_bounds(left, bottom, right, top, densify_pts=21)
-            )
-        else:
-            bbox = BoundingBox(*extent)
+            extent = transform.transform_bounds(*extent, densify_pts=21)
 
+        bbox = BoundingBox(*extent)
         x_origin = bbox.left if not is_inverted else bbox.top
         y_origin = bbox.top if not is_inverted else bbox.left
-
         width = abs(bbox.right - bbox.left)
         height = abs(bbox.top - bbox.bottom)
         mpu = meters_per_unit(crs)
+
+        tile_matrices: List[TileMatrix] = []
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
                 width / (tile_width * matrix_scale[0]) / 2.0**zoom,
                 height / (tile_height * matrix_scale[1]) / 2.0**zoom,
             )
-            tms["tileMatrices"].append(
+            tile_matrices.append(
                 TileMatrix(
                     **{
                         "id": str(zoom),
                         "scaleDenominator": res * mpu / 0.00028,
+                        "cellSize": res,
                         "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
@@ -402,7 +462,14 @@ class TileMatrixSet(BaseModel):
                 )
             )
 
-        return cls(**tms)
+        return cls(
+            crs=crs,
+            tileMatrices=tile_matrices,
+            id=id,
+            title=title,
+            _geographic_crs=geographic_crs,
+            **kwargs,
+        )
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
@@ -437,6 +504,7 @@ class TileMatrixSet(BaseModel):
                 **{
                     "id": str(int(tile_matrix.id) + 1),
                     "scaleDenominator": tile_matrix.scaleDenominator / factor,
+                    "cellSize": tile_matrix.cellSize / factor,
                     "pointOfOrigin": tile_matrix.pointOfOrigin,
                     "tileWidth": tile_matrix.tileWidth,
                     "tileHeight": tile_matrix.tileHeight,

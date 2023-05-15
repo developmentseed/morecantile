@@ -2,11 +2,41 @@
 ## 4.0.0 (TBD)
 
 * Remove assumption tile rows/cols are ordered in `TileMatrixSet.tiles()` method (author @fsvenson, https://github.com/developmentseed/morecantile/pull/104)
-* switch to **TMS 2.0** specification (author @dchirst, https://github.com/developmentseed/morecantile/pull/101)
+* switch to **TMS 2.0** specification (author @dchirst, https://github.com/developmentseed/morecantile/pull/101). See https://developmentseed.org/morecantile/tms-v2/ for more info.
 * remove `NZTM2000` TileMatrixSet (ref: https://github.com/developmentseed/morecantile/issues/103)
 * add `rasterio_geographic_crs` to export TMS's geographic CRS to Rasterio's CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/109)
 * add `geographic_crs` property in the TileMatrixSet model to return the private `_geographic_crs` attribute
 * add cache LRU layer on top of `TileMatrixSet.bbox` method
+* changed the input type in `morecantile.defaults.TileMatrixSets.register()` from `Sequence[TileMatrixSet]` to `Dict[str, TileMatrixSets]`
+
+    ```python
+    my_custom_tms = ...
+
+    # before
+    defaults = morecantile.tms.register([my_custom_tms])
+
+    # now
+    defaults = morecantile.tms.register({"MyCustomGrid": my_custom_tms})
+    ```
+
+* made `id` and `title` optional in `morecantile.TileMatrixSet.custom()` method
+
+    ```python
+    crs = CRS.from_epsg(3031)
+    extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
+
+    # before
+    tms = morecantile.TileMatrixSet.custom(extent, crs)
+    print(tms.id, tms.title)
+    >>> "Custom", "Custom TileMatrixSet"
+
+    # now
+    tms = morecantile.TileMatrixSet.custom(extent, crs)
+    print(tms.id, tms.title)
+    >>> None, None
+    ```
+
+* remove `boundingBox` in TileMatrixSet definition when created with `morecantile.TileMatrixSet.custom`
 
 ## 3.3.0 (2023-03-09)
 
