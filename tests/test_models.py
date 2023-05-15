@@ -8,6 +8,7 @@ from collections.abc import Iterable
 import pytest
 from pydantic import ValidationError
 from pyproj import CRS
+from rasterio.crs import CRS as rioCRS
 
 import morecantile
 from morecantile.commons import Tile
@@ -428,4 +429,17 @@ def test_crs_uris(authority, code, result):
 def test_crs_uris_for_defaults(tilematrixset):
     """Test CRS URIS."""
     t = morecantile.tms.get(tilematrixset)
-    assert t.supportedCRS == morecantile.models.CRS_to_uri(t.crs)
+    assert t.crs == morecantile.models.CRS_to_uri(t.crs)
+
+
+def test_rasterio_crs():
+    """Check rasterio CRS methods."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert isinstance(tms.rasterio_crs, rioCRS)
+    assert isinstance(tms.rasterio_geographic_crs, rioCRS)
+    assert tms.rasterio_crs == rioCRS.from_epsg(3857)
+    assert tms.rasterio_geographic_crs == rioCRS.from_epsg(4326)
+
+    tms = morecantile.tms.get("WGS1984Quad")
+    assert tms.rasterio_crs == rioCRS.from_epsg(4326)
+    assert tms.rasterio_geographic_crs == rioCRS.from_epsg(4326)

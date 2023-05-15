@@ -33,6 +33,7 @@ test = [
     "mercantile",
     "pytest",
     "pytest-cov",
+    "rasterio>=1.2.1",
 ]
 dev = [
     "pre-commit",
