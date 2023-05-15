@@ -31,27 +31,21 @@ def test_register():
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
     tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomGrid3031")
 
-    _ = morecantile.tms.register(tms)
+    # Make sure we don't update the default tms (frozen set)
+    _ = morecantile.tms.register({"MyCustomGrid3031": tms})
     assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
 
-    defaults = morecantile.tms.register(tms)
-    assert len(defaults.list()) == DEFAULT_GRID_COUNT + 1
-    assert "MyCustomGrid3031" in defaults.list()
-
-    defaults = morecantile.tms.register([tms])
+    defaults = morecantile.tms.register({"MyCustomGrid3031": tms})
     assert len(defaults.list()) == DEFAULT_GRID_COUNT + 1
     assert "MyCustomGrid3031" in defaults.list()
 
     # Check it will raise an exception if TMS is already registered
     with pytest.raises(Exception):
-        defaults = defaults.register(tms)
+        defaults = defaults.register({"MyCustomGrid3031": tms})
 
     # Do not raise is overwrite=True
-    defaults = defaults.register(tms, overwrite=True)
+    defaults = defaults.register({"MyCustomGrid3031": tms}, overwrite=True)
     assert len(defaults.list()) == DEFAULT_GRID_COUNT + 1
-
-    # make sure the default morecantile TMS are not overwriten
-    assert len(morecantile.defaults.default_tms.keys()) == DEFAULT_GRID_COUNT
 
     # add tms in morecantile defaults (not something to do anyway)
     epsg3031 = morecantile.TileMatrixSet.custom(extent, crs, id="epsg3031")

@@ -113,6 +113,18 @@ class TMSBoundingBox(BaseModel):
         json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
 
+# class variableMatrixWidth(BaseModel):
+#     """Variable Matrix Width Definition
+
+
+#     ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/variableMatrixWidth.json
+#     """
+
+#     coalesce: int = Field(..., ge=2, multiple_of=1, description="Number of tiles in width that coalesce in a single tile for these rows")
+#     minTileRow: int = Field(..., ge=0, multiple_of=1, description="First tile row where the coalescence factor applies for this tilematrix")
+#     maxTileRow: int = Field(..., ge=0, multiple_of=1, description="Last tile row where the coalescence factor applies for this tilematrix")
+
+
 class TileMatrix(BaseModel):
     """Tile Matrix Definition
 
@@ -170,6 +182,7 @@ class TileMatrix(BaseModel):
         multiple_of=1,
         description="Height of the matrix (number of tiles in height)",
     )
+    # variableMatrixWidths: Optional[List[variableMatrixWidth]] = Field(description="Describes the rows that has variable matrix width")
 
     class Config:
         """Forbid additional items like variableMatrixWidths."""
@@ -366,10 +379,11 @@ class TileMatrixSet(BaseModel):
         extent_crs: Optional[CRS] = None,
         minzoom: int = 0,
         maxzoom: int = 24,
-        title: str = "Custom TileMatrixSet",
-        id: str = "Custom",
+        title: Optional[str] = None,
+        id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
         geographic_crs: CRS = WGS84_CRS,
+        **kwargs: Any,
     ):
         """
         Construct a custom TileMatrixSet.
@@ -395,12 +409,14 @@ class TileMatrixSet(BaseModel):
             Tile Matrix Set minimum zoom level (default is 0).
         maxzoom: int
             Tile Matrix Set maximum zoom level (default is 24).
-        title: str
-            Tile Matrix Set title (default is 'Custom TileMatrixSet')
-        id: str
-            Tile Matrix Set identifier (default is 'Custom')
+        title: str, optional
+            Tile Matrix Set title
+        id: str, optional
+            Tile Matrix Set identifier
         geographic_crs: pyproj.CRS
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+        kwargs: Any
+            Attributes to forward to the TileMatrixSet
 
         Returns:
         --------
@@ -409,53 +425,29 @@ class TileMatrixSet(BaseModel):
         """
         matrix_scale = matrix_scale or [1, 1]
 
-        tms: Dict[str, Any] = {
-            "title": title,
-            "id": id,
-            "crs": crs,
-            "tileMatrices": [],
-            "_geographic_crs": geographic_crs,
-        }
-
         if ordered_axes:
             is_inverted = ordered_axis_inverted(ordered_axes)
         else:
             is_inverted = crs_axis_inverted(crs)
 
-        if is_inverted:
-            tms["boundingBox"] = TMSBoundingBox(
-                crs=extent_crs or crs,
-                lowerCorner=[extent[1], extent[0]],
-                upperCorner=[extent[3], extent[2]],
-            )
-        else:
-            tms["boundingBox"] = TMSBoundingBox(
-                crs=extent_crs or crs,
-                lowerCorner=[extent[0], extent[1]],
-                upperCorner=[extent[2], extent[3]],
-            )
-
         if extent_crs:
             transform = Transformer.from_crs(extent_crs, crs, always_xy=True)
-            left, bottom, right, top = extent
-            bbox = BoundingBox(
-                *transform.transform_bounds(left, bottom, right, top, densify_pts=21)
-            )
-        else:
-            bbox = BoundingBox(*extent)
+            extent = transform.transform_bounds(*extent, densify_pts=21)
 
+        bbox = BoundingBox(*extent)
         x_origin = bbox.left if not is_inverted else bbox.top
         y_origin = bbox.top if not is_inverted else bbox.left
-
         width = abs(bbox.right - bbox.left)
         height = abs(bbox.top - bbox.bottom)
         mpu = meters_per_unit(crs)
+
+        tile_matrices: List[TileMatrix] = []
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
                 width / (tile_width * matrix_scale[0]) / 2.0**zoom,
                 height / (tile_height * matrix_scale[1]) / 2.0**zoom,
             )
-            tms["tileMatrices"].append(
+            tile_matrices.append(
                 TileMatrix(
                     **{
                         "id": str(zoom),
@@ -470,7 +462,14 @@ class TileMatrixSet(BaseModel):
                 )
             )
 
-        return cls(**tms)
+        return cls(
+            crs=crs,
+            tileMatrices=tile_matrices,
+            id=id,
+            title=title,
+            _geographic_crs=geographic_crs,
+            **kwargs,
+        )
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""

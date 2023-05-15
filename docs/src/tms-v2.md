@@ -5,11 +5,12 @@ In September 2022, the Open Geospatial Consortium released an updated specificat
 This updated spec includes some breaking changes that alter the TMS JSON document. Some of these changes include:
 
 - [Addition of a `uri` parameter for TileMatrixSets registered on the official OGC NA TileMatrixSets registry](https://docs.ogc.org/is/17-083r4/21-066r1.html#_identifying_with_uri_a_well_known_tilematrixset_in_an_authoritative_registry)
-- [`identifier` renamed to `id`](https://docs.ogc.org/is/17-083r4/21-066r1.html#_json_encoding_rules_to_derive_a_more_natural_json_encoding_from_uml)
+- [`identifier` renamed to `id`](https://docs.ogc.org/is/17-083r4/21-066r1.html#_json_encoding_rules_to_derive_a_more_natural_json_encoding_from_uml) in both TileMatrix and TileMatrixSet
+- [Only `crs` and `tileMatrices` are required in `TileMatrixSet`](https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/tileMatrixSet.json#L6)
 - [`supportedCRS` renamed to `crs`](https://docs.ogc.org/is/17-083r4/21-066r1.html#_renaming_supportedcrs_to_crs)
 - [`tileMatrix` renamed to `tileMatrices`](https://docs.ogc.org/is/17-083r4/21-066r1.html#_json_encoding_rules_to_derive_a_more_natural_json_encoding_from_uml)
 - [`topLeftCorner` renamed to `pointOfOrigin`](https://docs.ogc.org/is/17-083r4/21-066r1.html#_replacing_topleftcorner_by_pointoforigin)
-- [Add optional parameters `cellSize` and `cornerOfOrigin` to TileMatrix](https://docs.ogc.org/is/17-083r4/21-066r1.html#_adding_cellsize_and_corneroforigin)
+- [Add `cellSize` and `cornerOfOrigin` (Optional) parameters to TileMatrix](https://docs.ogc.org/is/17-083r4/21-066r1.html#_adding_cellsize_and_corneroforigin)
 - [Remove `type` object properties](https://docs.ogc.org/is/17-083r4/21-066r1.html#_removing_type_object_properties)
 - [Added optional axis ordering](https://docs.ogc.org/is/17-083r4/21-066r1.html#_adding_optional_orderedaxes_to_highlight_crs_axis_ordering
 )

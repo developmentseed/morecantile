@@ -49,12 +49,50 @@ $ python -m pip install -U pip
 $ python -m pip install morecantile
 
 # Or install from source:
-
 $ python -m pip install -U pip
 $ python -m pip install git+https://github.com/developmentseed/morecantile.git
 ```
 
+## Usage
+
+```python
+import morecantile
+
+tms = morecantile.tms.get("WebMercatorQuad")
+
+# Get TMS bounding box
+print(tms.xy_bbox)
+>>> BoundingBox(
+    left=-20037508.342789244,
+    bottom=-20037508.34278919,
+    right=20037508.34278919,
+    top=20037508.342789244,
+)
+
+# Get the bounds for tile Z=4, X=10, Y=10 in the TMS's CRS (e.g epsg:3857)
+print(tms.xy_bounds(morecantile.Tile(10, 10, 4)))
+>>> BoundingBox(
+    left=5009377.085697308,
+    bottom=-7514065.628545959,
+    right=7514065.628545959,
+    top=-5009377.085697308,
+)
+
+# Get the bounds for tile Z=4, X=10, Y=10 in Geographic CRS (e.g epsg:4326)
+print(tms.bounds(morecantile.Tile(10, 10, 4)))
+>>> BoundingBox(
+    left=44.999999999999964,
+    bottom=-55.776573018667634,
+    right=67.4999999999999,
+    top=-40.97989806962009,
+)
+```
+
+More info can be found at https://developmentseed.org/morecantile/usage/
+
 ### Defaults Grids
+
+`morecantile` provides a set of default TMS grids:
 
 - **CanadianNAD83_LCC**: Lambert conformal conic NAD83 for Canada - EPSG:3978
 - **EuropeanETRS89_LAEAQuad**: ETRS89-extended / LAEA Europe - EPGS:3035

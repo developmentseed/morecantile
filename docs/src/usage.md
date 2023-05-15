@@ -1,25 +1,5 @@
-### List supported grids
 
-```python
-import morecantile
-
-print(morecantile.tms.list())
->>> [
-    'LINZAntarticaMapTilegrid',
-    'EuropeanETRS89_LAEAQuad',
-    'CanadianNAD83_LCC',
-    'UPSArcticWGS84Quad',
-    'NZTM2000Quad',
-    'UTM31WGS84Quad',
-    'UPSAntarcticWGS84Quad',
-    'WorldMercatorWGS84Quad',
-    'WorldCRS84Quad',
-    'WGS1984Quad',
-    'WebMercatorQuad'
-]
-```
-
-### Load one of the default grids
+### Load one TMS grid
 ```python
 import morecantile
 
@@ -150,35 +130,51 @@ print(customEPGS3031.matrix(0).dict(exclude_none=True))
 }
 ```
 
-And register the TMS
+## Use morecantile TMS store
+
+morecantile provides a `TileMatrixSets` class to *store* Tile Matrix Set definition. This object can easily be extended to include your own custom TMS.
+
+### List supported grids
+
 ```python
-default_tms = morecantile.tms.register(customEPGS3031)
+import morecantile
+
+print(morecantile.tms.list())
+>>> [
+    'LINZAntarticaMapTilegrid',
+    'EuropeanETRS89_LAEAQuad',
+    'CanadianNAD83_LCC',
+    'UPSArcticWGS84Quad',
+    'NZTM2000Quad',
+    'UTM31WGS84Quad',
+    'UPSAntarcticWGS84Quad',
+    'WorldMercatorWGS84Quad',
+    'WorldCRS84Quad',
+    'WGS1984Quad',
+    'WebMercatorQuad'
+]
+```
+
+### Register a custom TMS
+
+```python
+default_tms = morecantile.tms.register({"MyCustomTmsEPSG3031": customEPGS3031})
+assert "MyCustomTmsEPSG3031" in default_tms.list()
+
 tms = default_tms.get("MyCustomTmsEPSG3031")
 tms
 >>> <TileMatrixSet title='Custom TileMatrixSet' id='MyCustomTmsEPSG3031'>
 ```
 
-!!! important
-    starting with `morecantile==1.3.0`, you can create TMS using custom CRS.
+### Automatically register TMS documents
 
-    ```python
-    import morecantile
-    from pyproj import CRS
-
-    crs = CRS.from_proj4("+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs")
-    extent = [-13584760.000,-13585240.000,13585240.000,13584760.000]
-    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
-    ```
-
-### Extend morecantile default TMS
-
-Since the release of morecantile `1.3.1`, users can automatically extend morecantile default TMS with their custom TMS JSON files stored in a directory by setting `TILEMATRIXSET_DIRECTORY` environment.
+Since the release of morecantile `1.3.1`, users can automatically extend morecantile's default TMS with their custom TMS JSON files stored in a directory, by setting `TILEMATRIXSET_DIRECTORY` environment.
 
 !!! important
     Morecantile will look for all `.json` files within the directory referenced by `TILEMATRIXSET_DIRECTORY`.
 
-    - Filename HAVE TO be the same as the TMS identifer
-    - Filename HAVE TO be *without special characters* `[a-zA-Z0-9_]`
+    - filename HAVE TO be the same as the TMS id
+    - filename HAVE TO be *without special characters* `[a-zA-Z0-9_]`
 
 ## Morecantile + Pydantic
 
@@ -197,4 +193,10 @@ import morecantile
 my_tms_doc = "~/a_tms_doc.json"
 
 tms = morecantile.TileMatrixSet.parse_file(my_tms_doc)
+
+# print the TMS as json
+print(tms.json(exclude_none=True))
+
+# print the TMS as dict
+print(tms.dict(exclude_none=True))
 ```
