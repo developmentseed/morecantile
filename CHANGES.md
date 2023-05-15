@@ -1,5 +1,5 @@
 
-## 3.4.0 (TBD)
+## 3.4.0 (2023-05-15)
 
 * [backported from 4.0] Remove assumption tile rows/cols are ordered in `TileMatrixSet.tiles()` method (author @fsvenson, https://github.com/developmentseed/morecantile/pull/104)
 * [backported from 4.0] add `rasterio_geographic_crs` to export TMS's geographic CRS to Rasterio's CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/109)
