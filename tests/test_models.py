@@ -256,7 +256,7 @@ def test_InvertedLatLonGrids():
     tms = morecantile.tms.get("NZTM2000")
     bound = tms.xy_bounds(morecantile.Tile(1, 2, 0))
     assert bound == (1293760.0, 3118720.0, 3587520.0, 5412480.0)
-    assert tms.xy_bbox == (274000.0, 3087000.0, 3327000.0, 7173000.0)
+    assert tms.xy_bbox == (-1000000.0, 824960.0, 3587520.0, 10000000.0)
 
     tms = morecantile.tms.get("LINZAntarticaMapTilegrid")
     assert tms.xy_bbox == (

@@ -655,46 +655,11 @@ class TileMatrixSet(BaseModel):
     @property
     def xy_bbox(self):
         """Return TMS bounding box in TileMatrixSet's CRS."""
-        if self.boundingBox:
-            left = (
-                self.boundingBox.lowerCorner[1]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[0]
-            )
-            bottom = (
-                self.boundingBox.lowerCorner[0]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[1]
-            )
-            right = (
-                self.boundingBox.upperCorner[1]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[0]
-            )
-            top = (
-                self.boundingBox.upperCorner[0]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[1]
-            )
-            if self.boundingBox.crs != self.crs:
-                transform = Transformer.from_crs(
-                    self.boundingBox.crs, self.crs, always_xy=True
-                )
-                left, bottom, right, top = transform.transform_bounds(
-                    left,
-                    bottom,
-                    right,
-                    top,
-                    densify_pts=21,
-                )
+        zoom = self.minzoom
+        matrix = self.matrix(zoom)
 
-        else:
-            zoom = self.minzoom
-            matrix = self.matrix(zoom)
-            left, top = self._ul(Tile(0, 0, zoom))
-            right, bottom = self._ul(
-                Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
-            )
+        left, top = self._ul(Tile(0, 0, zoom))
+        right, bottom = self._ul(Tile(matrix.matrixWidth, matrix.matrixHeight, zoom))
 
         return BoundingBox(left, bottom, right, top)
 
