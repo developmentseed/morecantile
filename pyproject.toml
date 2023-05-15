@@ -23,6 +23,7 @@ dependencies = [
     "attrs",
     "pyproj~=3.1",
     "pydantic",
+    "cachetools",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +34,7 @@ test = [
     "mercantile",
     "pytest",
     "pytest-cov",
+    "rasterio>=1.2.1",
 ]
 dev = [
     "pre-commit",
@@ -91,6 +93,7 @@ select = [
     "D1",  # pydocstyle errors
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
+    "F",  # flake8
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
 ]

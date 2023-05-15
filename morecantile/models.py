@@ -4,15 +4,15 @@ import math
 import warnings
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
+from cachetools import LRUCache, cached
+from cachetools.keys import hashkey
 from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
 from pyproj import CRS, Transformer
-from pyproj.enums import WktVersion
 from pyproj.exceptions import ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
     InvalidZoomError,
-    MorecantileError,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
     QuadKeyError,
@@ -23,6 +23,7 @@ from morecantile.utils import (
     check_quadkey_support,
     meters_per_unit,
     point_in_bbox,
+    to_rasterio_crs,
 )
 
 NumType = Union[float, int]
@@ -197,16 +198,19 @@ class TileMatrixSet(BaseModel):
         return self.supportedCRS
 
     @property
+    def geographic_crs(self) -> CRSType:
+        """Return the TMS's geographic CRS."""
+        return self._geographic_crs
+
+    @property
     def rasterio_crs(self):
         """Return rasterio CRS."""
+        return to_rasterio_crs(self.crs)
 
-        import rasterio
-        from rasterio.env import GDALVersion
-
-        if GDALVersion.runtime().major < 3:
-            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt(WktVersion.WKT1_GDAL))
-        else:
-            return rasterio.crs.CRS.from_wkt(self.crs.to_wkt())
+    @property
+    def rasterio_geographic_crs(self):
+        """Return the geographic CRS as a rasterio CRS."""
+        return to_rasterio_crs(self._geographic_crs)
 
     @property
     def minzoom(self) -> int:
@@ -656,50 +660,19 @@ class TileMatrixSet(BaseModel):
     @property
     def xy_bbox(self):
         """Return TMS bounding box in TileMatrixSet's CRS."""
-        if self.boundingBox:
-            left = (
-                self.boundingBox.lowerCorner[1]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[0]
-            )
-            bottom = (
-                self.boundingBox.lowerCorner[0]
-                if self._invert_axis
-                else self.boundingBox.lowerCorner[1]
-            )
-            right = (
-                self.boundingBox.upperCorner[1]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[0]
-            )
-            top = (
-                self.boundingBox.upperCorner[0]
-                if self._invert_axis
-                else self.boundingBox.upperCorner[1]
-            )
-            if self.boundingBox.crs != self.crs:
-                transform = Transformer.from_crs(
-                    self.boundingBox.crs, self.crs, always_xy=True
-                )
-                left, bottom, right, top = transform.transform_bounds(
-                    left,
-                    bottom,
-                    right,
-                    top,
-                    densify_pts=21,
-                )
+        zoom = self.minzoom
+        matrix = self.matrix(zoom)
 
-        else:
-            zoom = self.minzoom
-            matrix = self.matrix(zoom)
-            left, top = self._ul(Tile(0, 0, zoom))
-            right, bottom = self._ul(
-                Tile(matrix.matrixWidth, matrix.matrixHeight, zoom)
-            )
+        left, top = self._ul(Tile(0, 0, zoom))
+        right, bottom = self._ul(Tile(matrix.matrixWidth, matrix.matrixHeight, zoom))
 
         return BoundingBox(left, bottom, right, top)
 
     @property
+    @cached(  # type: ignore
+        LRUCache(maxsize=512),
+        key=lambda self: hashkey(self.identifier, self.tileMatrix[0].topLeftCorner),
+    )
     def bbox(self):
         """Return TMS bounding box in geographic coordinate reference system."""
         left, bottom, right, top = self.xy_bbox
@@ -744,7 +717,7 @@ class TileMatrixSet(BaseModel):
         zooms : int or sequence of int
             One or more zoom levels.
         truncate : bool, optional
-            Whether or not to truncate inputs to web mercator limits.
+            Whether or not to truncate inputs to TMS limits.
 
         Yields
         ------
@@ -778,13 +751,18 @@ class TileMatrixSet(BaseModel):
             n = min(self.bbox.top, n)
 
             for z in zooms:
-                ul_tile = self.tile(
+                nw_tile = self.tile(
                     w + LL_EPSILON, n - LL_EPSILON, z
                 )  # Not in mercantile
-                lr_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
+                se_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
 
-                for i in range(ul_tile.x, lr_tile.x + 1):
-                    for j in range(ul_tile.y, lr_tile.y + 1):
+                minx = min(nw_tile.x, se_tile.x)
+                maxx = max(nw_tile.x, se_tile.x)
+                miny = min(nw_tile.y, se_tile.y)
+                maxy = max(nw_tile.y, se_tile.y)
+
+                for i in range(minx, maxx + 1):
+                    for j in range(miny, maxy + 1):
                         yield Tile(i, j, z)
 
     def feature(
@@ -1063,8 +1041,8 @@ class TileMatrixSet(BaseModel):
         tile : Tile or sequence of int
             May be be either an instance of Tile or 3 ints, X, Y, Z.
         zoom : int, optional
-            Determines the *zoom* level of the returned parent tile.
-            This defaults to one lower than the tile (the immediate parent).
+            Determines the *zoom* level of the returned child tiles.
+            This defaults to one higher than the tile (the immediate children).
 
         Returns
         -------
