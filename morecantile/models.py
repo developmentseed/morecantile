@@ -282,7 +282,7 @@ class TileMatrixSet(BaseModel):
 
     def __repr__(self):
         """Simplify default pydantic model repr."""
-        return f"<TileMatrixSet title='{self.title}' id='{self.id}'>"
+        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs}>"
 
     @property
     def geographic_crs(self) -> CRSType:
@@ -804,7 +804,12 @@ class TileMatrixSet(BaseModel):
     @property
     @cached(  # type: ignore
         LRUCache(maxsize=512),
-        key=lambda self: hashkey(self.id, self.tileMatrices[0].pointOfOrigin),
+        key=lambda self: hashkey(
+            self.crs,
+            self.tileMatrices[0].pointOfOrigin,
+            self.tileMatrices[0].matrixWidth,
+            self.tileMatrices[0].matrixHeight,
+        ),
     )
     def bbox(self):
         """Return TMS bounding box in geographic coordinate reference system."""
