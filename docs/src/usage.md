@@ -5,7 +5,7 @@ import morecantile
 
 tms = morecantile.tms.get("WebMercatorQuad")
 tms
->>> <TileMatrixSet title='Google Maps Compatible for the World' id='WebMercatorQuad'>
+>>> <TileMatrixSet title='Google Maps Compatible for the World' id='WebMercatorQuad' crs='http://www.opengis.net/def/crs/EPSG/0/3857>
 ```
 
 ### Create tile and get bounds
@@ -163,7 +163,7 @@ assert "MyCustomTmsEPSG3031" in default_tms.list()
 
 tms = default_tms.get("MyCustomTmsEPSG3031")
 tms
->>> <TileMatrixSet title='Custom TileMatrixSet' id='MyCustomTmsEPSG3031'>
+>>> <TileMatrixSet title='None' id='MyCustomTmsEPSG3031' crs='epsg:3031>
 ```
 
 ### Automatically register TMS documents
