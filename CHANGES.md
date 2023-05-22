@@ -1,7 +1,10 @@
+## 4.0.0 (2023-05-22)
+
+* no change since `4.0.0a1`
 
 ## 4.0.0a1 (2023-05-17)
 
-* Fix possible bug when a TileMatrixSet do not have `id`
+* Fix possible bug when a TileMatrixSet does not have `id`
 
 ## 4.0.0a0 (2023-05-15)
 
