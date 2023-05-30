@@ -1,5 +1,7 @@
 """Tests for morecantile."""
 
+import math
+
 import mercantile
 import pytest
 from pyproj import CRS
@@ -437,6 +439,18 @@ def test_tiles_roundtrip(t):
     assert val.x == t.x
     assert val.y == t.y
     assert val.z == t.z
+
+
+def test_tiles_nan_bounds():
+    """
+    nan bounds should raise an error instead of getting clamped to avoid
+    unintentionally generating tiles for the entire TMS' extent.
+    """
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    bounds = (-105, math.nan, -104.99, 40)
+    with pytest.raises(ValueError):
+        list(tms.tiles(*bounds, zooms=[14]))
 
 
 def test_extend_zoom():
