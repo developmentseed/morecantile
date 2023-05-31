@@ -443,3 +443,77 @@ def test_rasterio_crs():
     tms = morecantile.tms.get("WGS1984Quad")
     assert tms.rasterio_crs == rioCRS.from_epsg(4326)
     assert tms.rasterio_geographic_crs == rioCRS.from_epsg(4326)
+
+
+def test_boundingbox():
+    """Test boundingbox support."""
+    with pytest.raises(ValidationError):
+        TileMatrixSet(
+            **{
+                "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+                "boundingBox": {
+                    "lowerLeft": [],
+                    "upperRight": [],
+                    "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+                    "orderedAxes": ["X", "Y"],
+                },
+                "tileMatrices": [
+                    {
+                        "id": "0",
+                        "scaleDenominator": 559082264.028717,
+                        "cellSize": 156543.033928041,
+                        "pointOfOrigin": [-20037508.342789244, 20037508.342789244],
+                        "tileWidth": 256,
+                        "tileHeight": 256,
+                        "matrixWidth": 1,
+                        "matrixHeight": 1,
+                    },
+                ],
+            }
+        )
+
+    assert TileMatrixSet(
+        **{
+            "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+            "boundingBox": {
+                "lowerLeft": [-20037508.342789244, -20037508.34278919],
+                "upperRight": [20037508.34278919, 20037508.342789244],
+            },
+            "tileMatrices": [
+                {
+                    "id": "0",
+                    "scaleDenominator": 559082264.028717,
+                    "cellSize": 156543.033928041,
+                    "pointOfOrigin": [-20037508.342789244, 20037508.342789244],
+                    "tileWidth": 256,
+                    "tileHeight": 256,
+                    "matrixWidth": 1,
+                    "matrixHeight": 1,
+                },
+            ],
+        }
+    )
+
+    assert TileMatrixSet(
+        **{
+            "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+            "boundingBox": {
+                "lowerLeft": [-20037508.342789244, -20037508.34278919],
+                "upperRight": [20037508.34278919, 20037508.342789244],
+                "crs": "http://www.opengis.net/def/crs/EPSG/0/3857",
+                "orderedAxes": ["X", "Y"],
+            },
+            "tileMatrices": [
+                {
+                    "id": "0",
+                    "scaleDenominator": 559082264.028717,
+                    "cellSize": 156543.033928041,
+                    "pointOfOrigin": [-20037508.342789244, 20037508.342789244],
+                    "tileWidth": 256,
+                    "tileHeight": 256,
+                    "matrixWidth": 1,
+                    "matrixHeight": 1,
+                },
+            ],
+        }
+    )

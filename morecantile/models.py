@@ -2,11 +2,22 @@
 
 import math
 import warnings
-from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from cachetools import LRUCache, cached
 from cachetools.keys import hashkey
-from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, conlist, validator
 from pyproj import CRS, Transformer
 from pyproj.exceptions import ProjError
 
@@ -31,6 +42,12 @@ NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
+
+
+if TYPE_CHECKING:
+    axesInfo = List[str]
+else:
+    axesInfo = conlist(str, min_items=2, max_items=2)
 
 
 class CRSType(CRS, str):
@@ -99,12 +116,20 @@ def ordered_axis_inverted(ordered_axes: List[str]) -> bool:
 
 
 class TMSBoundingBox(BaseModel):
-    """Bounding box"""
+    """Bounding box
 
-    type: str = Field("BoundingBoxType", const=True)
-    crs: CRSType
-    lowerCorner: BoundsType
-    upperCorner: BoundsType
+    ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/2DBoundingBox.json
+
+    """
+
+    lowerLeft: BoundsType = Field(
+        description="A 2D Point in the CRS indicated elsewhere"
+    )
+    upperRight: BoundsType = Field(
+        description="A 2D Point in the CRS indicated elsewhere"
+    )
+    crs: Optional[CRSType]
+    orderedAxes: Optional[axesInfo]
 
     class Config:
         """Configure TMSBoundingBox."""
@@ -217,7 +242,7 @@ class TileMatrixSet(BaseModel):
     uri: Optional[str] = Field(
         description="Reference to an official source for this tileMatrixSet"
     )
-    orderedAxes: Optional[List[str]]
+    orderedAxes: Optional[axesInfo]
     crs: CRSType = Field(..., description="Coordinate Reference System (CRS)")
     wellKnownScaleSet: Optional[AnyHttpUrl] = Field(
         description="Reference to a well-known scale set"
@@ -349,6 +374,12 @@ class TileMatrixSet(BaseModel):
         v2_tms = tms.copy()
 
         del v2_tms["type"]
+
+        if tms_bbox := v2_tms.pop("boundingBox", None):
+            del tms_bbox["type"]
+            tms_bbox["lowerLeft"] = tms_bbox.pop("lowerCorner")
+            tms_bbox["upperRight"] = tms_bbox.pop("upperCorner")
+            v2_tms["boundingBox"] = tms_bbox
 
         v2_tms["crs"] = v2_tms.pop("supportedCRS")
         v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
