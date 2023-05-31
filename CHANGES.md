@@ -1,4 +1,5 @@
-## Next (TBD)
+
+## 4.0.1 (2023-05-31)
 
 * Raise a `ValueError` when `nan` bounds are passed to `tiles` (author @samn, https://github.com/developmentseed/morecantile/pull/120)
 
