@@ -1,3 +1,7 @@
+## Next (TBD)
+
+* Raise a `ValueError` when `nan` bounds are passed to `tiles` (author @samn, https://github.com/developmentseed/morecantile/pull/120)
+
 ## 4.0.0 (2023-05-22)
 
 * no change since `4.0.0a1`

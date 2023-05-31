@@ -867,6 +867,9 @@ class TileMatrixSet(BaseModel):
         function yields exactly one tile when given the bounds of that same tile.
 
         """
+        if any(math.isnan(coord) for coord in (west, south, east, north)):
+            raise ValueError("All coordinates must be finite")
+
         if isinstance(zooms, int):
             zooms = (zooms,)
 
