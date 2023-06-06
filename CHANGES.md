@@ -1,3 +1,8 @@
+## 4.1.0 (2023-06-06)
+
+* Change CRS models to align more with the TMS spec and fix some OpenAPI schema issues
+* add `TileMatrixSet._crs` PrivateAttr to host the `pyproj.CRS` (created from CRS uri/wkt)
+* update `grid_crs` properties in `TileMatrixSet.feature()` result to return the `CRS` (uri/wkt) instead of EPSG code
 
 ## 4.0.2 (2023-05-31)
 

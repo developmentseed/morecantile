@@ -17,9 +17,18 @@ from typing import (
 
 from cachetools import LRUCache, cached
 from cachetools.keys import hashkey
-from pydantic import AnyHttpUrl, BaseModel, Field, PrivateAttr, conlist, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    BaseModel,
+    Field,
+    PrivateAttr,
+    conlist,
+    root_validator,
+    validator,
+)
 from pyproj import CRS, Transformer
-from pyproj.exceptions import ProjError
+from pyproj.exceptions import CRSError, ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
@@ -50,44 +59,56 @@ else:
     axesInfo = conlist(str, min_items=2, max_items=2)
 
 
-class CRSType(CRS, str):
+class CRSUri(BaseModel):
+    """Coordinate Reference System (CRS) from URI."""
+
+    uri: AnyUrl = Field(
+        ...,
+        description="Reference to one coordinate reference system (CRS) as URI",
+        examples=[
+            "http://www.opengis.net/def/crs/EPSG/0/3978",
+            "urn:ogc:def:crs:EPSG::2193",
+        ],
+    )
+
+
+class CRSWKT(BaseModel):
+    """Coordinate Reference System (CRS) from WKT."""
+
+    wkt: str = Field(
+        ...,
+        description="Reference to one coordinate reference system (CRS) as WKT string",
+        examples=[
+            'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]',
+        ],
+    )
+
+
+# NOT SUPPORTED
+# class CRSRef(BaseModel):
+#     """CRS from referenceSystem."""
+#
+#     referenceSystem: Dict[str, Any] = Field(
+#         ...,
+#         description="A reference system data structure as defined in the MD_ReferenceSystem of the ISO 19115",
+#     )
+
+
+class CRSType(BaseModel):
+    """CRS model.
+
+    Ref: https://github.com/opengeospatial/ogcapi-tiles/blob/master/openapi/schemas/common-geodata/crs.yaml
+
+    Code generated using https://github.com/koxudaxi/datamodel-code-generator/
     """
-    A geographic or projected coordinate reference system.
-    """
 
-    @classmethod
-    def __get_validators__(cls):
-        """validator for the type."""
-        yield cls.validate
+    __root__: Union[str, Union[CRSUri, CRSWKT]] = Field(..., title="CRS")
 
-    @classmethod
-    def validate(cls, value: Union[CRS, str]) -> CRS:
-        """Validate CRS."""
-        # If input is a string we translate it to CRS
-        # TODO: add NotImplementedError for ISO 19115
-        if not isinstance(value, CRS):
-            return CRS.from_user_input(value)
-
-        return value
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        """Update default schema."""
-        field_schema.update(
-            anyOf=[
-                {"type": "pyproj.CRS"},
-                {"type": "string", "minLength": 1, "maxLength": 65536},
-            ],
-            examples=[
-                "CRS.from_epsg(4326)",
-                "http://www.opengis.net/def/crs/EPSG/0/3978",
-                "urn:ogc:def:crs:EPSG::2193",
-            ],
-        )
-
-    def __repr__(self):
-        """Type representation."""
-        return f"CRS({super().__repr__()})"
+    @root_validator
+    def validate_crs(cls, values):
+        """Make sure the CRS can be used in Pyproj."""
+        assert CRS.from_user_input(values.get("__root__"))
+        return values
 
 
 def CRS_to_uri(crs: CRS) -> str:
@@ -135,7 +156,7 @@ class TMSBoundingBox(BaseModel):
         """Configure TMSBoundingBox."""
 
         arbitrary_types_allowed = True
-        json_encoders = {CRS: lambda v: CRS_to_uri(v)}
+        # json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
 
 # class variableMatrixWidth(BaseModel):
@@ -256,7 +277,8 @@ class TileMatrixSet(BaseModel):
 
     # Private attributes
     _is_quadtree: bool = PrivateAttr()
-    _geographic_crs: CRSType = PrivateAttr(default=WGS84_CRS)
+    _crs: CRS = PrivateAttr()
+    _geographic_crs: CRS = PrivateAttr(default=WGS84_CRS)
     _to_geographic: Transformer = PrivateAttr()
     _from_geographic: Transformer = PrivateAttr()
 
@@ -264,7 +286,6 @@ class TileMatrixSet(BaseModel):
         """Configure TileMatrixSet."""
 
         arbitrary_types_allowed = True
-        json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
     def __init__(self, **data):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
@@ -276,15 +297,15 @@ class TileMatrixSet(BaseModel):
         super().__init__(**data)
 
         self._is_quadtree = check_quadkey_support(self.tileMatrices)
-
+        self._crs = CRS.from_user_input(self.crs.__root__)
         self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
 
         try:
             self._to_geographic = Transformer.from_crs(
-                self.crs, self._geographic_crs, always_xy=True
+                self._crs, self._geographic_crs, always_xy=True
             )
             self._from_geographic = Transformer.from_crs(
-                self._geographic_crs, self.crs, always_xy=True
+                self._geographic_crs, self._crs, always_xy=True
             )
         except ProjError:
             warnings.warn(
@@ -307,7 +328,7 @@ class TileMatrixSet(BaseModel):
 
     def __repr__(self):
         """Simplify default pydantic model repr."""
-        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs}>"
+        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self._crs}>"
 
     @property
     def geographic_crs(self) -> CRSType:
@@ -317,7 +338,7 @@ class TileMatrixSet(BaseModel):
     @property
     def rasterio_crs(self):
         """Return rasterio CRS."""
-        return to_rasterio_crs(self.crs)
+        return to_rasterio_crs(self._crs)
 
     @property
     def rasterio_geographic_crs(self):
@@ -340,7 +361,7 @@ class TileMatrixSet(BaseModel):
         return (
             ordered_axis_inverted(self.orderedAxes)
             if self.orderedAxes
-            else crs_axis_inverted(self.crs)
+            else crs_axis_inverted(self._crs)
         )
 
     @classmethod
@@ -493,8 +514,21 @@ class TileMatrixSet(BaseModel):
                 )
             )
 
+        if crs.to_authority(min_confidence=20):
+            crs_str = CRS_to_uri(crs)
+
+            # Some old Proj version might not support URI
+            # so we fall back to wkt
+            try:
+                CRS.from_user_input(crs_str)
+            except CRSError:
+                crs_str = crs.to_wkt()
+
+        else:
+            crs_str = crs.to_wkt()
+
         return cls(
-            crs=crs,
+            crs=crs_str,
             tileMatrices=tile_matrices,
             id=id,
             title=title,
@@ -555,7 +589,7 @@ class TileMatrixSet(BaseModel):
           by multiplying the later by 0.28 10-3 / metersPerUnit.
 
         """
-        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs)
+        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self._crs)
 
     def zoom_for_res(
         self,
@@ -836,7 +870,7 @@ class TileMatrixSet(BaseModel):
     @cached(  # type: ignore
         LRUCache(maxsize=512),
         key=lambda self: hashkey(
-            self.crs,
+            self.crs.__root__,
             self.tileMatrices[0].pointOfOrigin,
             self.tileMatrices[0].matrixWidth,
             self.tileMatrices[0].matrixHeight,
@@ -1002,7 +1036,7 @@ class TileMatrixSet(BaseModel):
             "properties": {
                 "title": f"XYZ tile {xyz}",
                 "grid_name": self.id,
-                "grid_crs": self.crs.to_string(),
+                "grid_crs": self.crs.__root__,
             },
         }
 
@@ -1013,7 +1047,7 @@ class TileMatrixSet(BaseModel):
                 UserWarning,
             )
             feat.update(
-                {"crs": {"type": "EPSG", "properties": {"code": self.crs.to_epsg()}}}
+                {"crs": {"type": "EPSG", "properties": {"code": self._crs.to_epsg()}}}
             )
 
         if props:

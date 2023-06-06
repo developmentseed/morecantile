@@ -16,7 +16,7 @@ def test_cli_shapes():
     assert result.exit_code == 0
     assert (
         result.output
-        == '{"bbox": [-105.46875, 39.909736, -104.765625, 40.446947], "geometry": {"coordinates": [[[-105.46875, 39.909736], [-105.46875, 40.446947], [-104.765625, 40.446947], [-104.765625, 39.909736], [-105.46875, 39.909736]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "EPSG:3857", "grid_name": "WebMercatorQuad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
+        == '{"bbox": [-105.46875, 39.909736, -104.765625, 40.446947], "geometry": {"coordinates": [[[-105.46875, 39.909736], [-105.46875, 40.446947], [-104.765625, 40.446947], [-104.765625, 39.909736], [-105.46875, 39.909736]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "http://www.opengis.net/def/crs/EPSG/0/3857", "grid_name": "WebMercatorQuad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
     )
 
     # tile as arg
@@ -24,7 +24,7 @@ def test_cli_shapes():
     assert result.exit_code == 0
     assert (
         result.output
-        == '{"bbox": [-105.46875, 39.909736, -104.765625, 40.446947], "geometry": {"coordinates": [[[-105.46875, 39.909736], [-105.46875, 40.446947], [-104.765625, 40.446947], [-104.765625, 39.909736], [-105.46875, 39.909736]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "EPSG:3857", "grid_name": "WebMercatorQuad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
+        == '{"bbox": [-105.46875, 39.909736, -104.765625, 40.446947], "geometry": {"coordinates": [[[-105.46875, 39.909736], [-105.46875, 40.446947], [-104.765625, 40.446947], [-104.765625, 39.909736], [-105.46875, 39.909736]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "http://www.opengis.net/def/crs/EPSG/0/3857", "grid_name": "WebMercatorQuad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
     )
 
     # buffer
@@ -34,7 +34,7 @@ def test_cli_shapes():
     assert result.exit_code == 0
     assert (
         result.output
-        == '{"bbox": [-106.46875, 38.909736, -103.765625, 41.446947], "geometry": {"coordinates": [[[-106.46875, 38.909736], [-106.46875, 41.446947], [-103.765625, 41.446947], [-103.765625, 38.909736], [-106.46875, 38.909736]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "EPSG:3857", "grid_name": "WebMercatorQuad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
+        == '{"bbox": [-106.46875, 38.909736, -103.765625, 41.446947], "geometry": {"coordinates": [[[-106.46875, 38.909736], [-106.46875, 41.446947], [-103.765625, 41.446947], [-103.765625, 38.909736], [-106.46875, 38.909736]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "http://www.opengis.net/def/crs/EPSG/0/3857", "grid_name": "WebMercatorQuad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
     )
 
     # Output is compact
@@ -102,7 +102,7 @@ def test_cli_shapesWGS84():
     assert result.exit_code == 0
     assert (
         result.output
-        == '{"bbox": [-105.46875, 40.099155, -104.765625, 40.636956], "geometry": {"coordinates": [[[-105.46875, 40.099155], [-105.46875, 40.636956], [-104.765625, 40.636956], [-104.765625, 40.099155], [-105.46875, 40.099155]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "EPSG:3395", "grid_name": "WorldMercatorWGS84Quad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
+        == '{"bbox": [-105.46875, 40.099155, -104.765625, 40.636956], "geometry": {"coordinates": [[[-105.46875, 40.099155], [-105.46875, 40.636956], [-104.765625, 40.636956], [-104.765625, 40.099155], [-105.46875, 40.099155]]], "type": "Polygon"}, "id": "(106, 193, 9)", "properties": {"grid_crs": "http://www.opengis.net/def/crs/EPSG/0/3395", "grid_name": "WorldMercatorWGS84Quad", "title": "XYZ tile (106, 193, 9)"}, "type": "Feature"}\n'
     )
 
 

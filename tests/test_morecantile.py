@@ -68,8 +68,8 @@ def test_register():
 def test_TMSproperties():
     """Test TileSchema()."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert tms.crs == CRS.from_epsg(3857)
-    assert meters_per_unit(tms.crs) == 1.0
+    assert tms._crs == CRS.from_epsg(3857)
+    assert meters_per_unit(tms._crs) == 1.0
     assert tms.minzoom == 0
     assert tms.maxzoom == 24
 
@@ -297,7 +297,7 @@ def test_axis_inverted(tms_name):
     tms = morecantile.tms.get(tms_name)
     if tms.orderedAxes:
         assert morecantile.models.crs_axis_inverted(
-            tms.crs
+            tms._crs
         ) == morecantile.models.ordered_axis_inverted(tms.orderedAxes)
 
 

@@ -29,7 +29,8 @@ def test_tile_matrix_set(tileset):
     # Confirm model validation is working
     ts = TileMatrixSet.parse_file(tileset)
     # This would fail if `crs` isn't supported by PROJ
-    isinstance(ts.crs, CRS)
+    assert isinstance(ts._crs, CRS)
+    assert ts._crs == ts.crs.__root__
 
 
 def test_tile_matrix_iter():
@@ -356,6 +357,8 @@ def test_mars_local_tms():
         title="Web Mercator Mars",
         geographic_crs=MARS2000_SPHERE,
     )
+    assert syrtis_tms._crs == syrtis_tms.crs.__root__
+
     center = syrtis_tms.ul(1, 1, 1)
     assert round(center.x, 6) == 76.5
     assert round(center.y, 6) == 17
@@ -382,7 +385,7 @@ def test_from_v1(identifier, file, crs):
 
     tms = TileMatrixSet.from_v1(v1_tms)
     assert tms.id == identifier
-    assert tms.crs == pyproj.CRS.from_epsg(crs)
+    assert tms._crs == pyproj.CRS.from_epsg(crs)
 
 
 @pytest.mark.parametrize(
@@ -429,7 +432,7 @@ def test_crs_uris(authority, code, result):
 def test_crs_uris_for_defaults(tilematrixset):
     """Test CRS URIS."""
     t = morecantile.tms.get(tilematrixset)
-    assert t.crs == morecantile.models.CRS_to_uri(t.crs)
+    assert t._crs == morecantile.models.CRS_to_uri(t._crs)
 
 
 def test_rasterio_crs():
