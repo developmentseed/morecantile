@@ -156,7 +156,6 @@ class TMSBoundingBox(BaseModel):
         """Configure TMSBoundingBox."""
 
         arbitrary_types_allowed = True
-        # json_encoders = {CRS: lambda v: CRS_to_uri(v)}
 
 
 # class variableMatrixWidth(BaseModel):
