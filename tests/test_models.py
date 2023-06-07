@@ -386,6 +386,8 @@ def test_from_v1(identifier, file, crs):
     tms = TileMatrixSet.from_v1(v1_tms)
     assert tms.id == identifier
     assert tms._crs == pyproj.CRS.from_epsg(crs)
+    assert tms.crs.to_epsg() == tms._crs.to_epsg()
+    assert tms.crs.to_wkt() == tms._crs.to_wkt()
 
 
 @pytest.mark.parametrize(

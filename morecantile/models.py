@@ -110,6 +110,16 @@ class CRSType(BaseModel):
         assert CRS.from_user_input(values.get("__root__"))
         return values
 
+    def to_epsg(self) -> Optional[int]:
+        """return EPSG number of the CRS."""
+        crs = CRS.from_user_input(self.__root__)
+        return crs.to_epsg()
+
+    def to_wkt(self) -> str:
+        """return WKT version of the CRS."""
+        crs = CRS.from_user_input(self.__root__)
+        return crs.to_wkt()
+
 
 def CRS_to_uri(crs: CRS) -> str:
     """Convert CRS to URI."""
