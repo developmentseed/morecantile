@@ -24,7 +24,6 @@ from pydantic import (
     Field,
     PrivateAttr,
     conlist,
-    root_validator,
     validator,
 )
 from pyproj import CRS, Transformer
@@ -103,12 +102,23 @@ class CRSType(BaseModel):
     """
 
     __root__: Union[str, Union[CRSUri, CRSWKT]] = Field(..., title="CRS")
+    _pyproj_crs: CRS = PrivateAttr()
 
-    @root_validator
-    def validate_crs(cls, values):
-        """Make sure the CRS can be used in Pyproj."""
-        assert CRS.from_user_input(values.get("__root__"))
-        return values
+    def __init__(self, **data):
+        """Custom Init to validate CRS string and create Pyproj CRS object."""
+        super().__init__(**data)
+
+        _pyproj_crs = CRS.from_user_input(data.get("__root__"))
+
+        self._pyproj_crs = _pyproj_crs
+
+    def to_epsg(self) -> Optional[int]:
+        """return EPSG number of the CRS."""
+        return self._pyproj_crs.to_epsg()
+
+    def to_wkt(self) -> str:
+        """return WKT version of the CRS."""
+        return self._pyproj_crs.to_wkt()
 
 
 def CRS_to_uri(crs: CRS) -> str:
