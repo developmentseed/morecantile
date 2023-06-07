@@ -1,3 +1,25 @@
+## 4.1.1 (2023-06-07)
+
+* add `to_epsg()` and `to_wkt()` methods to `CRSType` to allow compatibility with `4.0`
+
+```python
+import morecantile
+
+tms = morecantile.tms.get("WebMercatorQuad")
+
+tms.crs
+>> CRSType(__root__='http://www.opengis.net/def/crs/EPSG/0/3857')
+
+tms.crs.to_epsg()
+>> 3857
+
+tms._crs
+>> <Projected CRS: EPSG:3857>
+
+tms._crs.to_epsg()
+>> 3857
+```
+
 ## 4.1.0 (2023-06-06)
 
 * Change CRS attribute in model to align more with the TMS spec and fix some OpenAPI schema issues (It should be a string URI or WKT, not a pyproj.CRS)
