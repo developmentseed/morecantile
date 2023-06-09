@@ -108,9 +108,7 @@ class CRSType(BaseModel):
         """Custom Init to validate CRS string and create Pyproj CRS object."""
         super().__init__(**data)
 
-        _pyproj_crs = CRS.from_user_input(data.get("__root__"))
-
-        self._pyproj_crs = _pyproj_crs
+        self._pyproj_crs = CRS.from_user_input(data.get("__root__"))
 
     def to_epsg(self) -> Optional[int]:
         """return EPSG number of the CRS."""
@@ -119,6 +117,18 @@ class CRSType(BaseModel):
     def to_wkt(self) -> str:
         """return WKT version of the CRS."""
         return self._pyproj_crs.to_wkt()
+
+    def to_proj4(self) -> str:
+        """return PROJ4 version of the CRS."""
+        return self._pyproj_crs.to_proj4()
+
+    def to_dict(self) -> Dict:
+        """return DICT version of the CRS."""
+        return self._pyproj_crs.to_dict()
+
+    def to_json(self) -> str:
+        """return JSON version of the CRS."""
+        return self._pyproj_crs.to_json()
 
 
 def CRS_to_uri(crs: CRS) -> str:
@@ -286,7 +296,6 @@ class TileMatrixSet(BaseModel):
 
     # Private attributes
     _is_quadtree: bool = PrivateAttr()
-    _crs: CRS = PrivateAttr()
     _geographic_crs: CRS = PrivateAttr(default=WGS84_CRS)
     _to_geographic: Transformer = PrivateAttr()
     _from_geographic: Transformer = PrivateAttr()
@@ -306,15 +315,14 @@ class TileMatrixSet(BaseModel):
         super().__init__(**data)
 
         self._is_quadtree = check_quadkey_support(self.tileMatrices)
-        self._crs = CRS.from_user_input(self.crs.__root__)
         self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
 
         try:
             self._to_geographic = Transformer.from_crs(
-                self._crs, self._geographic_crs, always_xy=True
+                self.crs._pyproj_crs, self._geographic_crs, always_xy=True
             )
             self._from_geographic = Transformer.from_crs(
-                self._geographic_crs, self._crs, always_xy=True
+                self._geographic_crs, self.crs._pyproj_crs, always_xy=True
             )
         except ProjError:
             warnings.warn(
@@ -337,7 +345,7 @@ class TileMatrixSet(BaseModel):
 
     def __repr__(self):
         """Simplify default pydantic model repr."""
-        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self._crs}>"
+        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs.__root__}>"
 
     @property
     def geographic_crs(self) -> CRSType:
@@ -347,7 +355,7 @@ class TileMatrixSet(BaseModel):
     @property
     def rasterio_crs(self):
         """Return rasterio CRS."""
-        return to_rasterio_crs(self._crs)
+        return to_rasterio_crs(self.crs._pyproj_crs)
 
     @property
     def rasterio_geographic_crs(self):
@@ -370,7 +378,7 @@ class TileMatrixSet(BaseModel):
         return (
             ordered_axis_inverted(self.orderedAxes)
             if self.orderedAxes
-            else crs_axis_inverted(self._crs)
+            else crs_axis_inverted(self.crs._pyproj_crs)
         )
 
     @classmethod
@@ -598,7 +606,7 @@ class TileMatrixSet(BaseModel):
           by multiplying the later by 0.28 10-3 / metersPerUnit.
 
         """
-        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self._crs)
+        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs._pyproj_crs)
 
     def zoom_for_res(
         self,
@@ -1056,7 +1064,12 @@ class TileMatrixSet(BaseModel):
                 UserWarning,
             )
             feat.update(
-                {"crs": {"type": "EPSG", "properties": {"code": self._crs.to_epsg()}}}
+                {
+                    "crs": {
+                        "type": "EPSG",
+                        "properties": {"code": self.crs.to_epsg()},
+                    }
+                }
             )
 
         if props:
