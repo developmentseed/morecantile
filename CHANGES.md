@@ -1,3 +1,8 @@
+## 4.2.0 (2023-06-09)
+
+* add `to_proj4` and `to_dict` and `to_json` methods to `CRSType`
+* remove `TileMatrixSet._crs` (replaced with `TileMatrixSet.crs._pyproj_crs`)
+
 ## 4.1.1 (2023-06-07)
 
 * add `to_epsg()` and `to_wkt()` methods to `CRSType` to allow compatibility with `4.0`
