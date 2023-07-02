@@ -1,3 +1,7 @@
+## 4.2.1 (2023-07-02)
+
+* limit pydantic requirement to `~=1.0``
+
 ## 4.2.0 (2023-06-09)
 
 * add `to_proj4` and `to_dict` and `to_json` methods to `CRSType`

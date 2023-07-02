@@ -22,7 +22,7 @@ dynamic = ["version"]
 dependencies = [
     "attrs",
     "pyproj~=3.1",
-    "pydantic",
+    "pydantic~=1.0",
     "cachetools",
 ]
 
