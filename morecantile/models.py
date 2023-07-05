@@ -112,10 +112,12 @@ class CRSType(RootModel[Union[str, Union[CRSUri, CRSWKT]]]):
     Code generated using https://github.com/koxudaxi/datamodel-code-generator/
     """
 
-    @property
-    def _pyproj_crs(self) -> CRS:
-        """return pyproj CRS."""
-        return CRS.from_user_input(self.root)
+    _pyproj_crs: CRS = PrivateAttr()
+
+    def model_post_init(self, __context: Any) -> None:
+        """Post Init: Set private attr."""
+        super().model_post_init(__context)
+        self._pyproj_crs = CRS.from_user_input(self.root)
 
     def to_epsg(self) -> Optional[int]:
         """return EPSG number of the CRS."""
