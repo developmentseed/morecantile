@@ -1,6 +1,7 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 
 import math
+import sys
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -23,8 +24,9 @@ from pydantic import (
     BaseModel,
     Field,
     PrivateAttr,
+    RootModel,
     conlist,
-    validator,
+    field_validator,
 )
 from pyproj import CRS, Transformer
 from pyproj.exceptions import CRSError, ProjError
@@ -46,6 +48,11 @@ from morecantile.utils import (
     to_rasterio_crs,
 )
 
+if sys.version_info >= (3, 9):
+    from typing import Annotated  # pylint: disable=no-name-in-module
+else:
+    from typing_extensions import Annotated
+
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
@@ -55,32 +62,36 @@ WGS84_CRS = CRS.from_epsg(4326)
 if TYPE_CHECKING:
     axesInfo = List[str]
 else:
-    axesInfo = conlist(str, min_items=2, max_items=2)
+    axesInfo = conlist(str, min_length=2, max_length=2)
 
 
 class CRSUri(BaseModel):
     """Coordinate Reference System (CRS) from URI."""
 
-    uri: AnyUrl = Field(
-        ...,
-        description="Reference to one coordinate reference system (CRS) as URI",
-        examples=[
-            "http://www.opengis.net/def/crs/EPSG/0/3978",
-            "urn:ogc:def:crs:EPSG::2193",
-        ],
-    )
+    uri: Annotated[
+        AnyUrl,
+        Field(
+            description="Reference to one coordinate reference system (CRS) as URI",
+            examples=[
+                "http://www.opengis.net/def/crs/EPSG/0/3978",
+                "urn:ogc:def:crs:EPSG::2193",
+            ],
+        ),
+    ]
 
 
 class CRSWKT(BaseModel):
     """Coordinate Reference System (CRS) from WKT."""
 
-    wkt: str = Field(
-        ...,
-        description="Reference to one coordinate reference system (CRS) as WKT string",
-        examples=[
-            'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]',
-        ],
-    )
+    wkt: Annotated[
+        str,
+        Field(
+            description="Reference to one coordinate reference system (CRS) as WKT string",
+            examples=[
+                'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]',
+            ],
+        ),
+    ]
 
 
 # NOT SUPPORTED
@@ -93,7 +104,7 @@ class CRSWKT(BaseModel):
 #     )
 
 
-class CRSType(BaseModel):
+class CRSType(RootModel[Union[str, Union[CRSUri, CRSWKT]]]):
     """CRS model.
 
     Ref: https://github.com/opengeospatial/ogcapi-tiles/blob/master/openapi/schemas/common-geodata/crs.yaml
@@ -101,14 +112,10 @@ class CRSType(BaseModel):
     Code generated using https://github.com/koxudaxi/datamodel-code-generator/
     """
 
-    __root__: Union[str, Union[CRSUri, CRSWKT]] = Field(..., title="CRS")
-    _pyproj_crs: CRS = PrivateAttr()
-
-    def __init__(self, **data):
-        """Custom Init to validate CRS string and create Pyproj CRS object."""
-        super().__init__(**data)
-
-        self._pyproj_crs = CRS.from_user_input(data.get("__root__"))
+    @property
+    def _pyproj_crs(self) -> CRS:
+        """return pyproj CRS."""
+        return CRS.from_user_input(self.root)
 
     def to_epsg(self) -> Optional[int]:
         """return EPSG number of the CRS."""
@@ -163,14 +170,16 @@ class TMSBoundingBox(BaseModel):
 
     """
 
-    lowerLeft: BoundsType = Field(
-        description="A 2D Point in the CRS indicated elsewhere"
-    )
-    upperRight: BoundsType = Field(
-        description="A 2D Point in the CRS indicated elsewhere"
-    )
-    crs: Optional[CRSType]
-    orderedAxes: Optional[axesInfo]
+    lowerLeft: Annotated[
+        BoundsType,
+        Field(description="A 2D Point in the CRS indicated elsewhere"),
+    ]
+    upperRight: Annotated[
+        BoundsType,
+        Field(description="A 2D Point in the CRS indicated elsewhere"),
+    ]
+    crs: Optional[CRSType] = None
+    orderedAxes: Optional[axesInfo] = None
 
     class Config:
         """Configure TMSBoundingBox."""
@@ -198,55 +207,83 @@ class TileMatrix(BaseModel):
     ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/tileMatrix.json
     """
 
-    title: Optional[str] = Field(
-        description="Title of this tile matrix, normally used for display to a human"
-    )
-    description: Optional[str] = Field(
-        description="Brief narrative description of this tile matrix set, normally available for display to a human"
-    )
-    keywords: Optional[List[str]] = Field(
-        description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset"
-    )
-    id: str = Field(
-        ...,
-        regex=r"^[0-9]+$",
-        description="Identifier selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile. Implementation of 'identifier'",
-    )
-    scaleDenominator: float = Field(
-        ..., description="Scale denominator of this tile matrix"
-    )
-    cellSize: float = Field(..., description="Cell size of this tile matrix")
-    cornerOfOrigin: Optional[Literal["topLeft", "bottomLeft"]] = Field(
-        description="The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile."
-    )
-    pointOfOrigin: BoundsType = Field(
-        ...,
-        description="Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist.",
-    )
-    tileWidth: int = Field(
-        ...,
-        ge=1,
-        multiple_of=1,
-        description="Width of each tile of this tile matrix in pixels",
-    )
-    tileHeight: int = Field(
-        ...,
-        ge=1,
-        multiple_of=1,
-        description="Height of each tile of this tile matrix in pixels",
-    )
-    matrixWidth: int = Field(
-        ...,
-        ge=1,
-        multiple_of=1,
-        description="Width of the matrix (number of tiles in width)",
-    )
-    matrixHeight: int = Field(
-        ...,
-        ge=1,
-        multiple_of=1,
-        description="Height of the matrix (number of tiles in height)",
-    )
+    title: Annotated[
+        Optional[str],
+        Field(
+            description="Title of this tile matrix, normally used for display to a human"
+        ),
+    ] = None
+    description: Annotated[
+        Optional[str],
+        Field(
+            description="Brief narrative description of this tile matrix set, normally available for display to a human",
+        ),
+    ] = None
+    keywords: Annotated[
+        Optional[List[str]],
+        Field(
+            description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset",
+        ),
+    ] = None
+    id: Annotated[
+        str,
+        Field(
+            pattern=r"^[0-9]+$",
+            description="Identifier selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile. Implementation of 'identifier'",
+        ),
+    ]
+    scaleDenominator: Annotated[
+        float,
+        Field(description="Scale denominator of this tile matrix"),
+    ]
+    cellSize: Annotated[
+        float,
+        Field(description="Cell size of this tile matrix"),
+    ]
+    cornerOfOrigin: Annotated[
+        Optional[Literal["topLeft", "bottomLeft"]],
+        Field(
+            description="The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile.",
+        ),
+    ] = None
+    pointOfOrigin: Annotated[
+        BoundsType,
+        Field(
+            description="Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist.",
+        ),
+    ] = None
+    tileWidth: Annotated[
+        int,
+        Field(
+            ge=1,
+            multiple_of=1,
+            description="Width of each tile of this tile matrix in pixels",
+        ),
+    ]
+    tileHeight: Annotated[
+        int,
+        Field(
+            ge=1,
+            multiple_of=1,
+            description="Height of each tile of this tile matrix in pixels",
+        ),
+    ]
+    matrixWidth: Annotated[
+        int,
+        Field(
+            ge=1,
+            multiple_of=1,
+            description="Width of the matrix (number of tiles in width)",
+        ),
+    ]
+    matrixHeight: Annotated[
+        int,
+        Field(
+            ge=1,
+            multiple_of=1,
+            description="Height of the matrix (number of tiles in height)",
+        ),
+    ]
     # variableMatrixWidths: Optional[List[variableMatrixWidth]] = Field(description="Describes the rows that has variable matrix width")
 
     class Config:
@@ -267,28 +304,33 @@ class TileMatrixSet(BaseModel):
     """
 
     title: Optional[str] = Field(
-        description="Title of this tile matrix set, normally used for display to a human"
+        None,
+        description="Title of this tile matrix set, normally used for display to a human",
     )
     description: Optional[str] = Field(
-        description="Brief narrative description of this tile matrix set, normally available for display to a human"
+        None,
+        description="Brief narrative description of this tile matrix set, normally available for display to a human",
     )
     keywords: Optional[List[str]] = Field(
-        description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set"
+        None,
+        description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set",
     )
     id: Optional[str] = Field(
-        regex=r"^[\w\d_\-]+$",
+        None,
+        pattern=r"^[\w\d_\-]+$",
         description="Tile matrix set identifier. Implementation of 'identifier'",
     )
     uri: Optional[str] = Field(
-        description="Reference to an official source for this tileMatrixSet"
+        None, description="Reference to an official source for this tileMatrixSet"
     )
-    orderedAxes: Optional[axesInfo]
+    orderedAxes: Optional[axesInfo] = None
     crs: CRSType = Field(..., description="Coordinate Reference System (CRS)")
     wellKnownScaleSet: Optional[AnyHttpUrl] = Field(
-        description="Reference to a well-known scale set"
+        None, description="Reference to a well-known scale set"
     )
     boundingBox: Optional[TMSBoundingBox] = Field(
-        description="Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS"
+        None,
+        description="Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS",
     )
     tileMatrices: List[TileMatrix] = Field(
         ..., description="Describes scale levels and its tile matrices"
@@ -333,7 +375,7 @@ class TileMatrixSet(BaseModel):
             self._to_geographic = None
             self._from_geographic = None
 
-    @validator("tileMatrices")
+    @field_validator("tileMatrices")
     def sort_tile_matrices(cls, v):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.id))
@@ -345,7 +387,9 @@ class TileMatrixSet(BaseModel):
 
     def __repr__(self):
         """Simplify default pydantic model repr."""
-        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs.__root__}>"
+        return (
+            f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs.root}>"
+        )
 
     @property
     def geographic_crs(self) -> CRSType:
@@ -583,16 +627,14 @@ class TileMatrixSet(BaseModel):
         factor = 1 / matrix_scale[0]
         while not str(zoom) == tile_matrix.id:
             tile_matrix = TileMatrix(
-                **{
-                    "id": str(int(tile_matrix.id) + 1),
-                    "scaleDenominator": tile_matrix.scaleDenominator / factor,
-                    "cellSize": tile_matrix.cellSize / factor,
-                    "pointOfOrigin": tile_matrix.pointOfOrigin,
-                    "tileWidth": tile_matrix.tileWidth,
-                    "tileHeight": tile_matrix.tileHeight,
-                    "matrixWidth": int(tile_matrix.matrixWidth * factor),
-                    "matrixHeight": int(tile_matrix.matrixHeight * factor),
-                }
+                id=str(int(tile_matrix.id) + 1),
+                scaleDenominator=tile_matrix.scaleDenominator / factor,
+                cellSize=tile_matrix.cellSize / factor,
+                pointOfOrigin=tile_matrix.pointOfOrigin,
+                tileWidth=tile_matrix.tileWidth,
+                tileHeight=tile_matrix.tileHeight,
+                matrixWidth=int(tile_matrix.matrixWidth * factor),
+                matrixHeight=int(tile_matrix.matrixHeight * factor),
             )
 
         return tile_matrix
@@ -887,7 +929,7 @@ class TileMatrixSet(BaseModel):
     @cached(  # type: ignore
         LRUCache(maxsize=512),
         key=lambda self: hashkey(
-            self.crs.__root__,
+            self.crs.root,
             self.tileMatrices[0].pointOfOrigin,
             self.tileMatrices[0].matrixWidth,
             self.tileMatrices[0].matrixHeight,
@@ -1053,7 +1095,7 @@ class TileMatrixSet(BaseModel):
             "properties": {
                 "title": f"XYZ tile {xyz}",
                 "grid_name": self.id,
-                "grid_crs": self.crs.__root__,
+                "grid_crs": self.crs.root,
             },
         }
 

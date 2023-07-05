@@ -30,7 +30,7 @@ def test_tile_matrix_set(tileset):
     ts = TileMatrixSet.parse_file(tileset)
     # This would fail if `crs` isn't supported by PROJ
     assert isinstance(ts.crs._pyproj_crs, CRS)
-    assert ts.crs._pyproj_crs == ts.crs.__root__
+    assert ts.crs._pyproj_crs == ts.crs.root
 
 
 def test_tile_matrix_iter():
