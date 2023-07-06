@@ -165,7 +165,7 @@ def ordered_axis_inverted(ordered_axes: List[str]) -> bool:
     return ordered_axes[0].upper() in ["Y", "LAT", "N"]
 
 
-class TMSBoundingBox(BaseModel):
+class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
     """Bounding box
 
     ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/2DBoundingBox.json
@@ -183,11 +183,6 @@ class TMSBoundingBox(BaseModel):
     crs: Optional[CRSType] = None
     orderedAxes: Optional[axesInfo] = None
 
-    class Config:
-        """Configure TMSBoundingBox."""
-
-        arbitrary_types_allowed = True
-
 
 # class variableMatrixWidth(BaseModel):
 #     """Variable Matrix Width Definition
@@ -201,7 +196,7 @@ class TMSBoundingBox(BaseModel):
 #     maxTileRow: int = Field(..., ge=0, multiple_of=1, description="Last tile row where the coalescence factor applies for this tilematrix")
 
 
-class TileMatrix(BaseModel):
+class TileMatrix(BaseModel, extra="forbid"):
     """Tile Matrix Definition
 
     A tile matrix, usually corresponding to a particular zoom level of a TileMatrixSet.
@@ -288,13 +283,8 @@ class TileMatrix(BaseModel):
     ]
     # variableMatrixWidths: Optional[List[variableMatrixWidth]] = Field(description="Describes the rows that has variable matrix width")
 
-    class Config:
-        """Forbid additional items like variableMatrixWidths."""
 
-        extra = "forbid"
-
-
-class TileMatrixSet(BaseModel):
+class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     """Tile Matrix Set Definition
 
     A definition of a tile matrix set following the Tile Matrix Set standard.
@@ -343,11 +333,6 @@ class TileMatrixSet(BaseModel):
     _geographic_crs: CRS = PrivateAttr(default=WGS84_CRS)
     _to_geographic: Transformer = PrivateAttr()
     _from_geographic: Transformer = PrivateAttr()
-
-    class Config:
-        """Configure TileMatrixSet."""
-
-        arbitrary_types_allowed = True
 
     def __init__(self, **data):
         """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
