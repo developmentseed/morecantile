@@ -37,8 +37,9 @@ class TileMatrixSets:
 
         # We lazyload the TMS document only when called
         if isinstance(tms, pathlib.Path):
-            tms = TileMatrixSet.parse_file(tms)
-            self.tms[identifier] = tms
+            with tms.open() as f:
+                tms = TileMatrixSet.model_validate_json(f.read())
+                self.tms[identifier] = tms
 
         return tms
 

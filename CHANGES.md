@@ -1,3 +1,8 @@
+
+## 5.0.0 (unreleased)
+
+* update pydantic requirement to `~=2.0`
+
 ## 4.2.1 (2023-07-02)
 
 * limit pydantic requirement to `~=1.0``
