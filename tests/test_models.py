@@ -520,3 +520,13 @@ def test_boundingbox():
             ],
         }
     )
+
+
+def test_private_attr():
+    """Check private attr."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert "_is_quadtree" not in tms.model_dump()
+    assert "_is_quadtree" in tms.__private_attributes__
+    assert "_geographic_crs" in tms.__private_attributes__
+    assert "_to_geographic" in tms.__private_attributes__
+    assert "_from_geographic" in tms.__private_attributes__

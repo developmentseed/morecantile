@@ -3,18 +3,7 @@
 import math
 import sys
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
 
 from cachetools import LRUCache, cached
 from cachetools.keys import hashkey
@@ -25,8 +14,8 @@ from pydantic import (
     Field,
     PrivateAttr,
     RootModel,
-    conlist,
     field_validator,
+    model_validator,
 )
 from pyproj import CRS, Transformer
 from pyproj.exceptions import CRSError, ProjError
@@ -57,12 +46,7 @@ NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
 WGS84_CRS = CRS.from_epsg(4326)
-
-
-if TYPE_CHECKING:
-    axesInfo = List[str]
-else:
-    axesInfo = conlist(str, min_length=2, max_length=2)
+axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
 
 
 class CRSUri(BaseModel):
@@ -180,8 +164,14 @@ class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
         BoundsType,
         Field(description="A 2D Point in the CRS indicated elsewhere"),
     ]
-    crs: Optional[CRSType] = None
-    orderedAxes: Optional[axesInfo] = None
+    crs: Annotated[
+        Optional[CRSType],
+        Field(description="Coordinate Reference System (CRS)"),
+    ] = None
+    orderedAxes: Annotated[
+        Optional[axesInfo],
+        Field(description="Ordered list of names of the dimensions defined in the CRS"),
+    ] = None
 
 
 # class variableMatrixWidth(BaseModel):
@@ -295,38 +285,55 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
     """
 
-    title: Optional[str] = Field(
-        None,
-        description="Title of this tile matrix set, normally used for display to a human",
-    )
+    title: Annotated[
+        Optional[str],
+        Field(
+            description="Title of this tile matrix set, normally used for display to a human",
+        ),
+    ] = None
     description: Optional[str] = Field(
         None,
         description="Brief narrative description of this tile matrix set, normally available for display to a human",
     )
-    keywords: Optional[List[str]] = Field(
-        None,
-        description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set",
-    )
-    id: Optional[str] = Field(
-        None,
-        pattern=r"^[\w\d_\-]+$",
-        description="Tile matrix set identifier. Implementation of 'identifier'",
-    )
-    uri: Optional[str] = Field(
-        None, description="Reference to an official source for this tileMatrixSet"
-    )
-    orderedAxes: Optional[axesInfo] = None
-    crs: CRSType = Field(..., description="Coordinate Reference System (CRS)")
-    wellKnownScaleSet: Optional[AnyHttpUrl] = Field(
-        None, description="Reference to a well-known scale set"
-    )
-    boundingBox: Optional[TMSBoundingBox] = Field(
-        None,
-        description="Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS",
-    )
-    tileMatrices: List[TileMatrix] = Field(
-        ..., description="Describes scale levels and its tile matrices"
-    )
+    keywords: Annotated[
+        Optional[List[str]],
+        Field(
+            description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set",
+        ),
+    ] = None
+    id: Annotated[
+        Optional[str],
+        Field(
+            pattern=r"^[\w\d_\-]+$",
+            description="Tile matrix set identifier. Implementation of 'identifier'",
+        ),
+    ] = None
+    uri: Annotated[
+        Optional[str],
+        Field(description="Reference to an official source for this tileMatrixSet"),
+    ] = None
+    orderedAxes: Annotated[
+        Optional[axesInfo],
+        Field(description="Ordered list of names of the dimensions defined in the CRS"),
+    ] = None
+    crs: Annotated[
+        CRSType,
+        Field(description="Coordinate Reference System (CRS)"),
+    ]
+    wellKnownScaleSet: Annotated[
+        Optional[AnyHttpUrl],
+        Field(description="Reference to a well-known scale set"),
+    ] = None
+    boundingBox: Annotated[
+        Optional[TMSBoundingBox],
+        Field(
+            description="Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS",
+        ),
+    ] = None
+    tileMatrices: Annotated[
+        List[TileMatrix],
+        Field(description="Describes scale levels and its tile matrices"),
+    ]
 
     # Private attributes
     _is_quadtree: bool = PrivateAttr()
@@ -335,12 +342,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     _from_geographic: Transformer = PrivateAttr()
 
     def __init__(self, **data):
-        """Create PyProj transforms and check if TileMatrixSet supports quadkeys."""
-        if {"supportedCRS", "topLeftCorner"}.intersection(data):
-            raise DeprecationError(
-                "Tile Matrix Set must be version 2.0. Use morecantile <4.0 for TMS 1.0 support"
-            )
-
+        """Set private attributes."""
         super().__init__(**data)
 
         self._is_quadtree = check_quadkey_support(self.tileMatrices)
@@ -361,6 +363,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             )
             self._to_geographic = None
             self._from_geographic = None
+
+    @model_validator(mode="before")
+    def check_for_old_specification(cls, data):
+        """Check for TMS V1.0 keywords."""
+        if {"supportedCRS", "topLeftCorner"}.intersection(data):
+            raise DeprecationError(
+                "Tile Matrix Set must be version 2.0. Use morecantile <4.0 for TMS 1.0 support"
+            )
+        return data
 
     @field_validator("tileMatrices")
     def sort_tile_matrices(cls, v):
