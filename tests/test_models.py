@@ -14,7 +14,7 @@ from rasterio.crs import CRS as rioCRS
 import morecantile
 from morecantile.commons import Tile
 from morecantile.errors import InvalidIdentifier
-from morecantile.models import TileMatrix, TileMatrixSet
+from morecantile.models import CRSType, TileMatrix, TileMatrixSet
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
@@ -520,3 +520,33 @@ def test_boundingbox():
             ],
         }
     )
+
+
+def test_crs_type():
+    """Test CRSType Model."""
+    uri = "http://www.opengis.net/def/crs/EPSG/0/3857"
+    crs = CRSType(__root__=uri)
+    assert crs.__root__ == uri
+
+    # PROJ methods
+    assert crs._pyproj_crs == CRS.from_epsg(3857)
+    assert crs.srs == "http://www.opengis.net/def/crs/EPSG/0/3857"
+    assert crs.to_epsg() == 3857
+    assert crs.to_wkt() == CRS.from_epsg(3857).to_wkt()
+    assert crs.to_proj4() == CRS.from_epsg(3857).to_proj4()
+    assert crs.to_dict() == CRS.from_epsg(3857).to_dict()
+    assert crs.to_json() == CRS.from_epsg(3857).to_json()
+
+    # with Options
+    assert crs.to_epsg(min_confidence=10) == 3857
+    assert crs.to_wkt(pretty=True) == CRS.from_epsg(3857).to_wkt(pretty=True)
+    assert crs.to_proj4(5) == CRS.from_epsg(3857).to_proj4(5)
+    assert crs.to_json(pretty=True) == CRS.from_epsg(3857).to_json(pretty=True)
+
+    wkt = CRS.from_epsg(3857).to_wkt()
+    crs = CRSType(__root__=wkt)
+    assert crs.__root__ == wkt
+    # PROJ methods
+    assert crs._pyproj_crs == CRS.from_epsg(3857)
+    assert crs.srs == wkt
+    assert crs.to_epsg() == 3857
