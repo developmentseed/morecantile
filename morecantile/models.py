@@ -103,25 +103,30 @@ class CRSType(RootModel[Union[str, Union[CRSUri, CRSWKT]]]):
         super().model_post_init(__context)
         self._pyproj_crs = CRS.from_user_input(self.root)
 
-    def to_epsg(self) -> Optional[int]:
+    @property
+    def srs(self) -> str:
+        """return the string form of the user input used to create the CRS."""
+        return self._pyproj_crs.srs
+
+    def to_epsg(self, *args: Any, **kwargs: Any) -> Optional[int]:
         """return EPSG number of the CRS."""
-        return self._pyproj_crs.to_epsg()
+        return self._pyproj_crs.to_epsg(*args, **kwargs)
 
-    def to_wkt(self) -> str:
+    def to_wkt(self, *args: Any, **kwargs: Any) -> str:
         """return WKT version of the CRS."""
-        return self._pyproj_crs.to_wkt()
+        return self._pyproj_crs.to_wkt(*args, **kwargs)
 
-    def to_proj4(self) -> str:
+    def to_proj4(self, *args: Any, **kwargs: Any) -> str:
         """return PROJ4 version of the CRS."""
-        return self._pyproj_crs.to_proj4()
+        return self._pyproj_crs.to_proj4(*args, **kwargs)
 
     def to_dict(self) -> Dict:
         """return DICT version of the CRS."""
         return self._pyproj_crs.to_dict()
 
-    def to_json(self) -> str:
+    def to_json(self, *args: Any, **kwargs: Any) -> str:
         """return JSON version of the CRS."""
-        return self._pyproj_crs.to_json()
+        return self._pyproj_crs.to_json(*args, **kwargs)
 
 
 def CRS_to_uri(crs: CRS) -> str:

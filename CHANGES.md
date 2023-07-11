@@ -3,6 +3,11 @@
 
 * update pydantic requirement to `~=2.0`
 
+## 4.3.0 (2023-07-11)
+
+* add `.srs` property to `CRSType`
+* forward arguments to `pyproj.CRS` methods for `to_epsg()`, `to_wkt()`, `to_proj4()` and `to_json()` CRSType methods
+
 ## 4.2.1 (2023-07-02)
 
 * limit pydantic requirement to `~=1.0``

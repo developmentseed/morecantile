@@ -540,11 +540,18 @@ def test_crs_type():
     assert crs.model_dump() == uri
     # PROJ methods
     assert crs._pyproj_crs == CRS.from_epsg(3857)
+    assert crs.srs == "http://www.opengis.net/def/crs/EPSG/0/3857"
     assert crs.to_epsg() == 3857
     assert crs.to_wkt() == CRS.from_epsg(3857).to_wkt()
     assert crs.to_proj4() == CRS.from_epsg(3857).to_proj4()
     assert crs.to_dict() == CRS.from_epsg(3857).to_dict()
     assert crs.to_json() == CRS.from_epsg(3857).to_json()
+
+    # with Options
+    assert crs.to_epsg(min_confidence=10) == 3857
+    assert crs.to_wkt(pretty=True) == CRS.from_epsg(3857).to_wkt(pretty=True)
+    assert crs.to_proj4(5) == CRS.from_epsg(3857).to_proj4(5)
+    assert crs.to_json(pretty=True) == CRS.from_epsg(3857).to_json(pretty=True)
 
     wkt = CRS.from_epsg(3857).to_wkt()
     crs = CRSType(wkt)
@@ -552,4 +559,5 @@ def test_crs_type():
     assert crs.model_dump() == wkt
     # PROJ methods
     assert crs._pyproj_crs == CRS.from_epsg(3857)
+    assert crs.srs == wkt
     assert crs.to_epsg() == 3857
