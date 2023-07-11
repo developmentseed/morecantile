@@ -111,7 +111,7 @@ class CRSType(BaseModel):
         self._pyproj_crs = CRS.from_user_input(data.get("__root__"))
 
     @property
-    def srs(self) -> Optional[int]:
+    def srs(self) -> str:
         """return the string form of the user input used to create the CRS."""
         return self._pyproj_crs.srs
 
