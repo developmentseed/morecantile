@@ -3,10 +3,9 @@
 import math
 import sys
 import warnings
+from functools import cached_property
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
 
-from cachetools import LRUCache, cached
-from cachetools.keys import hashkey
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -179,16 +178,36 @@ class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
     ] = None
 
 
-# class variableMatrixWidth(BaseModel):
-#     """Variable Matrix Width Definition
+class variableMatrixWidth(BaseModel):
+    """Variable Matrix Width Definition
 
+    ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/variableMatrixWidth.json
+    """
 
-#     ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/blob/master/schemas/tms/2.0/json/variableMatrixWidth.json
-#     """
-
-#     coalesce: int = Field(..., ge=2, multiple_of=1, description="Number of tiles in width that coalesce in a single tile for these rows")
-#     minTileRow: int = Field(..., ge=0, multiple_of=1, description="First tile row where the coalescence factor applies for this tilematrix")
-#     maxTileRow: int = Field(..., ge=0, multiple_of=1, description="Last tile row where the coalescence factor applies for this tilematrix")
+    coalesce: Annotated[
+        int,
+        Field(
+            ge=2,
+            multiple_of=1,
+            description="Number of tiles in width that coalesce in a single tile for these rows",
+        ),
+    ]
+    minTileRow: Annotated[
+        int,
+        Field(
+            ge=0,
+            multiple_of=1,
+            description="First tile row where the coalescence factor applies for this tilematrix",
+        ),
+    ]
+    maxTileRow: Annotated[
+        int,
+        Field(
+            ge=0,
+            multiple_of=1,
+            description="Last tile row where the coalescence factor applies for this tilematrix",
+        ),
+    ]
 
 
 class TileMatrix(BaseModel, extra="forbid"):
@@ -220,7 +239,7 @@ class TileMatrix(BaseModel, extra="forbid"):
     id: Annotated[
         str,
         Field(
-            pattern=r"^[0-9]+$",
+            pattern=r"^\-?[0-9]+$",
             description="Identifier selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile. Implementation of 'identifier'",
         ),
     ]
@@ -276,7 +295,26 @@ class TileMatrix(BaseModel, extra="forbid"):
             description="Height of the matrix (number of tiles in height)",
         ),
     ]
-    # variableMatrixWidths: Optional[List[variableMatrixWidth]] = Field(description="Describes the rows that has variable matrix width")
+    variableMatrixWidths: Annotated[
+        Optional[List[variableMatrixWidth]],
+        Field(description="Describes the rows that has variable matrix width"),
+    ] = None
+
+    def get_coalesce_factor(self, row: int) -> int:
+        """Get Coalesce value for TileMatrix."""
+        if not self.variableMatrixWidths:
+            raise ValueError("TileMatrix has not variableMatrixWidths")
+
+        if row > self.matrixHeight:
+            raise ValueError(
+                f"Row {row} is greater than the TileMatrix height ({self.matrixHeight})"
+            )
+
+        for matrix_width in self.variableMatrixWidths:
+            if matrix_width.maxTileRow >= row >= matrix_width.minTileRow:
+                return matrix_width.coalesce
+
+        return 1
 
 
 class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
@@ -341,7 +379,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
-    _is_quadtree: bool = PrivateAttr()
     _geographic_crs: CRS = PrivateAttr(default=WGS84_CRS)
     _to_geographic: Transformer = PrivateAttr()
     _from_geographic: Transformer = PrivateAttr()
@@ -350,7 +387,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Set private attributes."""
         super().__init__(**data)
 
-        self._is_quadtree = check_quadkey_support(self.tileMatrices)
         self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
 
         try:
@@ -383,6 +419,21 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Sort matrices by identifier"""
         return sorted(v, key=lambda m: int(m.id))
 
+    @cached_property
+    def is_quadtree(self) -> bool:
+        """Check for quadtree support."""
+        return check_quadkey_support(self.tileMatrices)
+
+    @cached_property
+    def is_variable(self) -> bool:
+        """Check if TMS has variable width matrix."""
+        return any(
+            [
+                True if matrix.variableMatrixWidths is not None else False
+                for matrix in self.tileMatrices
+            ]
+        )
+
     def __iter__(self):
         """Iterate over matrices"""
         for matrix in self.tileMatrices:
@@ -394,17 +445,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs.root}>"
         )
 
-    @property
+    @cached_property
     def geographic_crs(self) -> CRSType:
         """Return the TMS's geographic CRS."""
         return self._geographic_crs
 
-    @property
+    @cached_property
     def rasterio_crs(self):
         """Return rasterio CRS."""
         return to_rasterio_crs(self.crs._pyproj_crs)
 
-    @property
+    @cached_property
     def rasterio_geographic_crs(self):
         """Return the geographic CRS as a rasterio CRS."""
         return to_rasterio_crs(self._geographic_crs)
@@ -419,7 +470,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """TileMatrixSet maximum TileMatrix identifier"""
         return int(self.tileMatrices[-1].id)
 
-    @property
+    @cached_property
     def _invert_axis(self) -> bool:
         """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
         return (
@@ -606,6 +657,14 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             if m.id == str(zoom):
                 return m
 
+        #######################################################################
+        # If user wants a deeper matrix we calculate it
+        #######################################################################
+        if self.is_variable:
+            raise InvalidZoomError(
+                f"TileMatrix not found for level: {zoom} - Unable to construct tileMatrix for TMS with variable width"
+            )
+
         matrix_scale = list(
             {
                 round(
@@ -653,6 +712,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs._pyproj_crs)
 
+    def _matrix_origin(self, matrix: TileMatrix) -> Coords:
+        """Return the Origin coordinates of the matrix."""
+        origin_x = (
+            matrix.pointOfOrigin[1] if self._invert_axis else matrix.pointOfOrigin[0]
+        )
+        origin_y = (
+            matrix.pointOfOrigin[0] if self._invert_axis else matrix.pointOfOrigin[1]
+        )
+        return Coords(origin_x, origin_y)
+
     def zoom_for_res(
         self,
         res: float,
@@ -694,13 +763,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         if zoom_level > 0 and abs(res - matrix_res) / matrix_res > 1e-8:
             if zoom_level_strategy.lower() == "lower":
                 zoom_level = max(zoom_level - 1, min_z)
+
             elif zoom_level_strategy.lower() == "upper":
                 zoom_level = min(zoom_level, max_z)
+
             elif zoom_level_strategy.lower() == "auto":
                 if (self._resolution(self.matrix(max(zoom_level - 1, min_z))) / res) < (
                     res / matrix_res
                 ):
                     zoom_level = max(zoom_level - 1, min_z)
+
             else:
                 raise ValueError(
                     f"Invalid strategy: {zoom_level_strategy}. Should be one of lower|upper|auto"
@@ -777,13 +849,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         matrix = self.matrix(zoom)
         res = self._resolution(matrix)
-
-        origin_x = (
-            matrix.pointOfOrigin[1] if self._invert_axis else matrix.pointOfOrigin[0]
-        )
-        origin_y = (
-            matrix.pointOfOrigin[0] if self._invert_axis else matrix.pointOfOrigin[1]
-        )
+        origin_x, origin_y = self._matrix_origin(matrix)
 
         xtile = (
             math.floor((xcoord - origin_x) / float(res * matrix.tileWidth))
@@ -849,17 +915,44 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         matrix = self.matrix(t.z)
         res = self._resolution(matrix)
+        origin_x, origin_y = self._matrix_origin(matrix)
 
-        origin_x = (
-            matrix.pointOfOrigin[1] if self._invert_axis else matrix.pointOfOrigin[0]
-        )
-        origin_y = (
-            matrix.pointOfOrigin[0] if self._invert_axis else matrix.pointOfOrigin[1]
+        cf = 1
+        if matrix.variableMatrixWidths is not None:
+            cf = matrix.get_coalesce_factor(t.y)
+
+        return Coords(
+            origin_x + math.floor(t.x / cf) * res * matrix.tileWidth,
+            origin_y - t.y * res * matrix.tileHeight,
         )
 
-        xcoord = origin_x + t.x * res * matrix.tileWidth
-        ycoord = origin_y - t.y * res * matrix.tileHeight
-        return Coords(xcoord, ycoord)
+    def _lr(self, *tile: Tile) -> Coords:
+        """
+        Return the lower right coordinate of the tile in TMS coordinate reference system.
+
+        Attributes
+        ----------
+        tile: (x, y, z) tile coordinates or a Tile object we want the lower right coordinates of.
+
+        Returns
+        -------
+        Coords: The lower right coordinates of the input tile.
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
+        res = self._resolution(matrix)
+        origin_x, origin_y = self._matrix_origin(matrix)
+
+        cf = 1
+        if matrix.variableMatrixWidths is not None:
+            cf = matrix.get_coalesce_factor(t.y)
+
+        return Coords(
+            origin_x + (math.floor(t.x / cf) + 1) * res * matrix.tileWidth,
+            origin_y - (t.y + 1) * res * matrix.tileHeight,
+        )
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
         """
@@ -877,7 +970,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         t = _parse_tile_arg(*tile)
 
         left, top = self._ul(t)
-        right, bottom = self._ul(Tile(t.x + 1, t.y + 1, t.z))
+        right, bottom = self._lr(t)
         return BoundingBox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
@@ -898,6 +991,24 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         x, y = self._ul(t)
         return Coords(*self.lnglat(x, y))
 
+    def lr(self, *tile: Tile) -> Coords:
+        """
+        Return the lower right coordinates of the tile in geographic coordinate reference system.
+
+        Attributes
+        ----------
+        tile (tuple or Tile): (x, y, z) tile coordinates or a Tile object we want the lower right geographic coordinates of.
+
+        Returns
+        -------
+        Coords: The lower right geographic coordinates of the input tile.
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._lr(t)
+        return Coords(*self.lnglat(x, y))
+
     def bounds(self, *tile: Tile) -> BoundingBox:
         """
         Return the bounding box of the tile in geographic coordinate reference system.
@@ -914,7 +1025,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         t = _parse_tile_arg(*tile)
 
         left, top = self.ul(t)
-        right, bottom = self.ul(Tile(t.x + 1, t.y + 1, t.z))
+        right, bottom = self.lr(t)
         return BoundingBox(left, bottom, right, top)
 
     @property
@@ -924,20 +1035,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         matrix = self.matrix(zoom)
 
         left, top = self._ul(Tile(0, 0, zoom))
-        right, bottom = self._ul(Tile(matrix.matrixWidth, matrix.matrixHeight, zoom))
-
+        right, bottom = self._lr(
+            Tile(matrix.matrixWidth - 1, matrix.matrixHeight - 1, zoom)
+        )
         return BoundingBox(left, bottom, right, top)
 
-    @property
-    @cached(  # type: ignore
-        LRUCache(maxsize=512),
-        key=lambda self: hashkey(
-            self.crs.root,
-            self.tileMatrices[0].pointOfOrigin,
-            self.tileMatrices[0].matrixWidth,
-            self.tileMatrices[0].matrixHeight,
-        ),
-    )
+    @cached_property
     def bbox(self):
         """Return TMS bounding box in geographic coordinate reference system."""
         left, bottom, right, top = self.xy_bbox
@@ -1138,7 +1241,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         str
 
         """
-        if not self._is_quadtree:
+        if not self.is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
@@ -1170,7 +1273,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         Tile
 
         """
-        if not self._is_quadtree:
+        if not self.is_quadtree:
             raise NoQuadkeySupport(
                 "This Tile Matrix Set doesn't support 2 x 2 quadkeys."
             )
@@ -1291,6 +1394,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         target_zoom = t.z - 1 if zoom is None else zoom
 
+        # buffer value to apply on bbox
         res = self._resolution(self.matrix(t.z)) / 10.0
 
         bbox = self.xy_bounds(t)
@@ -1329,9 +1433,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         target_zoom = t.z + 1 if zoom is None else zoom
 
-        bbox = self.xy_bounds(t)
+        # buffer value to apply on bbox
         res = self._resolution(self.matrix(t.z)) / 10.0
 
+        bbox = self.xy_bounds(t)
         ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
         lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
 
