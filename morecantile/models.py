@@ -922,7 +922,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             cf = matrix.get_coalesce_factor(t.y)
 
         return Coords(
-            origin_x + math.floor(t.x / cf) * res * matrix.tileWidth,
+            origin_x + math.floor(t.x / cf) * res * cf * matrix.tileWidth,
             origin_y - t.y * res * matrix.tileHeight,
         )
 
@@ -950,7 +950,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             cf = matrix.get_coalesce_factor(t.y)
 
         return Coords(
-            origin_x + (math.floor(t.x / cf) + 1) * res * matrix.tileWidth,
+            origin_x + (math.floor(t.x / cf) + 1) * res * cf * matrix.tileWidth,
             origin_y - (t.y + 1) * res * matrix.tileHeight,
         )
 
