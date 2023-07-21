@@ -1,6 +1,7 @@
 """Tests for morecantile."""
 
 import math
+import warnings
 
 import mercantile
 import pytest
@@ -277,8 +278,9 @@ def test_lnglat():
     """test lnglat."""
     tms = morecantile.tms.get("WebMercatorQuad")
 
-    with pytest.warns(None) as w:
-        assert not w
+    # Make sure not warning is raised
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         xy = (-8366731.739810849, -1655181.9927159143)
         lnglat = tms.lnglat(*xy)
         assert round(lnglat.x, 5) == -75.15963
