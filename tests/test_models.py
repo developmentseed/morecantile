@@ -62,36 +62,6 @@ def test_tile_matrix_order():
     assert int(tms_ordered.tileMatrices[-1].id) > int(tms_ordered.tileMatrices[0].id)
 
 
-def test_tile_matrix():
-    """SHould raise Validation error with unsupported variable size TMS."""
-    variable_matrix = {
-        "type": "TileMatrixType",
-        "id": "3",
-        "scaleDenominator": 34942641.5017948,
-        "pointOfOrigin": [-180, 90],
-        "tileWidth": 256,
-        "tileHeight": 256,
-        "matrixWidth": 16,
-        "matrixHeight": 8,
-        "variableMatrixWidth": [
-            {
-                "type": "VariableMatrixWidthType",
-                "coalesce": 2,
-                "minTileRow": 0,
-                "maxTileRow": 0,
-            },
-            {
-                "type": "VariableMatrixWidthType",
-                "coalesce": 2,
-                "minTileRow": 3,
-                "maxTileRow": 3,
-            },
-        ],
-    }
-    with pytest.raises(ValidationError):
-        TileMatrix(**variable_matrix)
-
-
 def test_invalid_tms():
     """should raise an error when tms name is not found."""
     with pytest.raises(InvalidIdentifier):

@@ -305,7 +305,10 @@ class TileMatrix(BaseModel, extra="forbid"):
         if not self.variableMatrixWidths:
             raise ValueError("TileMatrix has not variableMatrixWidths")
 
-        if row > self.matrixHeight:
+        if row < 0:
+            raise ValueError(f"Cannot find coalesce factor for Negative Row ({row})")
+
+        if row > self.matrixHeight - 1:
             raise ValueError(
                 f"Row {row} is greater than the TileMatrix height ({self.matrixHeight})"
             )
@@ -446,7 +449,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         )
 
     @cached_property
-    def geographic_crs(self) -> CRSType:
+    def geographic_crs(self) -> CRS:
         """Return the TMS's geographic CRS."""
         return self._geographic_crs
 
@@ -685,6 +688,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             UserWarning,
         )
 
+        # TODO: what if we want to construct a matrix for a level up ?
         tile_matrix = self.tileMatrices[-1]
         factor = 1 / matrix_scale[0]
         while not str(zoom) == tile_matrix.id:
@@ -862,18 +866,18 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             else 0
         )
 
-        # # avoid out-of-range tiles
+        # avoid out-of-range tiles
         if xtile < 0:
             xtile = 0
 
         if ytile < 0:
             ytile = 0
 
-        if xtile > matrix.matrixWidth:
-            xtile = matrix.matrixWidth
+        if xtile >= matrix.matrixWidth:
+            xtile = matrix.matrixWidth - 1
 
-        if ytile > matrix.matrixHeight:
-            ytile = matrix.matrixHeight
+        if ytile >= matrix.matrixHeight:
+            ytile = matrix.matrixHeight - 1
 
         return Tile(x=xtile, y=ytile, z=zoom)
 
@@ -1426,6 +1430,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         list: list of Tile
 
         """
+        print(tile)
         t = _parse_tile_arg(*tile)
 
         if zoom is not None and t.z > zoom:
