@@ -29,5 +29,4 @@ repos:
         language_version: python
         additional_dependencies:
         - types-attrs
-        - types-cachetools
         - pydantic~=2.0

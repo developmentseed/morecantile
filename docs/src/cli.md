@@ -46,17 +46,19 @@ Usage: morecantile tiles [OPTIONS] [ZOOM] [INPUT]
 Options:
   --identifier TileMatrixSet identifier.
                One of :
-                - LINZAntarticaMapTilegrid
-                - EuropeanETRS89_LAEAQuad
+                - CDB1GlobalGrid
                 - CanadianNAD83_LCC
-                - UPSArcticWGS84Quad
+                - EuropeanETRS89_LAEAQuad
+                - GNOSISGlobalGrid
+                - LINZAntarticaMapTilegrid
                 - NZTM2000Quad
-                - UTM31WGS84Quad
                 - UPSAntarcticWGS84Quad
-                - WorldMercatorWGS84Quad
-                - WorldCRS84Quad
-                - WGS1984Quad
+                - UPSArcticWGS84Quad
+                - UTM31WGS84Quad
                 - WebMercatorQuad
+                - WGS1984Quad
+                - WorldCRS84Quad
+                - WorldMercatorWGS84Quad
   --seq / --lf                    Write a RS-delimited JSON sequence (default is LF).
   --help                          Show this message and exit.
 ```
@@ -87,17 +89,19 @@ Usage: morecantile shapes [OPTIONS] [INPUT]
 Options:
   --identifier TileMatrixSet identifier.
                One of :
-                - LINZAntarticaMapTilegrid
-                - EuropeanETRS89_LAEAQuad
+                - CDB1GlobalGrid
                 - CanadianNAD83_LCC
-                - UPSArcticWGS84Quad
+                - EuropeanETRS89_LAEAQuad
+                - GNOSISGlobalGrid
+                - LINZAntarticaMapTilegrid
                 - NZTM2000Quad
-                - UTM31WGS84Quad
                 - UPSAntarcticWGS84Quad
-                - WorldMercatorWGS84Quad
-                - WorldCRS84Quad
-                - WGS1984Quad
+                - UPSArcticWGS84Quad
+                - UTM31WGS84Quad
                 - WebMercatorQuad
+                - WGS1984Quad
+                - WorldCRS84Quad
+                - WorldMercatorWGS84Quad
   --precision INTEGER             Decimal precision of coordinates.
   --indent INTEGER                Indentation level for JSON output
   --compact / --no-compact        Use compact separators (',', ':').
@@ -147,17 +151,19 @@ Usage: morecantile tms [OPTIONS]
 Options:
   --identifier TileMatrixSet identifier.
                One of :
-                - LINZAntarticaMapTilegrid
-                - EuropeanETRS89_LAEAQuad
+                - CDB1GlobalGrid
                 - CanadianNAD83_LCC
-                - UPSArcticWGS84Quad
+                - EuropeanETRS89_LAEAQuad
+                - GNOSISGlobalGrid
+                - LINZAntarticaMapTilegrid
                 - NZTM2000Quad
-                - UTM31WGS84Quad
                 - UPSAntarcticWGS84Quad
-                - WorldMercatorWGS84Quad
-                - WorldCRS84Quad
-                - WGS1984Quad
+                - UPSArcticWGS84Quad
+                - UTM31WGS84Quad
                 - WebMercatorQuad
+                - WGS1984Quad
+                - WorldCRS84Quad
+                - WorldMercatorWGS84Quad
   --help                          Show this message and exit.
 ```
 
