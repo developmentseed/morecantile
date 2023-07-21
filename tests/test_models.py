@@ -27,7 +27,8 @@ tms_v1_dir = os.path.join(os.path.dirname(__file__), "fixtures", "v1_tms")
 def test_tile_matrix_set(tileset):
     """Load TileMatrixSet in models."""
     # Confirm model validation is working
-    ts = TileMatrixSet.parse_file(tileset)
+    with open(tileset, "r") as f:
+        ts = TileMatrixSet.model_validate_json(f.read())
     # This would fail if `crs` isn't supported by PROJ
     assert isinstance(ts.crs._pyproj_crs, CRS)
     assert ts.crs._pyproj_crs == ts.crs.root
@@ -282,10 +283,9 @@ def test_zoom_for_res():
 def test_schema():
     """Translate Model to Schema."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert tms.schema()
-    assert tms.schema_json()
-    assert tms.json(exclude_none=True)
-    assert tms.dict(exclude_none=True)
+    assert tms.model_json_schema()
+    assert tms.model_dump_json(exclude_none=True)
+    assert tms.model_dump(exclude_none=True)
 
     crs = CRS.from_proj4(
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
@@ -293,19 +293,17 @@ def test_schema():
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
     with pytest.warns(UserWarning):
         tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
-    assert tms.schema()
-    assert tms.schema_json()
-    assert tms.dict(exclude_none=True)
-    json_doc = json.loads(tms.json(exclude_none=True))
+    assert tms.model_json_schema()
+    assert tms.model_dump(exclude_none=True)
+    json_doc = json.loads(tms.model_dump_json(exclude_none=True))
     assert json_doc["crs"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
 
     crs = CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
     tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
-    assert tms.schema()
-    assert tms.schema_json()
-    assert tms.json(exclude_none=True)
-    json_doc = json.loads(tms.json(exclude_none=True))
+    assert tms.model_json_schema()
+    assert tms.model_dump_json(exclude_none=True)
+    json_doc = json.loads(tms.model_dump_json(exclude_none=True))
     assert json_doc["crs"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
 
 

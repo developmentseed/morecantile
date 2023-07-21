@@ -185,7 +185,7 @@ From Pydantic docs:
 
 Pydantic model enforce the TileMatrixSet OGC specification for the whole project by validating each items.
 
-Because we use pydantic model to handle the TileMatrixSets you can uses pydantic's [helper functions](https://pydantic-docs.helpmanual.io/usage/models/#helper-functions) directly.
+Because we use pydantic model to handle the TileMatrixSets you can uses pydantic's [methods](https://docs.pydantic.dev/2.0/usage/models/#model-methods-and-properties) directly.
 
 ```python
 import morecantile
@@ -195,8 +195,8 @@ my_tms_doc = "~/a_tms_doc.json"
 tms = morecantile.TileMatrixSet.parse_file(my_tms_doc)
 
 # print the TMS as json
-print(tms.json(exclude_none=True))
+print(tms.model_dump_json(exclude_none=True))
 
 # print the TMS as dict
-print(tms.dict(exclude_none=True))
+print(tms.model_dump(exclude_none=True))
 ```
