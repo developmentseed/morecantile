@@ -1,5 +1,6 @@
 """Tests of the morecantile CLI"""
 
+import pytest
 from click.testing import CliRunner
 
 from morecantile.scripts.cli import cli
@@ -53,30 +54,33 @@ def test_cli_shapes():
     assert "FeatureCollection" in result.output
 
     # geojson is in WebMercator Projection
-    result = runner.invoke(
-        cli, ["shapes", "[106, 193, 9]", "--extents", "--projected", "--precision", "3"]
-    )
-    assert result.exit_code == 0
-    assert result.output == "-11740727.545 4852834.052 -11662456.028 4931105.569\n"
+    with pytest.warns(UserWarning):
+        result = runner.invoke(
+            cli,
+            ["shapes", "[106, 193, 9]", "--extents", "--projected", "--precision", "3"],
+        )
+        assert result.exit_code == 0
+        assert result.output == "-11740727.545 4852834.052 -11662456.028 4931105.569\n"
 
-    # JSON text sequences of bboxes are output.
-    result = runner.invoke(
-        cli,
-        [
-            "shapes",
-            "[106, 193, 9]",
-            "--seq",
-            "--bbox",
-            "--projected",
-            "--precision",
-            "3",
-        ],
-    )
-    assert result.exit_code == 0
-    assert (
-        result.output
-        == "\x1e\n[-11740727.545, 4852834.052, -11662456.028, 4931105.569]\n"
-    )
+    with pytest.warns(UserWarning):
+        # JSON text sequences of bboxes are output.
+        result = runner.invoke(
+            cli,
+            [
+                "shapes",
+                "[106, 193, 9]",
+                "--seq",
+                "--bbox",
+                "--projected",
+                "--precision",
+                "3",
+            ],
+        )
+        assert result.exit_code == 0
+        assert (
+            result.output
+            == "\x1e\n[-11740727.545, 4852834.052, -11662456.028, 4931105.569]\n"
+        )
 
     # shapes_props_fid
     result = runner.invoke(
