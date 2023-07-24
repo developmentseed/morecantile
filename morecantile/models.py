@@ -1430,7 +1430,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         list: list of Tile
 
         """
-        print(tile)
         t = _parse_tile_arg(*tile)
 
         if zoom is not None and t.z > zoom:
