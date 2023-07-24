@@ -1,5 +1,5 @@
 
-## 5.0.0 (unreleased)
+## 5.0.0 (2023-07-24)
 
 * update pydantic requirement to `~=2.0`
 
