@@ -15,7 +15,7 @@ from morecantile.errors import (
 )
 from morecantile.utils import is_power_of_two, meters_per_unit
 
-DEFAULT_GRID_COUNT = 11
+DEFAULT_GRID_COUNT = 13
 
 
 def test_default_grids():

@@ -37,10 +37,9 @@ Morecantile is like [mercantile](https://github.com/mapbox/mercantile) (the best
 
 | Morecantile Version | OGC Specification Version | Link
 | ------------------- | ------------------------- |---------
-| 4.0                 | 2.0                       | https://docs.ogc.org/is/17-083r4/17-083r4.html
-| 3.0 and earlier     | 1.0                       | http://docs.opengeospatial.org/is/17-083r2/17-083r2.html
+| >=4.0               | 2.0                       | https://docs.ogc.org/is/17-083r4/17-083r4.html
+| =<3.0               | 1.0                       | http://docs.opengeospatial.org/is/17-083r2/17-083r2.html
 
-**Note**: Variable matrix width tile set are not supported.
 
 ## Install
 
@@ -92,10 +91,12 @@ More info can be found at https://developmentseed.org/morecantile/usage/
 
 ### Defaults Grids
 
-`morecantile` provides a set of default TMS grids:
+`morecantile` provides a set of default TileMatrixSets:
 
+- **CDB1GlobalGrid** \*: CDB 1 Global Grid - EPGS:4326 (WGS84)
 - **CanadianNAD83_LCC**: Lambert conformal conic NAD83 for Canada - EPSG:3978
 - **EuropeanETRS89_LAEAQuad**: ETRS89-extended / LAEA Europe - EPGS:3035
+- **GNOSISGlobalGrid** \*: GNOSIS Global Grid - EPGS:4326 (WGS84)
 - **LINZAntarticaMapTilegrid**: LINZ Antarctic Map Tile Grid (Ross Sea Region) - EPSG:5482
 - **NZTM2000Quad**: LINZ NZTM2000 Map Tile Grid - EPSG:2193
 - **UPSAntarcticWGS84Quad**: Universal Polar Stereographic WGS 84 Quad for Antarctic - EPSG:5042
@@ -105,6 +106,8 @@ More info can be found at https://developmentseed.org/morecantile/usage/
 - **WGS1984Quad**: EPSG:4326 for the World - EPGS:4326 (WGS84)
 - **WorldCRS84Quad**: CRS84 for the World
 - **WorldMercatorWGS84Quad**: Elliptical Mercator projection - EPGS:3395
+
+\* TileMatrixSets with variable Matrix Width (see https://docs.ogc.org/is/17-083r4/17-083r4.html#toc15)
 
 ref: https://schemas.opengis.net/tms/2.0/json/examples/tilematrixset/
 

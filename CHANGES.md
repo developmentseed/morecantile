@@ -3,6 +3,18 @@
 
 * update pydantic requirement to `~=2.0`
 
+* add support for TileMatrixSets with Variable Matrix Width
+
+* add `variableMatrixWidths` to the `TileMatrix` model
+
+* add `TileMatrixSet._lr()` (and `lr()`) to retrieve the lower right coordinates of a tile (instead of using upper-left of tile+1)
+
+* switch to `functools.cached_property` to cache properties (instead of cachetools.LRUcache)
+
+* rename `_is_quadtree` property to `is_quadtree` in `TileMatrixSet` model
+
+* fix possible bug in `TileMatrixSet._tile()` (and `.tile()`) method to make sure x or y are not greater than `matrixWidth - 1` or `matrixHeight - 1`
+
 ## 4.3.0 (2023-07-11)
 
 * add `.srs` property to `CRSType`

@@ -62,36 +62,6 @@ def test_tile_matrix_order():
     assert int(tms_ordered.tileMatrices[-1].id) > int(tms_ordered.tileMatrices[0].id)
 
 
-def test_tile_matrix():
-    """SHould raise Validation error with unsupported variable size TMS."""
-    variable_matrix = {
-        "type": "TileMatrixType",
-        "id": "3",
-        "scaleDenominator": 34942641.5017948,
-        "pointOfOrigin": [-180, 90],
-        "tileWidth": 256,
-        "tileHeight": 256,
-        "matrixWidth": 16,
-        "matrixHeight": 8,
-        "variableMatrixWidth": [
-            {
-                "type": "VariableMatrixWidthType",
-                "coalesce": 2,
-                "minTileRow": 0,
-                "maxTileRow": 0,
-            },
-            {
-                "type": "VariableMatrixWidthType",
-                "coalesce": 2,
-                "minTileRow": 3,
-                "maxTileRow": 3,
-            },
-        ],
-    }
-    with pytest.raises(ValidationError):
-        TileMatrix(**variable_matrix)
-
-
 def test_invalid_tms():
     """should raise an error when tms name is not found."""
     with pytest.raises(InvalidIdentifier):
@@ -112,12 +82,14 @@ def test_invalid_tms():
         ("WGS1984Quad", False),
         ("WorldCRS84Quad", False),
         ("WebMercatorQuad", True),
+        ("CDB1GlobalGrid", False),
+        ("GNOSISGlobalGrid", False),
     ],
 )
 def test_quadkey_support(name, result):
     """test for Quadkey support."""
     tms = morecantile.tms.get(name)
-    assert tms._is_quadtree == result
+    assert tms.is_quadtree == result
 
 
 def test_quadkey():
@@ -400,11 +372,36 @@ def test_from_v1(identifier, file, crs):
         ("WorldCRS84Quad", False),
         ("WGS1984Quad", True),
         ("WebMercatorQuad", False),
+        ("CDB1GlobalGrid", True),
+        ("GNOSISGlobalGrid", True),
     ],
 )
 def test_inverted_tms(id, result):
     """Make sure _invert_axis return the correct result."""
     assert morecantile.tms.get(id)._invert_axis == result
+
+
+@pytest.mark.parametrize(
+    "id,result",
+    [
+        ("LINZAntarticaMapTilegrid", False),
+        ("EuropeanETRS89_LAEAQuad", False),
+        ("CanadianNAD83_LCC", False),
+        ("UPSArcticWGS84Quad", False),
+        ("NZTM2000Quad", False),
+        ("UTM31WGS84Quad", False),
+        ("UPSAntarcticWGS84Quad", False),
+        ("WorldMercatorWGS84Quad", False),
+        ("WorldCRS84Quad", False),
+        ("WGS1984Quad", False),
+        ("WebMercatorQuad", False),
+        ("CDB1GlobalGrid", True),
+        ("GNOSISGlobalGrid", True),
+    ],
+)
+def test_variable_tms(id, result):
+    """Make sure is_variable return the correct result."""
+    assert morecantile.tms.get(id).is_variable == result
 
 
 @pytest.mark.parametrize(
@@ -523,8 +520,6 @@ def test_boundingbox():
 def test_private_attr():
     """Check private attr."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert "_is_quadtree" not in tms.model_dump()
-    assert "_is_quadtree" in tms.__private_attributes__
     assert "_geographic_crs" in tms.__private_attributes__
     assert "_to_geographic" in tms.__private_attributes__
     assert "_from_geographic" in tms.__private_attributes__
