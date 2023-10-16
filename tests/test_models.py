@@ -554,3 +554,20 @@ def test_crs_type():
     assert crs._pyproj_crs == CRS.from_epsg(3857)
     assert crs.srs == wkt
     assert crs.to_epsg() == 3857
+
+
+@pytest.mark.parametrize(
+    ("rendering_pixel_size", "expected_scale_denominator"),
+    [
+        (0.00028, 279700977.9575893),
+        (0.000264, 296652552.3792614),
+    ],
+)
+def test_rendering_pixel_size(rendering_pixel_size, expected_scale_denominator):
+    """Check rendering pixel size is used to compute scaleDenominator"""
+    crs = CRS.from_epsg(3857)
+    extent = [-20026376.39, -20048966.10, 20026376.39, 20048966.10]
+    tms = morecantile.TileMatrixSet.custom(
+        extent, crs, id="MyCustomTmsEPSG3857", rendering_pixel_size=rendering_pixel_size
+    )
+    assert tms.matrix(1).scaleDenominator == expected_scale_denominator

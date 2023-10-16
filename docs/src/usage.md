@@ -105,6 +105,8 @@ Here are the available options:
 
 - **geographic_crs** (*pyproj.CRS, defaults to `EPSG:4326`*): Geographic (lat,lon) coordinate reference system
 
+- **rendering_pixel_size** (*float, defaults to `0.00028`*): Size in meters of an on-screen pixel
+
 
 ```python
 import morecantile

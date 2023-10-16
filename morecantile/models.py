@@ -300,6 +300,13 @@ class TileMatrix(BaseModel, extra="forbid"):
         Field(description="Describes the rows that has variable matrix width"),
     ] = None
 
+    renderingPixelSize: Annotated[
+        float,
+        Field(
+            description="The physical size (in meters) of a pixel when rendered on a screen"
+        ),
+    ] = 0.28e-3
+
     def get_coalesce_factor(self, row: int) -> int:
         """Get Coalesce value for TileMatrix."""
         if not self.variableMatrixWidths:
@@ -553,6 +560,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
         geographic_crs: CRS = WGS84_CRS,
+        rendering_pixel_size: float = 0.28e-3,
         **kwargs: Any,
     ):
         """
@@ -585,6 +593,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Tile Matrix Set identifier
         geographic_crs: pyproj.CRS
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+        rendering_pixel_size: float
+            Physical size (in meters) of a pixel when rendered on a screen (default is 0.28e-3)
         kwargs: Any
             Attributes to forward to the TileMatrixSet
 
@@ -621,13 +631,14 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 TileMatrix(
                     **{
                         "id": str(zoom),
-                        "scaleDenominator": res * mpu / 0.00028,
+                        "scaleDenominator": res * mpu / rendering_pixel_size,
                         "cellSize": res,
                         "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
                         "matrixWidth": matrix_scale[0] * 2**zoom,
                         "matrixHeight": matrix_scale[1] * 2**zoom,
+                        "renderingPixelSize": rendering_pixel_size,
                     }
                 )
             )
@@ -713,8 +724,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
           The pixel size of the tile can be obtained from the scaleDenominator
           by multiplying the later by 0.28 10-3 / metersPerUnit.
 
+        Note that 0.28e-3 is a standardized rendering pixel size representing the physical size
+        of a pixel when rendered on a screen. Some usages might favor a different size, which is
+        why this default value can be overridden when constructing a custom TileMatrixSet.
         """
-        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs._pyproj_crs)
+        return (
+            matrix.scaleDenominator
+            * matrix.renderingPixelSize
+            / meters_per_unit(self.crs._pyproj_crs)
+        )
 
     def _matrix_origin(self, matrix: TileMatrix) -> Coords:
         """Return the Origin coordinates of the matrix."""
