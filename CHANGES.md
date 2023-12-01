@@ -1,4 +1,8 @@
 
+## 5.0.1 (2023-12-01)
+
+* Remove *alias* tiles in `.parent()`, `.children()`, `.neighbors()` and `.tiles()` methods for Variable Matrix Width TileMatrixSets (https://github.com/developmentseed/morecantile/pull/136)
+
 ## 5.0.0 (2023-07-24)
 
 * update pydantic requirement to `~=2.0`
