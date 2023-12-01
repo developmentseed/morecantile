@@ -104,11 +104,84 @@ def test_gnosisg():
     tiles = gnosisg_tms.tiles(-180, -90, 180, 90, [0])
     assert len(list(tiles)) == 8
 
-    tiles = gnosisg_tms.tiles(-180, -90, 180, 90, [1])
-    assert len(list(tiles)) == 32
+    #############################
+    # CHECK WE DON'T HAVE ALIASES
+    tiles = list(gnosisg_tms.tiles(-180, -90, 180, 90, [1]))
+    assert len(tiles) == 24
+    assert Tile(1, 0, 1) not in tiles
 
+    # make sure the aliased tiles are not added
     assert len(gnosisg_tms.parent(Tile(0, 0, 1))) == 1
-    assert len(gnosisg_tms.parent(Tile(0, 0, 2))) == 2
-    assert len(gnosisg_tms.parent(Tile(0, 0, 3))) == 4
+    assert len(gnosisg_tms.parent(Tile(0, 0, 2))) == 1
+    assert len(gnosisg_tms.parent(Tile(0, 0, 3))) == 1
+    assert len(gnosisg_tms.children(Tile(0, 0, 0), zoom=1)) == 3
+    assert len(gnosisg_tms.children(Tile(0, 0, 0), zoom=2)) == 11
+    assert len(gnosisg_tms.children(Tile(0, 1, 1), zoom=2)) == 4
 
-    assert len(gnosisg_tms.children(Tile(0, 0, 0), zoom=1)) == 4
+    # test neighbors
+    tiles = gnosisg_tms.neighbors(Tile(0, 0, 1))
+    assert tiles == [
+        Tile(x=0, y=1, z=1),
+        Tile(x=1, y=1, z=1),
+        Tile(x=2, y=0, z=1),
+        Tile(x=2, y=1, z=1),
+    ]
+
+    tiles = gnosisg_tms.neighbors(Tile(2, 0, 1))
+    assert tiles == [
+        Tile(x=0, y=0, z=1),
+        Tile(x=1, y=1, z=1),
+        Tile(x=2, y=1, z=1),
+        Tile(x=3, y=1, z=1),
+        Tile(x=4, y=0, z=1),
+        Tile(x=4, y=1, z=1),
+    ]
+
+    tiles = gnosisg_tms.neighbors(Tile(6, 0, 1))
+    assert tiles == [
+        Tile(x=4, y=0, z=1),
+        Tile(x=5, y=1, z=1),
+        Tile(x=6, y=1, z=1),
+        Tile(x=7, y=1, z=1),
+    ]
+
+    tiles = gnosisg_tms.neighbors(Tile(0, 1, 1))
+    assert tiles == [
+        Tile(x=0, y=0, z=1),
+        Tile(x=0, y=2, z=1),
+        Tile(x=1, y=1, z=1),
+        Tile(x=1, y=2, z=1),
+    ]
+
+    tiles = gnosisg_tms.neighbors(Tile(3, 1, 1))
+    assert tiles == [
+        Tile(x=2, y=0, z=1),
+        Tile(x=2, y=1, z=1),
+        Tile(x=2, y=2, z=1),
+        Tile(x=3, y=2, z=1),
+        Tile(x=4, y=0, z=1),
+        Tile(x=4, y=1, z=1),
+        Tile(x=4, y=2, z=1),
+    ]
+
+    tiles = gnosisg_tms.neighbors(Tile(0, 3, 1))
+    assert tiles == [
+        Tile(x=0, y=2, z=1),
+        Tile(x=1, y=2, z=1),
+        Tile(x=2, y=2, z=1),
+        Tile(x=2, y=3, z=1),
+    ]
+
+    # assert alias tile have the same neighbors
+    assert gnosisg_tms.neighbors(Tile(0, 0, 1)) == gnosisg_tms.neighbors(Tile(1, 0, 1))
+
+    assert gnosisg_tms.tile(-180, 90, 2) == Tile(0, 0, 2)
+    assert gnosisg_tms.tile(-150, 90, 2) == Tile(0, 0, 2)
+    assert gnosisg_tms.tile(-80, 90, 2) == Tile(4, 0, 2)
+    assert gnosisg_tms.tile(-180, -90, 2) == Tile(0, 7, 2)
+    assert gnosisg_tms.tile(-150, -90, 2) == Tile(0, 7, 2)
+    assert gnosisg_tms.tile(-80, -90, 2) == Tile(4, 7, 2)
+
+    # Ignore coalescence and return alias
+    assert gnosisg_tms.tile(-150, 90, 2, ignore_coalescence=True) == Tile(1, 0, 2)
+    assert gnosisg_tms.tile(150, -90, 2, ignore_coalescence=True) == Tile(14, 7, 2)

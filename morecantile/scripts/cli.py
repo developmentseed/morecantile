@@ -534,8 +534,16 @@ def tms_to_geojson(  # noqa: C901
     col_xs = []
     col_ys = []
 
-    for x in range(0, matrix.matrixWidth):
-        for y in range(0, matrix.matrixHeight):
+    for y in range(0, matrix.matrixHeight):
+        cf = (
+            matrix.get_coalesce_factor(y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
+        for x in range(0, matrix.matrixWidth):
+            if cf != 1 and x % cf:
+                continue
+
             feature = tms.feature(
                 (x, y, level),
                 projected=projected,
