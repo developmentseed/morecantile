@@ -835,7 +835,13 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         return lng, lat
 
-    def _tile(self, xcoord: float, ycoord: float, zoom: int) -> Tile:
+    def _tile(
+        self,
+        xcoord: float,
+        ycoord: float,
+        zoom: int,
+        ignore_coalescence: bool = True,
+    ) -> Tile:
         """
         Get the tile containing a Point (in TMS CRS).
 
@@ -867,21 +873,37 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         )
 
         # avoid out-of-range tiles
-        if xtile < 0:
-            xtile = 0
-
         if ytile < 0:
             ytile = 0
-
-        if xtile >= matrix.matrixWidth:
-            xtile = matrix.matrixWidth - 1
 
         if ytile >= matrix.matrixHeight:
             ytile = matrix.matrixHeight - 1
 
+        if xtile < 0:
+            xtile = 0
+
+        if xtile >= matrix.matrixWidth:
+            xtile = matrix.matrixWidth - 1
+
+        if not ignore_coalescence:
+            cf = (
+                matrix.get_coalesce_factor(ytile)
+                if matrix.variableMatrixWidths is not None
+                else 1
+            )
+            if cf != 1 and xtile % cf:
+                xtile -= xtile % cf
+
         return Tile(x=xtile, y=ytile, z=zoom)
 
-    def tile(self, lng: float, lat: float, zoom: int, truncate=False) -> Tile:
+    def tile(
+        self,
+        lng: float,
+        lat: float,
+        zoom: int,
+        truncate=False,
+        ignore_coalescence: bool = False,
+    ) -> Tile:
         """
         Get the tile for a given geographic longitude and latitude pair.
 
@@ -900,7 +922,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         """
         x, y = self.xy(lng, lat, truncate=truncate)
-        return self._tile(x, y, zoom)
+        return self._tile(x, y, zoom, ignore_coalescence=ignore_coalescence)
 
     def _ul(self, *tile: Tile) -> Coords:
         """
@@ -921,10 +943,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         res = self._resolution(matrix)
         origin_x, origin_y = self._matrix_origin(matrix)
 
-        cf = 1
-        if matrix.variableMatrixWidths is not None:
-            cf = matrix.get_coalesce_factor(t.y)
-
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
         return Coords(
             origin_x + math.floor(t.x / cf) * res * cf * matrix.tileWidth,
             origin_y - t.y * res * matrix.tileHeight,
@@ -949,10 +972,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         res = self._resolution(matrix)
         origin_x, origin_y = self._matrix_origin(matrix)
 
-        cf = 1
-        if matrix.variableMatrixWidths is not None:
-            cf = matrix.get_coalesce_factor(t.y)
-
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
         return Coords(
             origin_x + (math.floor(t.x / cf) + 1) * res * cf * matrix.tileWidth,
             origin_y - (t.y + 1) * res * matrix.tileHeight,
@@ -1068,7 +1092,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             and (bbox[1] < tms_bounds[3])
         )
 
-    def tiles(
+    def tiles(  # noqa: C901
         self,
         west: float,
         south: float,
@@ -1127,17 +1151,34 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
             for z in zooms:
                 nw_tile = self.tile(
-                    w + LL_EPSILON, n - LL_EPSILON, z
+                    w + LL_EPSILON,
+                    n - LL_EPSILON,
+                    z,
+                    ignore_coalescence=True,
                 )  # Not in mercantile
-                se_tile = self.tile(e - LL_EPSILON, s + LL_EPSILON, z)
+                se_tile = self.tile(
+                    e - LL_EPSILON,
+                    s + LL_EPSILON,
+                    z,
+                    ignore_coalescence=True,
+                )
 
                 minx = min(nw_tile.x, se_tile.x)
                 maxx = max(nw_tile.x, se_tile.x)
                 miny = min(nw_tile.y, se_tile.y)
                 maxy = max(nw_tile.y, se_tile.y)
 
-                for i in range(minx, maxx + 1):
-                    for j in range(miny, maxy + 1):
+                matrix = self.matrix(z)
+                for j in range(miny, maxy + 1):
+                    cf = (
+                        matrix.get_coalesce_factor(j)
+                        if matrix.variableMatrixWidths is not None
+                        else 1
+                    )
+                    for i in range(minx, maxx + 1):
+                        if cf != 1 and i % cf:
+                            continue
+
                         yield Tile(i, j, z)
 
     def feature(
@@ -1326,9 +1367,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         if t.z < self.minzoom:
             return False
 
-        extrema = self.minmax(t.z)
-        validx = extrema["x"]["min"] <= t.x <= extrema["x"]["max"]
-        validy = extrema["y"]["min"] <= t.y <= extrema["y"]["max"]
+        matrix = self.matrix(t.z)
+        validx = 0 <= t.x <= matrix.matrixWidth - 1
+        validy = 0 <= t.y <= matrix.matrixHeight - 1
 
         return validx and validy
 
@@ -1352,22 +1393,48 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         """
         t = _parse_tile_arg(*tile)
-        extrema = self.minmax(t.z)
+        matrix = self.matrix(t.z)
+        x = t.x
+        y = t.y
 
-        tiles = []
-        for i in [-1, 0, 1]:
-            for j in [-1, 0, 1]:
-                if i == 0 and j == 0:
+        tiles = set()
+
+        miny = max(0, y - 1)
+        maxy = min(y + 1, matrix.matrixHeight - 1)
+
+        cf = (
+            matrix.get_coalesce_factor(y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
+
+        if cf != 1:
+            if x % cf:
+                x -= x % cf
+            minx = max(0, x - (x % cf) - 1)
+            maxx = min(x + (x % cf) + cf, matrix.matrixWidth - 1)
+
+        else:
+            minx = max(0, x - 1)
+            maxx = min(x + 1, matrix.matrixWidth - 1)
+
+        for ytile in range(miny, maxy + 1):
+            cf = (
+                matrix.get_coalesce_factor(ytile)
+                if matrix.variableMatrixWidths is not None
+                else 1
+            )
+            for xtile in range(minx, maxx + 1):
+                nx = xtile
+                if cf != 1 and nx % cf:
+                    nx = nx - nx % cf
+
+                if nx == x and ytile == y:
                     continue
-                elif t.x + i < extrema["x"]["min"] or t.y + j < extrema["y"]["min"]:
-                    continue
 
-                elif t.x + i > extrema["x"]["max"] or t.y + j > extrema["y"]["max"]:
-                    continue
+                tiles.add(Tile(x=nx, y=ytile, z=t.z))
 
-                tiles.append(Tile(x=t.x + i, y=t.y + j, z=t.z))
-
-        return tiles
+        return sorted(tiles)
 
     def parent(self, *tile: Tile, zoom: int = None):
         """Get the parent of a tile
@@ -1406,8 +1473,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
 
         tiles = []
-        for i in range(ul_tile.x, lr_tile.x + 1):
-            for j in range(ul_tile.y, lr_tile.y + 1):
+        matrix = self.matrix(target_zoom)
+        for j in range(ul_tile.y, lr_tile.y + 1):
+            cf = (
+                matrix.get_coalesce_factor(j)
+                if matrix.variableMatrixWidths is not None
+                else 1
+            )
+            for i in range(ul_tile.x, lr_tile.x + 1):
+                if cf != 1 and i % cf:
+                    continue
                 tiles.append(Tile(i, j, target_zoom))
 
         return tiles
@@ -1445,8 +1520,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
 
         tiles = []
-        for i in range(ul_tile.x, lr_tile.x + 1):
-            for j in range(ul_tile.y, lr_tile.y + 1):
+        matrix = self.matrix(target_zoom)
+        for j in range(ul_tile.y, lr_tile.y + 1):
+            cf = (
+                matrix.get_coalesce_factor(j)
+                if matrix.variableMatrixWidths is not None
+                else 1
+            )
+            for i in range(ul_tile.x, lr_tile.x + 1):
+                if cf != 1 and i % cf:
+                    continue
                 tiles.append(Tile(i, j, target_zoom))
 
         return tiles
