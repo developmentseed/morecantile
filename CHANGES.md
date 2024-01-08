@@ -1,5 +1,5 @@
 
-## 5.1.0 (2023-12-21)
+## 5.1.0 (2024-01-08)
 
 * Simplify bounds calculation by using `TileMatrix.cellSize` instead of `TileMatrix.scaleDenominator`
 * remove `TileMatrixSet._resolution` private method
