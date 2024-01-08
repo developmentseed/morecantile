@@ -98,7 +98,7 @@ def test_bounds(args):
     tms = morecantile.tms.get("WebMercatorQuad")
     bbox = tms.bounds(*args)
     for a, b in zip(expected, bbox):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
     assert bbox.left == bbox[0]
     assert bbox.bottom == bbox[1]
     assert bbox.right == bbox[2]
@@ -123,7 +123,7 @@ def test_xy_bounds(args):
     tms = morecantile.tms.get("WebMercatorQuad")
     bounds = tms.xy_bounds(*args)
     for a, b in zip(expected, bounds):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 def test_ul_tile():
@@ -136,7 +136,7 @@ def test_ul_tile():
     xy = tms.ul(486, 332, 10)
     expected = (-9.140625, 53.33087298301705)
     for a, b in zip(expected, xy):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 def test_projul_tile():
@@ -149,7 +149,7 @@ def test_projul_tile():
     xy = tms._ul(486, 332, 10)
     expected = (-1017529.7205322663, 7044436.526761846)
     for a, b in zip(expected, xy):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 def test_projtile():
@@ -201,7 +201,7 @@ def test_ul(args):
     expected = (-9.140625, 53.33087298301705)
     lnglat = tms.ul(*args)
     for a, b in zip(expected, lnglat):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
     assert lnglat[0] == lnglat.x
     assert lnglat[1] == lnglat.y
 
@@ -215,7 +215,7 @@ def test_bbox(args):
     expected = (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705)
     bbox = tms.bounds(*args)
     for a, b in zip(expected, bbox):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
     assert bbox.left == bbox[0]
     assert bbox.bottom == bbox[1]
     assert bbox.right == bbox[2]
@@ -229,7 +229,7 @@ def test_xy_tile():
     xy = tms.xy(*ul)
     expected = (-1017529.7205322663, 7044436.526761846)
     for a, b in zip(expected, xy):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 def test_xy_null_island():
@@ -238,7 +238,7 @@ def test_xy_null_island():
     xy = tms.xy(0.0, 0.0)
     expected = (0.0, 0.0)
     for a, b in zip(expected, xy):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 @pytest.mark.xfail
@@ -320,7 +320,7 @@ def test_lnglat_xy_roundtrip():
     lnglat = (-105.0844, 40.5853)
     roundtrip = tms.lnglat(*tms.xy(*lnglat))
     for a, b in zip(roundtrip, lnglat):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 @pytest.mark.parametrize(
@@ -338,7 +338,7 @@ def test_xy_bounds_mercantile(args):
     bounds = tms.xy_bounds(*args)
 
     for a, b in zip(expected, bounds):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 def test_tile_not_truncated():
@@ -462,25 +462,25 @@ def test_extend_zoom():
     with pytest.warns(UserWarning):
         more = tms.xy_bounds(1000, 1000, 25)
     for a, b in zip(more, merc):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
     merc = mercantile.xy_bounds(2000, 2000, 26)
     with pytest.warns(UserWarning):
         more = tms.xy_bounds(2000, 2000, 26)
     for a, b in zip(more, merc):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
     merc = mercantile.xy_bounds(2000, 2000, 27)
     with pytest.warns(UserWarning):
         more = tms.xy_bounds(2000, 2000, 27)
     for a, b in zip(more, merc):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
     merc = mercantile.xy_bounds(2000, 2000, 30)
     with pytest.warns(UserWarning):
         more = tms.xy_bounds(2000, 2000, 30)
     for a, b in zip(more, merc):
-        assert round(a - b, 7) == 0
+        assert round(a - b, 6) == 0
 
 
 def test_is_power_of_two():

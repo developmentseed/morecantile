@@ -526,7 +526,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         mpu = meters_per_unit(CRS.from_user_input(v2_tms["crs"]))
         for i in range(len(v2_tms["tileMatrices"])):
             v2_tms["tileMatrices"][i]["cellSize"] = (
-                v2_tms["tileMatrices"][i]["scaleDenominator"] * 0.00028 / mpu
+                v2_tms["tileMatrices"][i]["scaleDenominator"] * 0.28e-3 / mpu
             )
             v2_tms["tileMatrices"][i]["pointOfOrigin"] = v2_tms["tileMatrices"][i].pop(
                 "topLeftCorner"
@@ -553,6 +553,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
         geographic_crs: CRS = WGS84_CRS,
+        screen_pixel_size: float = 0.28e-3,
         **kwargs: Any,
     ):
         """
@@ -585,6 +586,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Tile Matrix Set identifier
         geographic_crs: pyproj.CRS
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+        screen_pixel_size: float, optional
+            Rendering pixel size. 0.28 mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.
         kwargs: Any
             Attributes to forward to the TileMatrixSet
 
@@ -621,7 +624,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 TileMatrix(
                     **{
                         "id": str(zoom),
-                        "scaleDenominator": res * mpu / 0.00028,
+                        "scaleDenominator": res * mpu / screen_pixel_size,
                         "cellSize": res,
                         "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
@@ -705,17 +708,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         return tile_matrix
 
-    def _resolution(self, matrix: TileMatrix) -> float:
-        """
-        Tile resolution for a TileMatrix.
-
-        From note g in http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#table_2:
-          The pixel size of the tile can be obtained from the scaleDenominator
-          by multiplying the later by 0.28 10-3 / metersPerUnit.
-
-        """
-        return matrix.scaleDenominator * 0.28e-3 / meters_per_unit(self.crs._pyproj_crs)
-
     def _matrix_origin(self, matrix: TileMatrix) -> Coords:
         """Return the Origin coordinates of the matrix."""
         origin_x = (
@@ -760,7 +752,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         # Freely adapted from https://github.com/OSGeo/gdal/blob/dc38aa64d779ecc45e3cd15b1817b83216cf96b8/gdal/frmts/gtiff/cogdriver.cpp#L272-L305
         for zoom_level in range(min_z, max_z + 1):
-            matrix_res = self._resolution(self.matrix(zoom_level))
+            matrix_res = self.matrix(zoom_level).cellSize
             if res > matrix_res or abs(res - matrix_res) / matrix_res <= 1e-8:
                 break
 
@@ -772,7 +764,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 zoom_level = min(zoom_level, max_z)
 
             elif zoom_level_strategy.lower() == "auto":
-                if (self._resolution(self.matrix(max(zoom_level - 1, min_z))) / res) < (
+                if (self.matrix(max(zoom_level - 1, min_z)).cellSize / res) < (
                     res / matrix_res
                 ):
                     zoom_level = max(zoom_level - 1, min_z)
@@ -858,16 +850,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         """
         matrix = self.matrix(zoom)
-        res = self._resolution(matrix)
         origin_x, origin_y = self._matrix_origin(matrix)
 
         xtile = (
-            math.floor((xcoord - origin_x) / float(res * matrix.tileWidth))
+            math.floor((xcoord - origin_x) / float(matrix.cellSize * matrix.tileWidth))
             if not math.isinf(xcoord)
             else 0
         )
         ytile = (
-            math.floor((origin_y - ycoord) / float(res * matrix.tileHeight))
+            math.floor((origin_y - ycoord) / float(matrix.cellSize * matrix.tileHeight))
             if not math.isinf(ycoord)
             else 0
         )
@@ -940,7 +931,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         t = _parse_tile_arg(*tile)
 
         matrix = self.matrix(t.z)
-        res = self._resolution(matrix)
         origin_x, origin_y = self._matrix_origin(matrix)
 
         cf = (
@@ -949,8 +939,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             else 1
         )
         return Coords(
-            origin_x + math.floor(t.x / cf) * res * cf * matrix.tileWidth,
-            origin_y - t.y * res * matrix.tileHeight,
+            origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth,
+            origin_y - t.y * matrix.cellSize * matrix.tileHeight,
         )
 
     def _lr(self, *tile: Tile) -> Coords:
@@ -969,7 +959,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         t = _parse_tile_arg(*tile)
 
         matrix = self.matrix(t.z)
-        res = self._resolution(matrix)
         origin_x, origin_y = self._matrix_origin(matrix)
 
         cf = (
@@ -978,8 +967,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             else 1
         )
         return Coords(
-            origin_x + (math.floor(t.x / cf) + 1) * res * cf * matrix.tileWidth,
-            origin_y - (t.y + 1) * res * matrix.tileHeight,
+            origin_x
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth,
+            origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight,
         )
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
@@ -1466,8 +1456,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         target_zoom = t.z - 1 if zoom is None else zoom
 
         # buffer value to apply on bbox
-        res = self._resolution(self.matrix(t.z)) / 10.0
-
+        res = self.matrix(t.z).cellSize / 10.0
         bbox = self.xy_bounds(t)
         ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
         lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
@@ -1513,7 +1502,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         target_zoom = t.z + 1 if zoom is None else zoom
 
         # buffer value to apply on bbox
-        res = self._resolution(self.matrix(t.z)) / 10.0
+        res = self.matrix(t.z).cellSize / 10.0
 
         bbox = self.xy_bounds(t)
         ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
