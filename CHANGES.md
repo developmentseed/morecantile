@@ -1,4 +1,31 @@
 
+## 5.2.0 (2024-01-18)
+
+* fix `CRS` parsing to allow `wkt ({"wkt": ...})` and `uri ({"uri": ...})` defined CRS
+
+    ```python
+    TileMatrixSet(
+        ...
+        crs="http://www.opengis.net/def/crs/EPSG/0/3857"
+    )
+
+    TileMatrixSet(
+        ...
+        crs={"uri": "http://www.opengis.net/def/crs/EPSG/0/3857"}
+    )
+
+    wkt = pyproj.CRS.from_epsg(3857).to_wkt()
+    TileMatrixSet(
+        ...
+        crs={"wkt": wkt}
+    )
+    ```
+
+* update `TileMatrixSet` representation to use CRS's URI
+* remove default for `TileMatrixSet.pointOfOrigin` attribute (**required**)
+* add `topLeft` default for `TileMatrixSet.cornerOfOrigin` attribute
+* renamed `morecantile.models.CRSType` -> `morecantile.models.CRS`
+
 ## 5.1.0 (2024-01-08)
 
 * Simplify bounds calculation by using `TileMatrix.cellSize` instead of `TileMatrix.scaleDenominator`
