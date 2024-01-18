@@ -1,4 +1,24 @@
 
+## 5.2.1 (2024-01-18)
+
+* fix `CRS` WKT type from `string` to `Object` (PROJJSON) (ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/issues/89).
+
+    ```python
+    # Before
+    wkt = pyproj.CRS.from_epsg(3857).to_wkt()
+    TileMatrixSet(
+        ...
+        crs={"wkt": wkt}
+    )
+
+    # Now
+    wkt = pyproj.CRS.from_epsg(3857).to_json_dict()
+    TileMatrixSet(
+        ...
+        crs={"wkt": wkt}
+    )
+    ```
+
 ## 5.2.0 (2024-01-18)
 
 * fix `CRS` parsing to allow `wkt ({"wkt": ...})` and `uri ({"uri": ...})` defined CRS

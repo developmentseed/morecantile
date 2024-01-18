@@ -566,7 +566,7 @@ def test_crs_type():
     assert crs._pyproj_crs == pyproj.CRS.from_epsg(3857)
 
     # CRSWKT
-    wkt = pyproj.CRS.from_epsg(3857).to_wkt()
+    wkt = pyproj.CRS.from_epsg(3857).to_json_dict()
     crs = CRS({"wkt": wkt})
     assert crs.root == CRSWKT(wkt=wkt)
     assert crs.model_dump()["wkt"] == wkt

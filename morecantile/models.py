@@ -64,15 +64,12 @@ class CRSUri(BaseModel):
 
 
 class CRSWKT(BaseModel):
-    """Coordinate Reference System (CRS) from WKT."""
+    """Coordinate Reference System (CRS) from WKT encoded as PROJJSON Object."""
 
     wkt: Annotated[
-        str,
+        Dict,
         Field(
-            description="Reference to one coordinate reference system (CRS) as WKT string",
-            examples=[
-                'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]',
-            ],
+            description="An object defining the CRS using the JSON encoding for Well-known text representation of coordinate reference systems 2.0",
         ),
     ]
 
@@ -109,7 +106,7 @@ class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
             self._pyproj_crs = pyproj.CRS.from_user_input(str(self.root.uri))
 
         elif isinstance(self.root, CRSWKT):
-            self._pyproj_crs = pyproj.CRS.from_wkt(self.root.wkt)
+            self._pyproj_crs = pyproj.CRS.from_json_dict(self.root.wkt)
 
         elif isinstance(self.root, CRSRef):
             raise NotImplementedError(
@@ -660,10 +657,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             try:
                 pyproj.CRS.from_user_input(crs_data)
             except CRSError:
-                crs_data = {"wkt": crs.to_wkt()}
+                crs_data = {"wkt": crs.to_json_dict()}
 
         else:
-            crs_data = {"wkt": crs.to_wkt()}
+            crs_data = {"wkt": crs.to_json_dict()}
 
         return cls(
             crs=crs_data,
