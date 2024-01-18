@@ -8,13 +8,12 @@ from collections.abc import Iterable
 import pyproj
 import pytest
 from pydantic import ValidationError
-from pyproj import CRS
 from rasterio.crs import CRS as rioCRS
 
 import morecantile
 from morecantile.commons import Tile
 from morecantile.errors import InvalidIdentifier
-from morecantile.models import CRSType, TileMatrix, TileMatrixSet
+from morecantile.models import CRS, CRSWKT, CRSUri, TileMatrix, TileMatrixSet
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
 tilesets = [
@@ -30,8 +29,8 @@ def test_tile_matrix_set(tileset):
     with open(tileset, "r") as f:
         ts = TileMatrixSet.model_validate_json(f.read())
     # This would fail if `crs` isn't supported by PROJ
-    assert isinstance(ts.crs._pyproj_crs, CRS)
-    assert ts.crs._pyproj_crs == ts.crs.root
+    assert isinstance(ts.crs._pyproj_crs, pyproj.CRS)
+    assert repr(ts)
 
 
 def test_tile_matrix_iter():
@@ -138,7 +137,7 @@ def test_Custom():
 
     # Web Mercator Extent
     extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
-    custom_tms = TileMatrixSet.custom(extent, CRS.from_epsg(3857))
+    custom_tms = TileMatrixSet.custom(extent, pyproj.CRS.from_epsg(3857))
 
     assert tms.tile(20.0, 15.0, 5) == custom_tms.tile(20.0, 15.0, 5)
 
@@ -151,7 +150,7 @@ def test_Custom():
 
     extent = (-180.0, -85.051128779806, 180.0, 85.051128779806)
     custom_tms = TileMatrixSet.custom(
-        extent, CRS.from_epsg(3857), extent_crs=CRS.from_epsg(4326)
+        extent, pyproj.CRS.from_epsg(3857), extent_crs=pyproj.CRS.from_epsg(4326)
     )
 
     assert tms.tile(20.0, 15.0, 5) == custom_tms.tile(20.0, 15.0, 5)
@@ -166,7 +165,7 @@ def test_Custom():
 
 def test_custom_tms_bounds_epsg4326():
     """Check bounds with epsg4326."""
-    custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), CRS.from_epsg(4326))
+    custom_tms = TileMatrixSet.custom((-120, 30, -110, 40), pyproj.CRS.from_epsg(4326))
     assert custom_tms.xy_bbox == (-120, 30, -110, 40)
     assert custom_tms.bbox == (-120, 30, -110, 40)
     assert custom_tms.xy_bounds(0, 0, 0) == (-120, 30, -110, 40)
@@ -178,7 +177,7 @@ def test_custom_tms_bounds_user_crs():
     """Check bounds with epsg4326."""
     custom_tms = TileMatrixSet.custom(
         (-120, 30, -110, 40),
-        CRS.from_epsg(4326),
+        pyproj.CRS.from_epsg(4326),
     )
     assert custom_tms.xy_bbox == (-120, 30, -110, 40)
     assert custom_tms.bbox == (-120, 30, -110, 40)
@@ -243,7 +242,7 @@ def test_zoom_for_res():
         assert tms.zoom_for_res(0.0001, max_z=25) == 25
 
     # minzoom greater than 0
-    crs = CRS.from_epsg(3857)
+    crs = pyproj.CRS.from_epsg(3857)
     extent = [-20026376.39, -20048966.10, 20026376.39, 20048966.10]
     tms = morecantile.TileMatrixSet.custom(
         extent, crs, id="MyCustomTmsEPSG3857", minzoom=6
@@ -259,7 +258,7 @@ def test_schema():
     assert tms.model_dump_json(exclude_none=True)
     assert tms.model_dump(exclude_none=True)
 
-    crs = CRS.from_proj4(
+    crs = pyproj.CRS.from_proj4(
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
@@ -270,7 +269,7 @@ def test_schema():
     json_doc = json.loads(tms.model_dump_json(exclude_none=True))
     assert json_doc["crs"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
 
-    crs = CRS.from_epsg(3031)
+    crs = pyproj.CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
     tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
     assert tms.model_json_schema()
@@ -279,14 +278,14 @@ def test_schema():
     assert json_doc["crs"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
 
 
-MARS2000_SPHERE = CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
+MARS2000_SPHERE = pyproj.CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
 
 
 def test_mars_tms():
     """The Mars global mercator scheme should broadly align with the Earth
     Web Mercator CRS, despite the different planetary radius and scale.
     """
-    MARS_MERCATOR = CRS.from_proj4(
+    MARS_MERCATOR = pyproj.CRS.from_proj4(
         "+proj=merc +R=3396190 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +no_defs"
     )
 
@@ -317,7 +316,7 @@ def test_mars_tms():
 def test_mars_local_tms():
     """Local TMS using Mars CRS"""
     # A transverse mercator projection for the landing site of the Perseverance rover.
-    SYRTIS_TM = CRS.from_proj4(
+    SYRTIS_TM = pyproj.CRS.from_proj4(
         "+proj=tmerc +lat_0=17 +lon_0=76.5 +k=0.9996 +x_0=0 +y_0=0 +a=3396190 +b=3376200 +units=m +no_defs"
     )
     # 100km grid centered on 17N, 76.5E
@@ -328,6 +327,7 @@ def test_mars_local_tms():
         geographic_crs=MARS2000_SPHERE,
     )
     assert SYRTIS_TM == syrtis_tms.crs._pyproj_crs
+    assert syrtis_tms.model_dump(mode="json")
 
     center = syrtis_tms.ul(1, 1, 1)
     assert round(center.x, 6) == 76.5
@@ -418,7 +418,7 @@ def test_variable_tms(id, result):
 def test_crs_uris(authority, code, result):
     """Test CRS URIS."""
     assert (
-        morecantile.models.CRS_to_uri(CRS((authority, code)))
+        morecantile.models.CRS_to_uri(pyproj.CRS((authority, code)))
         == f"http://www.opengis.net/def/crs/{result}"
     )
 
@@ -528,29 +528,83 @@ def test_private_attr():
 def test_crs_type():
     """Test CRSType Model."""
     uri = "http://www.opengis.net/def/crs/EPSG/0/3857"
-    crs = CRSType(uri)
+    crs = CRS(uri)
     assert crs.root == uri
     assert crs.model_dump() == uri
     # PROJ methods
-    assert crs._pyproj_crs == CRS.from_epsg(3857)
+    assert crs._pyproj_crs == pyproj.CRS.from_epsg(3857)
     assert crs.srs == "http://www.opengis.net/def/crs/EPSG/0/3857"
     assert crs.to_epsg() == 3857
-    assert crs.to_wkt() == CRS.from_epsg(3857).to_wkt()
-    assert crs.to_proj4() == CRS.from_epsg(3857).to_proj4()
-    assert crs.to_dict() == CRS.from_epsg(3857).to_dict()
-    assert crs.to_json() == CRS.from_epsg(3857).to_json()
+    assert crs.to_wkt() == pyproj.CRS.from_epsg(3857).to_wkt()
+    assert crs.to_proj4() == pyproj.CRS.from_epsg(3857).to_proj4()
+    assert crs.to_dict() == pyproj.CRS.from_epsg(3857).to_dict()
+    assert crs.to_json() == pyproj.CRS.from_epsg(3857).to_json()
 
     # with Options
     assert crs.to_epsg(min_confidence=10) == 3857
-    assert crs.to_wkt(pretty=True) == CRS.from_epsg(3857).to_wkt(pretty=True)
-    assert crs.to_proj4(5) == CRS.from_epsg(3857).to_proj4(5)
-    assert crs.to_json(pretty=True) == CRS.from_epsg(3857).to_json(pretty=True)
+    assert crs.to_wkt(pretty=True) == pyproj.CRS.from_epsg(3857).to_wkt(pretty=True)
+    assert crs.to_proj4(5) == pyproj.CRS.from_epsg(3857).to_proj4(5)
+    assert crs.to_json(pretty=True) == pyproj.CRS.from_epsg(3857).to_json(pretty=True)
 
-    wkt = CRS.from_epsg(3857).to_wkt()
-    crs = CRSType(wkt)
+    # Outside OGC Specs but it works
+    wkt = pyproj.CRS.from_epsg(3857).to_wkt()
+    crs = CRS(wkt)
     assert crs.root == wkt
     assert crs.model_dump() == wkt
     # PROJ methods
-    assert crs._pyproj_crs == CRS.from_epsg(3857)
+    assert crs._pyproj_crs == pyproj.CRS.from_epsg(3857)
     assert crs.srs == wkt
     assert crs.to_epsg() == 3857
+
+    # CRSUri
+    data = {"uri": "http://www.opengis.net/def/crs/EPSG/0/3857"}
+    crs = CRS(data)
+    assert crs.root == CRSUri(uri="http://www.opengis.net/def/crs/EPSG/0/3857")
+    assert (
+        crs.model_dump(mode="json") == data
+    )  # we use `mode=json` to dump all sub-model (URL)
+    assert crs._pyproj_crs == pyproj.CRS.from_epsg(3857)
+
+    # CRSWKT
+    wkt = pyproj.CRS.from_epsg(3857).to_wkt()
+    crs = CRS({"wkt": wkt})
+    assert crs.root == CRSWKT(wkt=wkt)
+    assert crs.model_dump()["wkt"] == wkt
+    assert crs._pyproj_crs == pyproj.CRS.from_epsg(3857)
+
+    # CRSRef
+    with pytest.raises(NotImplementedError):
+        CRS({"referenceSystem": {"yo": 1}})
+
+    # something else
+    with pytest.raises(ValidationError):
+        CRS({"Hey": 1})
+
+
+def test_crs_type_in_tms():
+    """Check TMS representation when using non-string CRS."""
+    # CRS URI
+    crs = {"uri": "http://www.opengis.net/def/crs/EPSG/0/3857"}
+    tms = TileMatrixSet(
+        **{
+            "crs": crs,
+            "boundingBox": {
+                "lowerLeft": [-20037508.342789244, -20037508.34278919],
+                "upperRight": [20037508.34278919, 20037508.342789244],
+            },
+            "tileMatrices": [
+                {
+                    "id": "0",
+                    "scaleDenominator": 559082264.028717,
+                    "cellSize": 156543.033928041,
+                    "pointOfOrigin": [-20037508.342789244, 20037508.342789244],
+                    "tileWidth": 256,
+                    "tileHeight": 256,
+                    "matrixWidth": 1,
+                    "matrixHeight": 1,
+                },
+            ],
+        }
+    )
+    assert str(tms.crs.root.uri) == "http://www.opengis.net/def/crs/EPSG/0/3857"
+    assert repr(tms)

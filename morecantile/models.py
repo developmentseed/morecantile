@@ -6,6 +6,7 @@ import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
 
+import pyproj
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -16,7 +17,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pyproj import CRS, Transformer
 from pyproj.exceptions import CRSError, ProjError
 
 from morecantile.commons import BoundingBox, Coords, Tile
@@ -44,7 +44,7 @@ else:
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
-WGS84_CRS = CRS.from_epsg(4326)
+WGS84_CRS = pyproj.CRS.from_epsg(4326)
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
 
 
@@ -77,17 +77,18 @@ class CRSWKT(BaseModel):
     ]
 
 
-# NOT SUPPORTED
-# class CRSRef(BaseModel):
-#     """CRS from referenceSystem."""
-#
-#     referenceSystem: Dict[str, Any] = Field(
-#         ...,
-#         description="A reference system data structure as defined in the MD_ReferenceSystem of the ISO 19115",
-#     )
+class CRSRef(BaseModel):
+    """CRS from referenceSystem."""
+
+    referenceSystem: Annotated[
+        Dict[str, Any],
+        Field(
+            description="A reference system data structure as defined in the MD_ReferenceSystem of the ISO 19115",
+        ),
+    ]
 
 
-class CRSType(RootModel[Union[str, Union[CRSUri, CRSWKT]]]):
+class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
     """CRS model.
 
     Ref: https://github.com/opengeospatial/ogcapi-tiles/blob/master/openapi/schemas/common-geodata/crs.yaml
@@ -95,12 +96,25 @@ class CRSType(RootModel[Union[str, Union[CRSUri, CRSWKT]]]):
     Code generated using https://github.com/koxudaxi/datamodel-code-generator/
     """
 
-    _pyproj_crs: CRS = PrivateAttr()
+    _pyproj_crs: pyproj.CRS = PrivateAttr()
 
     def model_post_init(self, __context: Any) -> None:
         """Post Init: Set private attr."""
         super().model_post_init(__context)
-        self._pyproj_crs = CRS.from_user_input(self.root)
+
+        if isinstance(self.root, str):
+            self._pyproj_crs = pyproj.CRS.from_user_input(self.root)
+
+        elif isinstance(self.root, CRSUri):
+            self._pyproj_crs = pyproj.CRS.from_user_input(str(self.root.uri))
+
+        elif isinstance(self.root, CRSWKT):
+            self._pyproj_crs = pyproj.CRS.from_wkt(self.root.wkt)
+
+        elif isinstance(self.root, CRSRef):
+            raise NotImplementedError(
+                "Morecantile do not support `MD_ReferenceSystem` defined CRS"
+            )
 
     @property
     def srs(self) -> str:
@@ -128,7 +142,11 @@ class CRSType(RootModel[Union[str, Union[CRSUri, CRSWKT]]]):
         return self._pyproj_crs.to_json(*args, **kwargs)
 
 
-def CRS_to_uri(crs: CRS) -> str:
+# For compatibility
+CRSType = CRS
+
+
+def CRS_to_uri(crs: pyproj.CRS) -> str:
     """Convert CRS to URI."""
     authority = "EPSG"
     code = None
@@ -140,10 +158,11 @@ def CRS_to_uri(crs: CRS) -> str:
         # if we have a version number in the authority, split it out
         if "_" in authority:
             authority, version = authority.split("_")
+
     return f"http://www.opengis.net/def/crs/{authority}/{version}/{code}"
 
 
-def crs_axis_inverted(crs: CRS) -> bool:
+def crs_axis_inverted(crs: pyproj.CRS) -> bool:
     """Check if CRS has inverted AXIS (lat,lon) instead of (lon,lat)."""
     return crs.axis_info[0].abbrev.upper() in ["Y", "LAT", "N"]
 
@@ -169,7 +188,7 @@ class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
         Field(description="A 2D Point in the CRS indicated elsewhere"),
     ]
     crs: Annotated[
-        Optional[CRSType],
+        Optional[CRS],
         Field(description="Coordinate Reference System (CRS)"),
     ] = None
     orderedAxes: Annotated[
@@ -252,17 +271,17 @@ class TileMatrix(BaseModel, extra="forbid"):
         Field(description="Cell size of this tile matrix"),
     ]
     cornerOfOrigin: Annotated[
-        Optional[Literal["topLeft", "bottomLeft"]],
+        Literal["topLeft", "bottomLeft"],
         Field(
             description="The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile.",
         ),
-    ] = None
+    ] = "topLeft"
     pointOfOrigin: Annotated[
         BoundsType,
         Field(
             description="Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist.",
         ),
-    ] = None
+    ]
     tileWidth: Annotated[
         int,
         Field(
@@ -363,7 +382,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         Field(description="Ordered list of names of the dimensions defined in the CRS"),
     ] = None
     crs: Annotated[
-        CRSType,
+        CRS,
         Field(description="Coordinate Reference System (CRS)"),
     ]
     wellKnownScaleSet: Annotated[
@@ -382,9 +401,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
-    _geographic_crs: CRS = PrivateAttr(default=WGS84_CRS)
-    _to_geographic: Transformer = PrivateAttr()
-    _from_geographic: Transformer = PrivateAttr()
+    _geographic_crs: pyproj.CRS = PrivateAttr(default=WGS84_CRS)
+    _to_geographic: pyproj.Transformer = PrivateAttr()
+    _from_geographic: pyproj.Transformer = PrivateAttr()
 
     def __init__(self, **data):
         """Set private attributes."""
@@ -393,10 +412,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
 
         try:
-            self._to_geographic = Transformer.from_crs(
+            self._to_geographic = pyproj.Transformer.from_crs(
                 self.crs._pyproj_crs, self._geographic_crs, always_xy=True
             )
-            self._from_geographic = Transformer.from_crs(
+            self._from_geographic = pyproj.Transformer.from_crs(
                 self._geographic_crs, self.crs._pyproj_crs, always_xy=True
             )
         except ProjError:
@@ -444,12 +463,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
     def __repr__(self):
         """Simplify default pydantic model repr."""
-        return (
-            f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{self.crs.root}>"
-        )
+        return f"<TileMatrixSet title='{self.title}' id='{self.id}' crs='{CRS_to_uri(self.crs._pyproj_crs)}>"
 
     @cached_property
-    def geographic_crs(self) -> CRS:
+    def geographic_crs(self) -> pyproj.CRS:
         """Return the TMS's geographic CRS."""
         return self._geographic_crs
 
@@ -489,7 +506,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
                 Attributes
         ----------
-        supportedCRS: CRSType
+        supportedCRS: CRS
             Tile Matrix Set coordinate reference system
         title: str
             Title of TMS
@@ -523,7 +540,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         v2_tms["crs"] = v2_tms.pop("supportedCRS")
         v2_tms["tileMatrices"] = v2_tms.pop("tileMatrix")
         v2_tms["id"] = v2_tms.pop("identifier")
-        mpu = meters_per_unit(CRS.from_user_input(v2_tms["crs"]))
+        mpu = meters_per_unit(pyproj.CRS.from_user_input(v2_tms["crs"]))
         for i in range(len(v2_tms["tileMatrices"])):
             v2_tms["tileMatrices"][i]["cellSize"] = (
                 v2_tms["tileMatrices"][i]["scaleDenominator"] * 0.28e-3 / mpu
@@ -542,17 +559,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     def custom(
         cls,
         extent: List[float],
-        crs: CRS,
+        crs: pyproj.CRS,
         tile_width: int = 256,
         tile_height: int = 256,
         matrix_scale: Optional[List] = None,
-        extent_crs: Optional[CRS] = None,
+        extent_crs: Optional[pyproj.CRS] = None,
         minzoom: int = 0,
         maxzoom: int = 24,
         title: Optional[str] = None,
         id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
-        geographic_crs: CRS = WGS84_CRS,
+        geographic_crs: pyproj.CRS = WGS84_CRS,
         screen_pixel_size: float = 0.28e-3,
         **kwargs: Any,
     ):
@@ -604,7 +621,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             is_inverted = crs_axis_inverted(crs)
 
         if extent_crs:
-            transform = Transformer.from_crs(extent_crs, crs, always_xy=True)
+            transform = pyproj.Transformer.from_crs(extent_crs, crs, always_xy=True)
             extent = transform.transform_bounds(*extent, densify_pts=21)
 
         bbox = BoundingBox(*extent)
@@ -636,20 +653,20 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             )
 
         if crs.to_authority(min_confidence=20):
-            crs_str = CRS_to_uri(crs)
+            crs_data: Any = CRS_to_uri(crs)
 
             # Some old Proj version might not support URI
             # so we fall back to wkt
             try:
-                CRS.from_user_input(crs_str)
+                pyproj.CRS.from_user_input(crs_data)
             except CRSError:
-                crs_str = crs.to_wkt()
+                crs_data = {"wkt": crs.to_wkt()}
 
         else:
-            crs_str = crs.to_wkt()
+            crs_data = {"wkt": crs.to_wkt()}
 
         return cls(
-            crs=crs_str,
+            crs=crs_data,
             tileMatrices=tile_matrices,
             id=id,
             title=title,
@@ -1236,7 +1253,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             "properties": {
                 "title": f"XYZ tile {xyz}",
                 "grid_name": self.id,
-                "grid_crs": self.crs.root,
+                "grid_crs": CRS_to_uri(self.crs._pyproj_crs),
             },
         }
 
