@@ -113,7 +113,7 @@ class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
 
         elif isinstance(self.root, CRSRef):
             raise NotImplementedError(
-                "Morecantile do not support `MD_ReferenceSystem` defined CRS"
+                "Morecantile does not support `MD_ReferenceSystem` defined CRS"
             )
 
     @property
