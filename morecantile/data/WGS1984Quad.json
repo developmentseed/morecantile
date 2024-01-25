@@ -1,5 +1,5 @@
 {
-  "id": "WorldCRS84Quad",
+  "id": "WGS1984Quad",
   "title": "EPSG:4326 for the World",
   "uri": "http://www.opengis.net/def/tilematrixset/OGC/1.0/WorldCRS84Quad",
   "crs": "http://www.opengis.net/def/crs/EPSG/0/4326",

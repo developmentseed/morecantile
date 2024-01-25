@@ -1,4 +1,8 @@
 
+## 5.2.2 (2024-01-24)
+
+* fix `id` for `WGS1984Quad` TileMatrixSet (from `WorldCRS84Quad` to `WGS1984Quad`)
+
 ## 5.2.1 (2024-01-18)
 
 * fix `CRS` WKT type from `string` to `Object` (PROJJSON) (ref: https://github.com/opengeospatial/2D-Tile-Matrix-Set/issues/89).
