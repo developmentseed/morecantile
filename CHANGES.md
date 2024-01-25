@@ -1,5 +1,5 @@
 
-## 5.2.2 (2024-01-24)
+## 5.2.2 (2024-01-25)
 
 * fix `id` for `WGS1984Quad` TileMatrixSet (from `WorldCRS84Quad` to `WGS1984Quad`)
 
