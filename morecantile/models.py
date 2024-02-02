@@ -54,11 +54,13 @@ class CRSUri(BaseModel):
     uri: Annotated[
         AnyUrl,
         Field(
-            description="Reference to one coordinate reference system (CRS) as URI",
-            examples=[
-                "http://www.opengis.net/def/crs/EPSG/0/3978",
-                "urn:ogc:def:crs:EPSG::2193",
-            ],
+            json_schema_extra={
+                "description": "Reference to one coordinate reference system (CRS) as URI",
+                "exemples": [
+                    "http://www.opengis.net/def/crs/EPSG/0/3978",
+                    "urn:ogc:def:crs:EPSG::2193",
+                ],
+            }
         ),
     ]
 
@@ -69,7 +71,9 @@ class CRSWKT(BaseModel):
     wkt: Annotated[
         Dict,
         Field(
-            description="An object defining the CRS using the JSON encoding for Well-known text representation of coordinate reference systems 2.0",
+            json_schema_extra={
+                "description": "An object defining the CRS using the JSON encoding for Well-known text representation of coordinate reference systems 2.0",
+            }
         ),
     ]
 
@@ -80,7 +84,9 @@ class CRSRef(BaseModel):
     referenceSystem: Annotated[
         Dict[str, Any],
         Field(
-            description="A reference system data structure as defined in the MD_ReferenceSystem of the ISO 19115",
+            json_schema_extra={
+                "description": "A reference system data structure as defined in the MD_ReferenceSystem of the ISO 19115",
+            }
         ),
     ]
 
@@ -178,19 +184,35 @@ class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
 
     lowerLeft: Annotated[
         BoundsType,
-        Field(description="A 2D Point in the CRS indicated elsewhere"),
+        Field(
+            json_schema_extra={
+                "description": "A 2D Point in the CRS indicated elsewhere",
+            }
+        ),
     ]
     upperRight: Annotated[
         BoundsType,
-        Field(description="A 2D Point in the CRS indicated elsewhere"),
+        Field(
+            json_schema_extra={
+                "description": "A 2D Point in the CRS indicated elsewhere",
+            }
+        ),
     ]
     crs: Annotated[
         Optional[CRS],
-        Field(description="Coordinate Reference System (CRS)"),
+        Field(
+            json_schema_extra={
+                "description": "Coordinate Reference System (CRS)",
+            }
+        ),
     ] = None
     orderedAxes: Annotated[
         Optional[axesInfo],
-        Field(description="Ordered list of names of the dimensions defined in the CRS"),
+        Field(
+            json_schema_extra={
+                "description": "Ordered list of names of the dimensions defined in the CRS",
+            }
+        ),
     ] = None
 
 
@@ -205,7 +227,9 @@ class variableMatrixWidth(BaseModel):
         Field(
             ge=2,
             multiple_of=1,
-            description="Number of tiles in width that coalesce in a single tile for these rows",
+            json_schema_extra={
+                "description": "Number of tiles in width that coalesce in a single tile for these rows",
+            },
         ),
     ]
     minTileRow: Annotated[
@@ -213,7 +237,9 @@ class variableMatrixWidth(BaseModel):
         Field(
             ge=0,
             multiple_of=1,
-            description="First tile row where the coalescence factor applies for this tilematrix",
+            json_schema_extra={
+                "description": "First tile row where the coalescence factor applies for this tilematrix",
+            },
         ),
     ]
     maxTileRow: Annotated[
@@ -221,7 +247,9 @@ class variableMatrixWidth(BaseModel):
         Field(
             ge=0,
             multiple_of=1,
-            description="Last tile row where the coalescence factor applies for this tilematrix",
+            json_schema_extra={
+                "description": "Last tile row where the coalescence factor applies for this tilematrix",
+            },
         ),
     ]
 
@@ -237,46 +265,66 @@ class TileMatrix(BaseModel, extra="forbid"):
     title: Annotated[
         Optional[str],
         Field(
-            description="Title of this tile matrix, normally used for display to a human"
+            json_schema_extra={
+                "description": "Title of this tile matrix, normally used for display to a human",
+            }
         ),
     ] = None
     description: Annotated[
         Optional[str],
         Field(
-            description="Brief narrative description of this tile matrix set, normally available for display to a human",
+            json_schema_extra={
+                "description": "Brief narrative description of this tile matrix set, normally available for display to a human",
+            }
         ),
     ] = None
     keywords: Annotated[
         Optional[List[str]],
         Field(
-            description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset",
+            json_schema_extra={
+                "description": "Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset",
+            }
         ),
     ] = None
     id: Annotated[
         str,
         Field(
             pattern=r"^\-?[0-9]+$",
-            description="Identifier selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile. Implementation of 'identifier'",
+            json_schema_extra={
+                "description": "Identifier selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile. Implementation of 'identifier'",
+            },
         ),
     ]
     scaleDenominator: Annotated[
         float,
-        Field(description="Scale denominator of this tile matrix"),
+        Field(
+            json_schema_extra={
+                "description": "Scale denominator of this tile matrix",
+            }
+        ),
     ]
     cellSize: Annotated[
         float,
-        Field(description="Cell size of this tile matrix"),
+        Field(
+            json_schema_extra={
+                "description": "Cell size of this tile matrix",
+            }
+        ),
     ]
     cornerOfOrigin: Annotated[
         Literal["topLeft", "bottomLeft"],
         Field(
-            description="The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile.",
+            json_schema_extra={
+                "description": "The corner of the tile matrix (_topLeft_ or _bottomLeft_) used as the origin for numbering tile rows and columns. This corner is also a corner of the (0, 0) tile.",
+            }
         ),
     ] = "topLeft"
     pointOfOrigin: Annotated[
         BoundsType,
         Field(
-            description="Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist.",
+            json_schema_extra={
+                "description": "Precise position in CRS coordinates of the corner of origin (e.g. the top-left corner) for this tile matrix. This position is also a corner of the (0, 0) tile. In previous version, this was 'topLeftCorner' and 'cornerOfOrigin' did not exist.",
+            }
         ),
     ]
     tileWidth: Annotated[
@@ -284,7 +332,9 @@ class TileMatrix(BaseModel, extra="forbid"):
         Field(
             ge=1,
             multiple_of=1,
-            description="Width of each tile of this tile matrix in pixels",
+            json_schema_extra={
+                "description": "Width of each tile of this tile matrix in pixels",
+            },
         ),
     ]
     tileHeight: Annotated[
@@ -292,7 +342,9 @@ class TileMatrix(BaseModel, extra="forbid"):
         Field(
             ge=1,
             multiple_of=1,
-            description="Height of each tile of this tile matrix in pixels",
+            json_schema_extra={
+                "description": "Height of each tile of this tile matrix in pixels",
+            },
         ),
     ]
     matrixWidth: Annotated[
@@ -300,7 +352,9 @@ class TileMatrix(BaseModel, extra="forbid"):
         Field(
             ge=1,
             multiple_of=1,
-            description="Width of the matrix (number of tiles in width)",
+            json_schema_extra={
+                "description": "Width of the matrix (number of tiles in width)",
+            },
         ),
     ]
     matrixHeight: Annotated[
@@ -308,12 +362,18 @@ class TileMatrix(BaseModel, extra="forbid"):
         Field(
             ge=1,
             multiple_of=1,
-            description="Height of the matrix (number of tiles in height)",
+            json_schema_extra={
+                "description": "Height of the matrix (number of tiles in height)",
+            },
         ),
     ]
     variableMatrixWidths: Annotated[
         Optional[List[variableMatrixWidth]],
-        Field(description="Describes the rows that has variable matrix width"),
+        Field(
+            json_schema_extra={
+                "description": "Describes the rows that has variable matrix width",
+            }
+        ),
     ] = None
 
     def get_coalesce_factor(self, row: int) -> int:
@@ -350,51 +410,83 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     title: Annotated[
         Optional[str],
         Field(
-            description="Title of this tile matrix set, normally used for display to a human",
+            json_schema_extra={
+                "description": "Title of this tile matrix set, normally used for display to a human",
+            }
         ),
     ] = None
-    description: Optional[str] = Field(
-        None,
-        description="Brief narrative description of this tile matrix set, normally available for display to a human",
-    )
+    description: Annotated[
+        Optional[str],
+        Field(
+            json_schema_extra={
+                "description": "Brief narrative description of this tile matrix set, normally available for display to a human",
+            }
+        ),
+    ] = None
     keywords: Annotated[
         Optional[List[str]],
         Field(
-            description="Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set",
+            json_schema_extra={
+                "description": "Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set",
+            }
         ),
     ] = None
     id: Annotated[
         Optional[str],
         Field(
             pattern=r"^[\w\d_\-]+$",
-            description="Tile matrix set identifier. Implementation of 'identifier'",
+            json_schema_extra={
+                "description": "Tile matrix set identifier. Implementation of 'identifier'",
+            },
         ),
     ] = None
     uri: Annotated[
         Optional[str],
-        Field(description="Reference to an official source for this tileMatrixSet"),
+        Field(
+            json_schema_extra={
+                "description": "Reference to an official source for this tileMatrixSet",
+            }
+        ),
     ] = None
     orderedAxes: Annotated[
         Optional[axesInfo],
-        Field(description="Ordered list of names of the dimensions defined in the CRS"),
+        Field(
+            json_schema_extra={
+                "description": "Ordered list of names of the dimensions defined in the CRS",
+            }
+        ),
     ] = None
     crs: Annotated[
         CRS,
-        Field(description="Coordinate Reference System (CRS)"),
+        Field(
+            json_schema_extra={
+                "description": "Coordinate Reference System (CRS)",
+            }
+        ),
     ]
     wellKnownScaleSet: Annotated[
         Optional[AnyHttpUrl],
-        Field(description="Reference to a well-known scale set"),
+        Field(
+            json_schema_extra={
+                "description": "Reference to a well-known scale set",
+            }
+        ),
     ] = None
     boundingBox: Annotated[
         Optional[TMSBoundingBox],
         Field(
-            description="Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS",
+            json_schema_extra={
+                "description": "Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS",
+            }
         ),
     ] = None
     tileMatrices: Annotated[
         List[TileMatrix],
-        Field(description="Describes scale levels and its tile matrices"),
+        Field(
+            json_schema_extra={
+                "description": "Describes scale levels and its tile matrices",
+            }
+        ),
     ]
 
     # Private attributes
