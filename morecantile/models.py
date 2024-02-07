@@ -696,7 +696,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         screen_pixel_size: float, optional
             Rendering pixel size. 0.28 mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.
         decimation: int, optional
-            How tiles are divided at each zoom level (default is 2).
+            How tiles are divided at each zoom level (default is 2). Must be greater than 1.
         kwargs: Any
             Attributes to forward to the TileMatrixSet
 
@@ -715,6 +715,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         if extent_crs:
             transform = pyproj.Transformer.from_crs(extent_crs, crs, always_xy=True)
             extent = transform.transform_bounds(*extent, densify_pts=21)
+
+        if decimation < 2:
+            raise ValueError(
+                "Custom TileMatrixSet require a decimation that is greater than 1."
+            )
 
         bbox = BoundingBox(*extent)
         x_origin = bbox.left if not is_inverted else bbox.top
