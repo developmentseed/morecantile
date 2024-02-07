@@ -186,18 +186,18 @@ def test_custom_tms_bounds_user_crs():
 
 
 def test_custom_tms_decimation():
-    """Check bounds with epsg6342 and custom decimation."""
+    """Check bounds with epsg6342 and custom decimation base."""
     extent = (238170, 4334121, 377264, 4473215)
     left, bottom, right, top = extent
-    for decimation in [2, 3, 4, 5]:
+    for decimation_base in [2, 3, 4, 5]:
         custom_tms = TileMatrixSet.custom(
             extent,
             pyproj.CRS.from_epsg(6342),
-            decimation=decimation,
+            decimation_base=decimation_base,
         )
         for zoom in [0, 1, 2, 3]:
-            tile_width = (right - left) / decimation**zoom
-            tile_height = (top - bottom) / decimation**zoom
+            tile_width = (right - left) / decimation_base**zoom
+            tile_height = (top - bottom) / decimation_base**zoom
             expected = (left, top - tile_height, left + tile_width, top)
             tile_bounds = custom_tms.xy_bounds(0, 0, zoom)
             for a, b in zip(expected, tile_bounds):
