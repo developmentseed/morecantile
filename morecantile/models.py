@@ -660,6 +660,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         ordered_axes: Optional[List[str]] = None,
         geographic_crs: pyproj.CRS = WGS84_CRS,
         screen_pixel_size: float = 0.28e-3,
+        decimation: int = 2,
         **kwargs: Any,
     ):
         """
@@ -694,6 +695,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
         screen_pixel_size: float, optional
             Rendering pixel size. 0.28 mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.
+        decimation: int, optional
+            How tiles are divided at each zoom level (default is 2).
         kwargs: Any
             Attributes to forward to the TileMatrixSet
 
@@ -723,8 +726,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         tile_matrices: List[TileMatrix] = []
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
-                width / (tile_width * matrix_scale[0]) / 2.0**zoom,
-                height / (tile_height * matrix_scale[1]) / 2.0**zoom,
+                width / (tile_width * matrix_scale[0]) / float(decimation) ** zoom,
+                height / (tile_height * matrix_scale[1]) / float(decimation) ** zoom,
             )
             tile_matrices.append(
                 TileMatrix(
@@ -735,8 +738,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                         "pointOfOrigin": [x_origin, y_origin],
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
-                        "matrixWidth": matrix_scale[0] * 2**zoom,
-                        "matrixHeight": matrix_scale[1] * 2**zoom,
+                        "matrixWidth": matrix_scale[0] * decimation**zoom,
+                        "matrixHeight": matrix_scale[1] * decimation**zoom,
                     }
                 )
             )
