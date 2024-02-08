@@ -195,6 +195,12 @@ def test_custom_tms_decimation():
             pyproj.CRS.from_epsg(6342),
             decimation_base=decimation_base,
         )
+
+        if decimation_base == 2:
+            assert custom_tms.is_quadtree
+        else:
+            assert not custom_tms.is_quadtree
+
         for zoom in [0, 1, 2, 3]:
             tile_width = (right - left) / decimation_base**zoom
             tile_height = (top - bottom) / decimation_base**zoom

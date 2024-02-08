@@ -716,7 +716,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             transform = pyproj.Transformer.from_crs(extent_crs, crs, always_xy=True)
             extent = transform.transform_bounds(*extent, densify_pts=21)
 
-        if decimation_base < 2:
+        if decimation_base <= 1:
             raise ValueError(
                 "Custom TileMatrixSet requires a decimation base that is greater than 1."
             )
