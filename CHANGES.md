@@ -1,4 +1,8 @@
 
+## 5.3.0 (2024-02-09)
+
+* enable custom decimation value for in `TileMatrixSet.custom` method (author @mccarthyryanc, https://github.com/developmentseed/morecantile/pull/146)
+
 ## 5.2.3 (2024-02-02)
 
 * update pydantic `Field` usage to avoid deprecation in 3.0

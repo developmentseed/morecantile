@@ -693,6 +693,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Tile Matrix Set identifier
         geographic_crs: pyproj.CRS
             Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+        ordered_axes: list of str, optional
+            Override Axis order (e.g `["N", "S"]`) else default to CRS's metadata
         screen_pixel_size: float, optional
             Rendering pixel size. 0.28 mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.
         decimation_base: int, optional
