@@ -185,6 +185,31 @@ def test_custom_tms_bounds_user_crs():
     assert custom_tms.bounds(0, 0, 0) == (-120, 30, -110, 40)
 
 
+def test_custom_tms_decimation():
+    """Check bounds with epsg6342 and custom decimation base."""
+    extent = (238170, 4334121, 377264, 4473215)
+    left, bottom, right, top = extent
+    for decimation_base in [2, 3, 4, 5]:
+        custom_tms = TileMatrixSet.custom(
+            extent,
+            pyproj.CRS.from_epsg(6342),
+            decimation_base=decimation_base,
+        )
+
+        if decimation_base == 2:
+            assert custom_tms.is_quadtree
+        else:
+            assert not custom_tms.is_quadtree
+
+        for zoom in [0, 1, 2, 3]:
+            tile_width = (right - left) / decimation_base**zoom
+            tile_height = (top - bottom) / decimation_base**zoom
+            expected = (left, top - tile_height, left + tile_width, top)
+            tile_bounds = custom_tms.xy_bounds(0, 0, zoom)
+            for a, b in zip(expected, tile_bounds):
+                assert round(a - b, 4) == 0
+
+
 def test_nztm_quad_is_quad():
     """Test NZTM2000Quad."""
     tms = morecantile.tms.get("NZTM2000Quad")
