@@ -1252,9 +1252,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         for w, s, e, n in bboxes:
             # Clamp bounding values.
-            w = max(self.bbox.left, w)
+            w = (
+                max(self.bbox.left, w)
+                if self.bbox.left * w > 0  # case where we cross 180th meridian
+                else min(self.bbox.left, w)
+            )
             s = max(self.bbox.bottom, s)
-            e = min(self.bbox.right, e)
+            e = (
+                min(self.bbox.right, e)
+                if self.bbox.right * e > 0  # case where we cross 180th meridian
+                else max(self.bbox.right, e)
+            )
             n = min(self.bbox.top, n)
 
             for z in zooms:
