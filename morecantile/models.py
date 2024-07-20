@@ -1254,14 +1254,14 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             # Clamp bounding values.
             w = (
                 max(self.bbox.left, w)
-                if self.bbox.left * w > 0  # case where we cross 180th meridian
-                else min(self.bbox.left, w)
+                if self.bbox.left * w > 0
+                else min(self.bbox.left, w)  # case where we cross 180th meridian
             )
             s = max(self.bbox.bottom, s)
             e = (
                 min(self.bbox.right, e)
-                if self.bbox.right * e > 0  # case where we cross 180th meridian
-                else max(self.bbox.right, e)
+                if self.bbox.right * e > 0
+                else max(self.bbox.right, e)  # case where we cross 180th meridian
             )
             n = min(self.bbox.top, n)
 
