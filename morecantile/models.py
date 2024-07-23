@@ -31,6 +31,7 @@ from morecantile.utils import (
     _parse_tile_arg,
     bbox_to_feature,
     check_quadkey_support,
+    lons_contain_antimeridian,
     meters_per_unit,
     point_in_bbox,
     to_rasterio_crs,
@@ -1252,17 +1253,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         for w, s, e, n in bboxes:
             # Clamp bounding values.
-            w = (
-                max(self.bbox.left, w)
-                if self.bbox.left * w > 0
-                else min(self.bbox.left, w)  # case where we cross 180th meridian
-            )
+            ws_contain_180th = lons_contain_antimeridian(w, self.bbox.left)
+            es_contain_180th = lons_contain_antimeridian(e, self.bbox.right)
+            w = min(self.bbox.left, w) if ws_contain_180th else max(self.bbox.left, w)
             s = max(self.bbox.bottom, s)
-            e = (
-                min(self.bbox.right, e)
-                if self.bbox.right * e > 0
-                else max(self.bbox.right, e)  # case where we cross 180th meridian
-            )
+            e = max(self.bbox.right, e) if es_contain_180th else min(self.bbox.right, e)
             n = min(self.bbox.top, n)
 
             for z in zooms:

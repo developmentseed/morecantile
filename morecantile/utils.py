@@ -40,6 +40,30 @@ def _parse_tile_arg(*args) -> Tile:
         )
 
 
+def lons_contain_antimeridian(lon1: float, lon2: float) -> bool:
+    """
+    Check if the antimeridian (180th meridian) is between two longitude points
+
+    Parameters
+    ----------
+    lon1: float
+        The first longitude.
+    lon2: float
+        The second longitude
+
+    Returns
+    -------
+    A bool representing whether two longs contain the 180th meridian.
+    """
+    lon1_clipped = max(-180.0, min(lon1, 180))
+    lon2_clipped = max(-180.0, min(lon2, 180))
+    lon1_converted = (lon1_clipped + 360) % 360
+    lon2_converted = (lon2_clipped + 360) % 360
+    ws = [lon1_converted, lon2_converted]
+    sorted(ws)
+    return ws[0] < 180 < ws[1]
+
+
 def meters_per_unit(crs: CRS) -> float:
     """
     Coefficient to convert the coordinate reference system (CRS)
