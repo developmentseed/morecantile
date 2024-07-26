@@ -1,4 +1,8 @@
 
+## 5.3.1 (2024-07-26)
+
+* handle 180th meridian case for `tms.tiles()` (author @ljstrnadiii, https://github.com/developmentseed/morecantile/pull/150)
+
 ## 5.3.0 (2024-02-09)
 
 * enable custom decimation value for in `TileMatrixSet.custom` method (author @mccarthyryanc, https://github.com/developmentseed/morecantile/pull/146)
