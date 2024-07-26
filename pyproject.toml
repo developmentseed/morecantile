@@ -37,6 +37,7 @@ test = [
 ]
 dev = [
     "pre-commit",
+    "bump-my-version",
 ]
 docs = [
     "mkdocs",
@@ -110,3 +111,18 @@ ignore = [
 filterwarnings = [
     "ignore:You will likely lose important projection*:UserWarning",
 ]
+
+[tool.bumpversion]
+current_version = "5.3.0"
+
+search = "{current_version}"
+replace = "{new_version}"
+regex = false
+tag = true
+commit = true
+tag_name = "{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "morecantile/__init__.py"
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'
