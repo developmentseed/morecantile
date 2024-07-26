@@ -33,3 +33,10 @@ from morecantile import utils
 def test_mpu(crs, unit):
     """test meters_per_unit."""
     assert utils.meters_per_unit(crs) == unit
+
+
+@pytest.mark.parametrize(
+    "lon1, lon2, contains", [(-180, 180, False), (179, -179, True)]
+)
+def test_lons_contain_antimeridian(lon1: float, lon2: float, contains: bool):
+    assert utils.lons_contain_antimeridian(lon1, lon2) == contains
