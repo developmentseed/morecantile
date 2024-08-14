@@ -282,7 +282,7 @@ def shapes(  # noqa: C901
         click.echo(
             json.dumps(
                 {"type": "FeatureCollection", "bbox": bbox, "features": features},
-                **dump_kwds
+                **dump_kwds,
             )
         )
 
