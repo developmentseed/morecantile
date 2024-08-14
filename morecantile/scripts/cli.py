@@ -379,7 +379,9 @@ def tiles(ctx, zoom, input, identifier, seq, tms):  # noqa: C901
             east -= epsilon
             north -= epsilon
 
-        for tile in tilematrixset.tiles(west, south, east, north, [zoom], truncate=False):
+        for tile in tilematrixset.tiles(
+            west, south, east, north, [zoom], truncate=False
+        ):
             vals = (tile.x, tile.y, zoom)
             output = json.dumps(vals)
             if seq:
