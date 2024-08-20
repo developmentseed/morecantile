@@ -184,6 +184,11 @@ def cli(ctx, verbose, quiet):
     default=None,
     help="Shift shape x and y values by a constant number",
 )
+@click.option(
+    "--tms",
+    help="Path to TileMatrixSet JSON file.",
+    type=click.Path(),
+)
 @click.pass_context
 def shapes(  # noqa: C901
     ctx,
@@ -198,6 +203,7 @@ def shapes(  # noqa: C901
     collect,
     extents,
     buffer,
+    tms,
 ):
     """
     Reads one or more Web Mercator tile descriptions
@@ -217,7 +223,10 @@ def shapes(  # noqa: C901
     the properties object of the output feature.
 
     """
-    tms = morecantile.tms.get(identifier)
+    tilematrixset = morecantile.tms.get(identifier)
+    if tms:
+        with open(tms, "r") as f:
+            tilematrixset = morecantile.TileMatrixSet(**json.load(f))
 
     dump_kwds = {"sort_keys": True}
     if indent:
@@ -243,7 +252,7 @@ def shapes(  # noqa: C901
         else:
             raise click.BadParameter("{0}".format(obj), param=input, param_hint="input")
 
-        feature = tms.feature(
+        feature = tilematrixset.feature(
             (x, y, z),
             fid=fid,
             props=props,
@@ -273,7 +282,7 @@ def shapes(  # noqa: C901
         click.echo(
             json.dumps(
                 {"type": "FeatureCollection", "bbox": bbox, "features": features},
-                **dump_kwds
+                **dump_kwds,
             )
         )
 
@@ -302,8 +311,13 @@ def shapes(  # noqa: C901
     default=False,
     help="Write a RS-delimited JSON sequence (default is LF).",
 )
+@click.option(
+    "--tms",
+    help="Path to TileMatrixSet JSON file.",
+    type=click.Path(),
+)
 @click.pass_context
-def tiles(ctx, zoom, input, identifier, seq):  # noqa: C901
+def tiles(ctx, zoom, input, identifier, seq, tms):  # noqa: C901
     """
     Lists TMS tiles at ZOOM level intersecting
     GeoJSON [west, south, east, north] bounding boxen, features, or
@@ -324,7 +338,10 @@ def tiles(ctx, zoom, input, identifier, seq):  # noqa: C901
     [853, 1551, 12]
 
     """
-    tms = morecantile.tms.get(identifier)
+    tilematrixset = morecantile.tms.get(identifier)
+    if tms:
+        with open(tms, "r") as f:
+            tilematrixset = morecantile.TileMatrixSet(**json.load(f))
 
     for obj in normalize_source(input):
         if isinstance(obj, list):
@@ -362,7 +379,9 @@ def tiles(ctx, zoom, input, identifier, seq):  # noqa: C901
             east -= epsilon
             north -= epsilon
 
-        for tile in tms.tiles(west, south, east, north, [zoom], truncate=False):
+        for tile in tilematrixset.tiles(
+            west, south, east, north, [zoom], truncate=False
+        ):
             vals = (tile.x, tile.y, zoom)
             output = json.dumps(vals)
             if seq:
