@@ -1,4 +1,8 @@
 
+## 5.4.0 (2024-08-20)
+
+* adds --tms optional argument to the shapes and tiles cli tools (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/151)
+
 ## 5.3.1 (2024-07-26)
 
 * handle 180th meridian case for `tms.tiles()` (author @ljstrnadiii, https://github.com/developmentseed/morecantile/pull/150)
