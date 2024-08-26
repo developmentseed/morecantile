@@ -499,7 +499,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Set private attributes."""
         super().__init__(**data)
 
-        self._geographic_crs = data.get("_geographic_crs", WGS84_CRS)
+        self._geographic_crs = pyproj.CRS.from_user_input(data.get("_geographic_crs", WGS84_CRS))
 
         try:
             self._to_geographic = pyproj.Transformer.from_crs(
