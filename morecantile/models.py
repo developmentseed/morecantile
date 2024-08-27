@@ -1,7 +1,6 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 
 import math
-import sys
 import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
@@ -18,6 +17,7 @@ from pydantic import (
     model_validator,
 )
 from pyproj.exceptions import CRSError, ProjError
+from typing_extensions import Annotated
 
 from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
@@ -36,11 +36,6 @@ from morecantile.utils import (
     point_in_bbox,
     to_rasterio_crs,
 )
-
-if sys.version_info >= (3, 9):
-    from typing import Annotated  # pylint: disable=no-name-in-module
-else:
-    from typing_extensions import Annotated
 
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
@@ -499,7 +494,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Set private attributes."""
         super().__init__(**data)
 
-        self._geographic_crs = pyproj.CRS.from_user_input(data.get("_geographic_crs", WGS84_CRS))
+        self._geographic_crs = pyproj.CRS.from_user_input(
+            data.get("_geographic_crs", WGS84_CRS)
+        )
 
         try:
             self._to_geographic = pyproj.Transformer.from_crs(

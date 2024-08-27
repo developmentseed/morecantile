@@ -1,4 +1,8 @@
 
+## 5.4.1 (2024-08-27)
+
+* ensure `TileMatrixSet._geographic_crs` is a pyproj CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/152)
+
 ## 5.4.0 (2024-08-20)
 
 * adds --tms optional argument to the shapes and tiles cli tools (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/151)

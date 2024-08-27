@@ -162,6 +162,19 @@ def test_Custom():
     assert round(wmMat.scaleDenominator, 6) == round(cusMat.scaleDenominator, 6)
     assert round(wmMat.pointOfOrigin[0], 6) == round(cusMat.pointOfOrigin[0], 6)
 
+    extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
+    custom_tms = TileMatrixSet.custom(
+        extent, pyproj.CRS.from_epsg(3857), geographic_crs="epsg:4326"
+    )
+    assert isinstance(custom_tms._geographic_crs, pyproj.CRS)
+    assert custom_tms._geographic_crs == pyproj.CRS.from_epsg(4326)
+
+    extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
+    custom_tms = TileMatrixSet.custom(
+        extent, pyproj.CRS.from_epsg(3857), geographic_crs=pyproj.CRS.from_epsg(4326)
+    )
+    assert isinstance(custom_tms._geographic_crs, pyproj.CRS)
+
 
 def test_custom_tms_bounds_epsg4326():
     """Check bounds with epsg4326."""
