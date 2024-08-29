@@ -1,4 +1,8 @@
 
+## 5.4.2 (2024-08-29)
+
+* better handle anti-meridian crossing bbox in `tms.tiles()` (author @ljstrnadiii, https://github.com/developmentseed/morecantile/pull/154)
+
 ## 5.4.1 (2024-08-27)
 
 * ensure `TileMatrixSet._geographic_crs` is a pyproj CRS object (author @AndrewAnnex, https://github.com/developmentseed/morecantile/pull/152)

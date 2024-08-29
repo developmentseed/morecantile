@@ -54,7 +54,7 @@ Documentation = "https://developmentseed.org/morecantile/"
 morecantile = "morecantile.scripts.cli:cli"
 
 [build-system]
-requires = ["flit>=3.2,<4"]
+requires = ["flit_core>=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [tool.flit.module]
