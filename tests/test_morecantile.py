@@ -396,9 +396,29 @@ def test_tiles():
     assert len(list(tms.tiles(*bounds, zooms=[2]))) == 2
 
 
-def test_tiles_when_tms_bounds_and_provided_bounds_cross_antimeridian():
-    bounds = (119.1, -32.86, 119.2, -32.82)
-    utm = CRS.from_epsg(32750)
+@pytest.mark.parametrize(
+    ("bounds", "expected", "crs", "tms_bbox"),
+    [
+        # case where east tms bbox crosses antimeridian
+        (
+            (119.1, -32.86, 119.2, -32.82),
+            6,
+            32750,
+            (100.23646734667152, -79.99407435445299, -158.6052850376368, 0.0),
+        ),
+        # case where west tms bbox crosses antimeridian
+        (
+            (11.700978, 52.056474, 11.711114, 52.062706),
+            4,
+            32632,
+            (-17.582877658817317, 0.0, 95.87417095917766, 83.95429547980198),
+        ),
+    ],
+)
+def test_tiles_when_tms_bounds_and_provided_bounds_cross_antimeridian(
+    bounds: tuple, expected: int, crs: int, tms_bbox: tuple
+):
+    utm = CRS.from_epsg(crs)
     rs_extent = utm.area_of_use.bounds
     tms = morecantile.TileMatrixSet.custom(
         crs=utm, extent_crs=CRS.from_epsg(4326), extent=list(rs_extent)
@@ -407,8 +427,8 @@ def test_tiles_when_tms_bounds_and_provided_bounds_cross_antimeridian():
     # antimeridian e.g. min(119.2, -158.605) clamps to much larger area. Now
     # that we check to see if lons contain antimeridian, we build tiles that
     # actually overlap the provided bounds to tiles.
-    assert tms.bbox == (100.23646734667152, -79.99407435445299, -158.6052850376368, 0.0)
-    assert len(list(tms.tiles(*bounds, zooms=4))) == 1
+    assert tms.bbox == tms_bbox
+    assert len(list(tms.tiles(*bounds, zooms=11))) == expected
 
 
 def test_tiles_for_tms_with_non_standard_row_col_order():
