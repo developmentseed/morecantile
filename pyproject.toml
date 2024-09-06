@@ -41,8 +41,10 @@ dev = [
     "bump-my-version",
 ]
 docs = [
-    "mkdocs",
-    "mkdocs-material",
+    "mkdocs>=1.4.3",
+    "mkdocs-material[imaging]>=9.5",
+    "griffe-inherited-docstrings>=1.0.0",
+    "mkdocstrings[python]>=0.25.1",
     "pygments",
 ]
 

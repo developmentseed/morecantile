@@ -24,6 +24,12 @@ nav:
   - Home: 'index.md'
   - Usage: 'usage.md'
   - TMS v2: 'tms-v2.md'
+  - API:
+    - morecantile.commons: api/morecantile/commons.md
+    - morecantile.defaults: api/morecantile/defaults.md
+    - morecantile.errors: api/morecantile/errors.md
+    - morecantile.models: api/morecantile/models.md
+    - morecantile.utils: api/morecantile/utils.md
   - CLI: 'cli.md'
   - Development - Contributing: 'contributing.md'
   - Release: 'release-notes.md'
@@ -41,9 +47,41 @@ theme:
   font:
     text: 'Nunito Sans'
     code: 'Fira Code'
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - navigation.indexes
+    - navigation.instant
+    - navigation.tracking
+    - search.suggest
+    - search.share
 
 plugins:
   - search
+  - mkdocstrings:
+      enable_inventory: true
+      handlers:
+        python:
+          paths: [src]
+          options:
+            filters:
+            - "!^__post_init__"
+            docstring_section_style: list
+            docstring_style: google
+            line_length: 100
+            separate_signature: true
+            show_root_heading: true
+            show_signature_annotations: true
+            show_source: false
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            extensions:
+              - griffe_inherited_docstrings
+          import:
+            - https://docs.python.org/3/objects.inv
+            - https://rasterio.readthedocs.io/en/stable/objects.inv
+            - https://docs.pydantic.dev/latest/objects.inv
+            - https://pyproj4.github.io/pyproj/stable/objects.inv
 
 # These extensions are chosen to be a superset of Pandoc's Markdown.
 # This way, I can write in Pandoc's Markdown and have it be supported here.

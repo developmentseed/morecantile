@@ -7,10 +7,10 @@ class BoundingBox(NamedTuple):
     """A xmin,ymin,xmax,ymax coordinates tuple.
 
     Args:
-    left (number): min horizontal coordinate.
-    bottom (number):min vertical coordinate.
-    right (number): max horizontal coordinate.
-    top (number): max vertical coordinate.
+        left (number): min horizontal coordinate.
+        bottom (number):min vertical coordinate.
+        right (number): max horizontal coordinate.
+        top (number): max vertical coordinate.
 
     Examples:
         >>> BoundingBox(-180.0, -90.0, 180.0, 90.0)
