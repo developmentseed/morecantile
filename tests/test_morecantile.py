@@ -428,6 +428,8 @@ def test_tiles_when_tms_bounds_and_provided_bounds_cross_antimeridian(
     # that we check to see if lons contain antimeridian, we build tiles that
     # actually overlap the provided bounds to tiles.
     assert tms.bbox == tms_bbox
+    for a, b in zip(tms.bbox, tms_bbox):
+        assert round(a - b, 6) == 0
     assert len(list(tms.tiles(*bounds, zooms=11))) == expected
 
 
