@@ -40,7 +40,6 @@ from morecantile.utils import (
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
-WGS84_CRS = pyproj.CRS.from_epsg(4326)
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
 
 
@@ -486,7 +485,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
-    _geographic_crs: pyproj.CRS = PrivateAttr(default=WGS84_CRS)
+    _geographic_crs: pyproj.CRS = PrivateAttr()
     _to_geographic: pyproj.Transformer = PrivateAttr()
     _from_geographic: pyproj.Transformer = PrivateAttr()
 
@@ -494,8 +493,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Set private attributes."""
         super().__init__(**data)
 
+        # TODO is the geodetic_crs always the geographic crs?
+        # maybe instead switch depending on if it's a projection or a geodcrs/geogcrs
         self._geographic_crs = pyproj.CRS.from_user_input(
-            data.get("_geographic_crs", WGS84_CRS)
+            data.get("_geographic_crs", self.crs._pyproj_crs.geodetic_crs)
         )
 
         try:
@@ -656,7 +657,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         title: Optional[str] = None,
         id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
-        geographic_crs: pyproj.CRS = WGS84_CRS,
+        geographic_crs: pyproj.CRS = None,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
         **kwargs: Any,
@@ -689,8 +690,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Tile Matrix Set title
         id: str, optional
             Tile Matrix Set identifier
-        geographic_crs: pyproj.CRS
-            Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
+        geographic_crs: pyproj.CRS, optional
+            Geographic (lat,lon) coordinate reference system (default is CRS's geodetic CRS)
         ordered_axes: list of str, optional
             Override Axis order (e.g `["N", "S"]`) else default to CRS's metadata
         screen_pixel_size: float, optional
@@ -705,6 +706,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         TileMatrixSet
 
         """
+        # TODO is this correct to always assume?
+        geographic_crs = geographic_crs or crs.geodetic_crs
+
         matrix_scale = matrix_scale or [1, 1]
 
         if ordered_axes:
