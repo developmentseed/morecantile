@@ -493,8 +493,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Set private attributes."""
         super().__init__(**data)
 
-        # TODO is the geodetic_crs always the geographic crs?
-        # maybe instead switch depending on if it's a projection or a geodcrs/geogcrs
         self._geographic_crs = pyproj.CRS.from_user_input(
             data.get("_geographic_crs", self.crs._pyproj_crs.geodetic_crs)
         )
