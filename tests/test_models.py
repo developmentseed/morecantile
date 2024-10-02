@@ -289,18 +289,21 @@ def test_zoom_for_res():
     assert tms.zoom_for_res(10) == 14
     assert tms.zoom_for_res(5000) == 6
 
+
 def test_custom_not_earth():
-    crs = pyproj.CRS.from_user_input('IAU_2015:49900')
+    crs = pyproj.CRS.from_user_input("IAU_2015:49900")
     extent = [-90, -180, 90, 180]
     mars_tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsGeographicCRS")
-    assert '4326' not in mars_tms.geographic_crs.to_wkt()
-    assert '4326' not in mars_tms.rasterio_geographic_crs.to_wkt()
-    wkt_mars_web_mercator = "PROJCRS[\"Mars (2015) - Sphere XY / Pseudo-Mercator\",BASEGEOGCRS[\"Mars (2015) - Sphere\",DATUM[\"Mars (2015) - Sphere\",ELLIPSOID[\"Mars (2015) - Sphere\",3396190,0,LENGTHUNIT[\"metre\",1,ID[\"EPSG\",9001]]],ANCHOR[\"Viking 1 lander : 47.95137 W\"]],PRIMEM[\"Reference Meridian\",0,ANGLEUNIT[\"degree\",0.0174532925199433,ID[\"EPSG\",9122]]]],CONVERSION[\"Popular Visualisation Pseudo-Mercator\",METHOD[\"Popular Visualisation Pseudo Mercator\",ID[\"EPSG\",1024]],PARAMETER[\"Latitude of natural origin\",0,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8801]],PARAMETER[\"Longitude of natural origin\",0,ANGLEUNIT[\"degree\",0.0174532925199433],ID[\"EPSG\",8802]],PARAMETER[\"False easting\",0,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8806]],PARAMETER[\"False northing\",0,LENGTHUNIT[\"metre\",1],ID[\"EPSG\",8807]]],CS[Cartesian,2],AXIS[\"easting (X)\",east,ORDER[1],LENGTHUNIT[\"metre\",1,ID[\"EPSG\",9001]]],AXIS[\"northing (Y)\",north,ORDER[2],LENGTHUNIT[\"metre\",1,ID[\"EPSG\",9001]]],USAGE[SCOPE[\"Web mapping and visualisation.\"],AREA[\"World between 85.06 S and 85.06 N.\"],BBOX[-85.850511287,-180,85.0511287,180]],REMARK[\"Use semi-major radius as sphere radius for interoperability. Source of IAU Coordinate systems: doi:10.1007/s10569-017-9805-5\"]]"
+    assert "4326" not in mars_tms.geographic_crs.to_wkt()
+    assert "4326" not in mars_tms.rasterio_geographic_crs.to_wkt()
+    wkt_mars_web_mercator = 'PROJCRS["Mars (2015) - Sphere XY / Pseudo-Mercator",BASEGEOGCRS["Mars (2015) - Sphere",DATUM["Mars (2015) - Sphere",ELLIPSOID["Mars (2015) - Sphere",3396190,0,LENGTHUNIT["metre",1,ID["EPSG",9001]]],ANCHOR["Viking 1 lander : 47.95137 W"]],PRIMEM["Reference Meridian",0,ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9122]]]],CONVERSION["Popular Visualisation Pseudo-Mercator",METHOD["Popular Visualisation Pseudo Mercator",ID["EPSG",1024]],PARAMETER["Latitude of natural origin",0,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8801]],PARAMETER["Longitude of natural origin",0,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8802]],PARAMETER["False easting",0,LENGTHUNIT["metre",1],ID["EPSG",8806]],PARAMETER["False northing",0,LENGTHUNIT["metre",1],ID["EPSG",8807]]],CS[Cartesian,2],AXIS["easting (X)",east,ORDER[1],LENGTHUNIT["metre",1,ID["EPSG",9001]]],AXIS["northing (Y)",north,ORDER[2],LENGTHUNIT["metre",1,ID["EPSG",9001]]],USAGE[SCOPE["Web mapping and visualisation."],AREA["World between 85.06 S and 85.06 N."],BBOX[-85.850511287,-180,85.0511287,180]],REMARK["Use semi-major radius as sphere radius for interoperability. Source of IAU Coordinate systems: doi:10.1007/s10569-017-9805-5"]]'
     crs_mars_web_mercator = pyproj.CRS.from_wkt(wkt_mars_web_mercator)
-    extent_wm = [-85.850511287,-180,85.0511287,180]
-    mars_tms_wm = morecantile.TileMatrixSet.custom(extent_wm, crs_mars_web_mercator, id="MarsWebMercator")
-    assert '4326' not in mars_tms_wm.geographic_crs.to_wkt()
-    assert '4326' not in mars_tms_wm.rasterio_geographic_crs.to_wkt()
+    extent_wm = [-85.850511287, -180, 85.0511287, 180]
+    mars_tms_wm = morecantile.TileMatrixSet.custom(
+        extent_wm, crs_mars_web_mercator, id="MarsWebMercator"
+    )
+    assert "4326" not in mars_tms_wm.geographic_crs.to_wkt()
+    assert "4326" not in mars_tms_wm.rasterio_geographic_crs.to_wkt()
 
 
 def test_schema():
@@ -321,8 +324,8 @@ def test_schema():
     assert json_doc["crs"] == "http://www.opengis.net/def/crs/IAU/2015/49930"
     # test to ensure a correct geographic crs
     mars_tms = TileMatrixSet.model_validate(json_doc)
-    assert '4326' not in mars_tms.geographic_crs.to_wkt()
-    assert '4326' not in mars_tms.rasterio_geographic_crs.to_wkt()
+    assert "4326" not in mars_tms.geographic_crs.to_wkt()
+    assert "4326" not in mars_tms.rasterio_geographic_crs.to_wkt()
     crs = pyproj.CRS.from_epsg(3031)
     extent = [-948.75, -543592.47, 5817.41, -3333128.95]  # From https:///epsg.io/3031
     tms = morecantile.TileMatrixSet.custom(extent, crs, id="MyCustomTmsEPSG3031")
