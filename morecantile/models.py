@@ -706,6 +706,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         # TODO is this correct to always assume?
         geographic_crs = geographic_crs or crs.geodetic_crs
+        if not geographic_crs:
+            raise ValueError("CRS doesn't have internal geodeticCRS/geographicCRS defined, please provide one")
 
         matrix_scale = matrix_scale or [1, 1]
 
