@@ -145,7 +145,7 @@ class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
 CRSType = CRS
 
 
-def CRS_to_uri(crs: pyproj.CRS) -> str:
+def CRS_to_info(crs: pyproj.CRS) -> tuple[str, str, str | None]:
     """Convert CRS to URI."""
     authority = "EPSG"
     code = None
@@ -157,8 +157,21 @@ def CRS_to_uri(crs: pyproj.CRS) -> str:
         # if we have a version number in the authority, split it out
         if "_" in authority:
             authority, version = authority.split("_")
+    return authority, version, code
 
+
+def CRS_to_uri(crs: pyproj.CRS) -> str:
+    """Convert CRS to URI."""
+    authority, version, code = CRS_to_info(crs)
     return f"http://www.opengis.net/def/crs/{authority}/{version}/{code}"
+
+
+def CRS_to_urn(crs: pyproj.CRS) -> str:
+    """Convert CRS to URN."""
+    authority, version, code = CRS_to_info(crs)
+    if version == "0":
+        version = ""
+    return f"urn:ogc:def:crs:{authority}:{version}:{code}"
 
 
 def crs_axis_inverted(crs: pyproj.CRS) -> bool:
