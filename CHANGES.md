@@ -1,4 +1,9 @@
 
+## 6.0.0 (TBD)
+
+* remove `_geographic_crs` private attribute in `TileMatrixSet` model **breaking change**
+* use `crs.geodetic_crs` property as `geographic_crs` **breaking change**
+
 ## 5.4.2 (2024-08-29)
 
 * better handle anti-meridian crossing bbox in `tms.tiles()` (author @ljstrnadiii, https://github.com/developmentseed/morecantile/pull/154)
