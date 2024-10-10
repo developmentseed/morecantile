@@ -30,6 +30,7 @@ def test_tile_matrix_set(tileset):
         ts = TileMatrixSet.model_validate_json(f.read())
     # This would fail if `crs` isn't supported by PROJ
     assert isinstance(ts.crs._pyproj_crs, pyproj.CRS)
+    assert isinstance(ts.geographic_crs, pyproj.CRS)
     assert repr(ts)
 
 
@@ -163,17 +164,13 @@ def test_Custom():
     assert round(wmMat.pointOfOrigin[0], 6) == round(cusMat.pointOfOrigin[0], 6)
 
     extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
-    custom_tms = TileMatrixSet.custom(
-        extent, pyproj.CRS.from_epsg(3857), geographic_crs="epsg:4326"
-    )
-    assert isinstance(custom_tms._geographic_crs, pyproj.CRS)
-    assert custom_tms._geographic_crs == pyproj.CRS.from_epsg(4326)
+    custom_tms = TileMatrixSet.custom(extent, pyproj.CRS.from_epsg(3857))
+    assert isinstance(custom_tms.geographic_crs, pyproj.CRS)
+    assert custom_tms.geographic_crs == pyproj.CRS.from_epsg(4326)
 
     extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
-    custom_tms = TileMatrixSet.custom(
-        extent, pyproj.CRS.from_epsg(3857), geographic_crs=pyproj.CRS.from_epsg(4326)
-    )
-    assert isinstance(custom_tms._geographic_crs, pyproj.CRS)
+    custom_tms = TileMatrixSet.custom(extent, pyproj.CRS.from_epsg(3857))
+    assert isinstance(custom_tms.geographic_crs, pyproj.CRS)
 
 
 def test_custom_tms_bounds_epsg4326():
@@ -300,8 +297,7 @@ def test_schema():
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
-    with pytest.warns(UserWarning):
-        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     assert tms.model_json_schema()
     assert tms.model_dump(exclude_none=True)
     json_doc = json.loads(tms.model_dump_json(exclude_none=True))
@@ -338,7 +334,6 @@ def test_mars_tms():
         MARS_MERCATOR,
         extent_crs=MARS2000_SPHERE,
         title="Web Mercator Mars",
-        geographic_crs=MARS2000_SPHERE,
     )
 
     pos = (35, 40, 3)
@@ -362,7 +357,6 @@ def test_mars_local_tms():
         [-5e5, -5e5, 5e5, 5e5],
         SYRTIS_TM,
         title="Web Mercator Mars",
-        geographic_crs=MARS2000_SPHERE,
     )
     assert SYRTIS_TM == syrtis_tms.crs._pyproj_crs
     assert syrtis_tms.model_dump(mode="json")
@@ -558,7 +552,6 @@ def test_boundingbox():
 def test_private_attr():
     """Check private attr."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert "_geographic_crs" in tms.__private_attributes__
     assert "_to_geographic" in tms.__private_attributes__
     assert "_from_geographic" in tms.__private_attributes__
 
