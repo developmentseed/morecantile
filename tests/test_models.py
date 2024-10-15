@@ -399,7 +399,10 @@ def test_mars_tms_construction():
     mars_sphere_crs = pyproj.CRS.from_user_input("IAU_2015:49900")
     extent = [-90, -180, 90, 180]
     mars_tms = morecantile.TileMatrixSet.custom(
-        extent, mars_sphere_crs, id="MarsGeographicCRS"
+        extent, 
+        mars_sphere_crs, 
+        id="MarsGeographicCRS", 
+        matrix_scale=[1, 2],
     )
     assert "4326" not in mars_tms.geographic_crs.to_wkt()
     assert "4326" not in mars_tms.rasterio_geographic_crs.to_wkt()
