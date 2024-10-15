@@ -432,6 +432,23 @@ def test_mars_web_mercator_long_lat():
     assert mars_tms_wm.bbox.bottom == pytest.approx(-85.0511287)
     assert mars_tms_wm.bbox.right == pytest.approx(180.0)
     assert mars_tms_wm.bbox.top == pytest.approx(85.0511287)
+    extent_wm_geog = [
+        -179.9999999999996,
+        -85.05112877980656,
+        179.9999999999996,
+        85.05112877980656,
+    ]
+    mars_sphere_crs = pyproj.CRS.from_user_input("IAU_2015:49900")
+    mars_tms_wm_geog_ext = morecantile.TileMatrixSet.custom(
+        extent_wm_geog,
+        extent_crs=mars_sphere_crs,
+        crs=crs_mars_web_mercator,
+        id="MarsWebMercator",
+    )
+    assert mars_tms_wm_geog_ext.bbox.left == pytest.approx(-180.0)
+    assert mars_tms_wm_geog_ext.bbox.bottom == pytest.approx(-85.0511287)
+    assert mars_tms_wm_geog_ext.bbox.right == pytest.approx(180.0)
+    assert mars_tms_wm_geog_ext.bbox.top == pytest.approx(85.0511287)
 
 
 @pytest.mark.parametrize(
