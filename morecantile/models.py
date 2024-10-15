@@ -40,7 +40,6 @@ from morecantile.utils import (
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
-WGS84_CRS = pyproj.CRS.from_epsg(4326)
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
 
 
