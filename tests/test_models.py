@@ -423,7 +423,6 @@ def test_mars_web_mercator_long_lat():
     ]
     mars_tms_wm = morecantile.TileMatrixSet.custom(
         extent_wm,
-        # extent_crs=mars_sphere_crs,
         crs=crs_mars_web_mercator,
         id="MarsWebMercator",
     )
