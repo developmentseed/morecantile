@@ -348,7 +348,7 @@ def test_mars_tms():
         extent_crs=MARS2000_SPHERE,
         title="Web Mercator Mars",
     )
-    assert mars_tms.geographic_crs
+    assert mars_tms.geographic_crs == MARS2000_SPHERE
 
     pos = (35, 40, 3)
     mars_tile = mars_tms.tile(*pos)
