@@ -485,7 +485,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
-    _geographic_crs: pyproj.CRS = PrivateAttr()
     _to_geographic: pyproj.Transformer = PrivateAttr()
     _from_geographic: pyproj.Transformer = PrivateAttr()
 
@@ -493,16 +492,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Set private attributes."""
         super().__init__(**data)
 
-        self._geographic_crs = pyproj.CRS.from_user_input(
-            data.get("_geographic_crs", self.crs._pyproj_crs.geodetic_crs)
-        )
-
         try:
             self._to_geographic = pyproj.Transformer.from_crs(
-                self.crs._pyproj_crs, self._geographic_crs, always_xy=True
+                self.crs._pyproj_crs, self.crs._pyproj_crs.geodetic_crs, always_xy=True
             )
             self._from_geographic = pyproj.Transformer.from_crs(
-                self._geographic_crs, self.crs._pyproj_crs, always_xy=True
+                self.crs._pyproj_crs.geodetic_crs, self.crs._pyproj_crs, always_xy=True
             )
         except ProjError:
             warnings.warn(
@@ -554,7 +549,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     @cached_property
     def geographic_crs(self) -> pyproj.CRS:
         """Return the TMS's geographic CRS."""
-        return self._geographic_crs
+        return self.crs._pyproj_crs.geodetic_crs
 
     @cached_property
     def rasterio_crs(self):
@@ -564,7 +559,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     @cached_property
     def rasterio_geographic_crs(self):
         """Return the geographic CRS as a rasterio CRS."""
-        return to_rasterio_crs(self._geographic_crs)
+        return to_rasterio_crs(self.crs._pyproj_crs.geodetic_crs)
 
     @property
     def minzoom(self) -> int:
@@ -655,7 +650,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         title: Optional[str] = None,
         id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
-        geographic_crs: pyproj.CRS = None,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
         **kwargs: Any,
@@ -688,8 +682,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Tile Matrix Set title
         id: str, optional
             Tile Matrix Set identifier
-        geographic_crs: pyproj.CRS, optional
-            Geographic (lat,lon) coordinate reference system (default is CRS's geodetic CRS)
         ordered_axes: list of str, optional
             Override Axis order (e.g `["N", "S"]`) else default to CRS's metadata
         screen_pixel_size: float, optional
@@ -774,7 +766,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             tileMatrices=tile_matrices,
             id=id,
             title=title,
-            _geographic_crs=geographic_crs,
             **kwargs,
         )
 
