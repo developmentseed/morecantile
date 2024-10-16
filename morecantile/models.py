@@ -487,14 +487,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     # Private attributes
     _to_geographic: pyproj.Transformer = PrivateAttr()
     _from_geographic: pyproj.Transformer = PrivateAttr()
-    _tile_matrices_idx: Dict[str, int] = PrivateAttr()
+
+    _tile_matrices_idx: Dict[int, int] = PrivateAttr()
 
     def __init__(self, **data):
         """Set private attributes."""
         super().__init__(**data)
 
         self._tile_matrices_idx = {
-            mat.id: idx for idx, mat in enumerate(self.tileMatrices)
+            int(mat.id): idx for idx, mat in enumerate(self.tileMatrices)
         }
 
         try:
@@ -770,7 +771,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
-        if (idx := self._tile_matrices_idx.get(str(zoom), None)) is not None:
+        if (idx := self._tile_matrices_idx.get(zoom, None)) is not None:
             return self.tileMatrices[idx]
 
         #######################################################################
@@ -1025,58 +1026,61 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         x, y = self.xy(lng, lat, truncate=truncate)
         return self._tile(x, y, zoom, ignore_coalescence=ignore_coalescence)
 
-    def _ul(self, tile: Tile) -> Coords:
+    def _ul(self, *tile: Tile) -> Coords:
         """
         Return the upper left coordinate of the tile in TMS coordinate reference system.
 
         Attributes
         ----------
-        tile: Tile object we want the upper left coordinates of.
+        tile: (x, y, z) tile coordinates or a Tile object we want the upper left coordinates of.
 
         Returns
         -------
         Coords: The upper left coordinates of the input tile.
 
         """
-        matrix = self.matrix(tile.z)
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
         origin_x, origin_y = self._matrix_origin(matrix)
 
         cf = (
-            matrix.get_coalesce_factor(tile.y)
+            matrix.get_coalesce_factor(t.y)
             if matrix.variableMatrixWidths is not None
             else 1
         )
         return Coords(
-            origin_x
-            + math.floor(tile.x / cf) * matrix.cellSize * cf * matrix.tileWidth,
-            origin_y - tile.y * matrix.cellSize * matrix.tileHeight,
+            origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth,
+            origin_y - t.y * matrix.cellSize * matrix.tileHeight,
         )
 
-    def _lr(self, tile: Tile) -> Coords:
+    def _lr(self, *tile: Tile) -> Coords:
         """
         Return the lower right coordinate of the tile in TMS coordinate reference system.
 
         Attributes
         ----------
-        tile: Tile object we want the lower right coordinates of.
+        tile: (x, y, z) tile coordinates or a Tile object we want the lower right coordinates of.
 
         Returns
         -------
         Coords: The lower right coordinates of the input tile.
 
         """
-        matrix = self.matrix(tile.z)
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
         origin_x, origin_y = self._matrix_origin(matrix)
 
         cf = (
-            matrix.get_coalesce_factor(tile.y)
+            matrix.get_coalesce_factor(t.y)
             if matrix.variableMatrixWidths is not None
             else 1
         )
         return Coords(
             origin_x
-            + (math.floor(tile.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth,
-            origin_y - (tile.y + 1) * matrix.cellSize * matrix.tileHeight,
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth,
+            origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight,
         )
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
@@ -1094,40 +1098,59 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         t = _parse_tile_arg(*tile)
 
-        left, top = self._ul(t)
-        right, bottom = self._lr(t)
+        matrix = self.matrix(t.z)
+        origin_x, origin_y = self._matrix_origin(matrix)
+
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
+
+        left = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
+        top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+        right = (
+            origin_x
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+
         return BoundingBox(left, bottom, right, top)
 
-    def ul(self, tile: Tile) -> Coords:
+    def ul(self, *tile: Tile) -> Coords:
         """
         Return the upper left coordinates of the tile in geographic coordinate reference system.
 
         Attributes
         ----------
-        tile (Tile): Tile object we want the upper left geographic coordinates of.
+        tile (tuple or Tile): (x, y, z) tile coordinates or a Tile object we want the upper left geographic coordinates of.
 
         Returns
         -------
         Coords: The upper left geographic coordinates of the input tile.
 
         """
-        x, y = self._ul(tile)
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._ul(t)
         return Coords(*self.lnglat(x, y))
 
-    def lr(self, tile: Tile) -> Coords:
+    def lr(self, *tile: Tile) -> Coords:
         """
         Return the lower right coordinates of the tile in geographic coordinate reference system.
 
         Attributes
         ----------
-        tile (Tile): Tile object we want the lower right geographic coordinates of.
+        tile (tuple or Tile): (x, y, z) tile coordinates or a Tile object we want the lower right geographic coordinates of.
 
         Returns
         -------
         Coords: The lower right geographic coordinates of the input tile.
 
         """
-        x, y = self._lr(tile)
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._lr(t)
         return Coords(*self.lnglat(x, y))
 
     def bounds(self, *tile: Tile) -> BoundingBox:
@@ -1143,10 +1166,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         BoundingBox: The bounding box of the input tile.
 
         """
-        t = _parse_tile_arg(*tile)
+        _left, _bottom, _right, _top = self.xy_bounds(*tile)
+        left, top = self.lnglat(_left, _top)
+        right, bottom = self.lnglat(_right, _bottom)
 
-        left, top = self.ul(t)
-        right, bottom = self.lr(t)
         return BoundingBox(left, bottom, right, top)
 
     @property

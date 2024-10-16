@@ -384,7 +384,7 @@ def test_mars_local_tms():
     assert syrtis_tms.geographic_crs
     assert syrtis_tms.model_dump(mode="json")
 
-    center = syrtis_tms.ul(Tile(1, 1, 1))
+    center = syrtis_tms.ul(1, 1, 1)
     assert round(center.x, 6) == 76.5
     assert round(center.y, 6) == 17
 
