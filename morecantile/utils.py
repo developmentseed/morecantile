@@ -32,6 +32,7 @@ def _parse_tile_arg(*args) -> Tile:
     """
     if len(args) == 1:
         args = args[0]
+
     if len(args) == 3:
         return Tile(*args)
     else:

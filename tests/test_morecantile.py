@@ -133,7 +133,7 @@ def test_ul_tile():
     test form https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
     """
     tms = morecantile.tms.get("WebMercatorQuad")
-    xy = tms.ul(486, 332, 10)
+    xy = tms.ul(morecantile.Tile(486, 332, 10))
     expected = (-9.140625, 53.33087298301705)
     for a, b in zip(expected, xy):
         assert round(a - b, 6) == 0
@@ -146,7 +146,7 @@ def test_projul_tile():
     test form https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
     """
     tms = morecantile.tms.get("WebMercatorQuad")
-    xy = tms._ul(486, 332, 10)
+    xy = tms._ul(morecantile.Tile(486, 332, 10))
     expected = (-1017529.7205322663, 7044436.526761846)
     for a, b in zip(expected, xy):
         assert round(a - b, 6) == 0
@@ -191,15 +191,12 @@ def test_feature():
 
 ################################################################################
 # replicate mercantile tests
-# https://github.com/mapbox/mercantile/blob/master/tests/test_funcs.py
-@pytest.mark.parametrize(
-    "args", [(486, 332, 10), [(486, 332, 10)], [morecantile.Tile(486, 332, 10)]]
-)
-def test_ul(args):
+def test_ul():
     """test args."""
+    tile = morecantile.Tile(486, 332, 10)
     tms = morecantile.tms.get("WebMercatorQuad")
     expected = (-9.140625, 53.33087298301705)
-    lnglat = tms.ul(*args)
+    lnglat = tms.ul(tile)
     for a, b in zip(expected, lnglat):
         assert round(a - b, 6) == 0
     assert lnglat[0] == lnglat.x
@@ -225,7 +222,7 @@ def test_bbox(args):
 def test_xy_tile():
     """x, y for the 486-332-10 tile is correctly calculated."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    ul = tms.ul(486, 332, 10)
+    ul = tms.ul(morecantile.Tile(486, 332, 10))
     xy = tms.xy(*ul)
     expected = (-1017529.7205322663, 7044436.526761846)
     for a, b in zip(expected, xy):
