@@ -1,5 +1,5 @@
 
-## 6.0.0 (TBD)
+## 6.0.0 (2024-10-16)
 
 * remove `_geographic_crs` private attribute in `TileMatrixSet` model **breaking change**
 * use `crs.geodetic_crs` property as `geographic_crs` **breaking change**
