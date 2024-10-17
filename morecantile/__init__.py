@@ -8,7 +8,7 @@ Refs:
 
 """
 
-__version__ = "6.0.0"
+__version__ = "6.1.0"
 
 from .commons import BoundingBox, Coords, Tile  # noqa
 from .defaults import TileMatrixSets, tms  # noqa
