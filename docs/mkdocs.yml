@@ -31,6 +31,7 @@ nav:
     - morecantile.models: api/morecantile/models.md
     - morecantile.utils: api/morecantile/utils.md
   - CLI: 'cli.md'
+  - Benchmarking: benchmark.html
   - Development - Contributing: 'contributing.md'
   - Release: 'release-notes.md'
 
