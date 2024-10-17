@@ -1,0 +1,6 @@
+pytest
+pytest-benchmark
+
+morecantile
+mercantile
+utiles
