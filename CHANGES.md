@@ -1,8 +1,8 @@
 
-## 7.0.0 (TBD)
+## 6.1.0 (TBD)
 
 * add `_tile_matrices_idx: Dict[str, int]` private attribute to improve `matrices` lookup
-* change `_ul`, `ul`, `_lr` and `lr` method to only accept `morecantile.Tile` object **breaking change**
+* change `xy_bounds()` and `bounds()` methods to avoid calculation duplication
 
 ## 6.0.0 (2024-10-16)
 
