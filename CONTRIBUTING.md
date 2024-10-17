@@ -24,6 +24,13 @@ This repo is set to use `pre-commit` to run *isort*, *flake8*, *pydocstring*, *b
 $ pre-commit install
 ```
 
+##### Performance tests
+
+```sh
+python -m pip install -e ".[benchmark]"
+python -m pytest tests/benchmarks.py --benchmark-only --benchmark-columns 'min, max, mean, median' --benchmark-sort 'min'
+```
+
 ### Docs
 
 ```bash
