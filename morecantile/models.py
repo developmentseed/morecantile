@@ -488,9 +488,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     _to_geographic: pyproj.Transformer = PrivateAttr()
     _from_geographic: pyproj.Transformer = PrivateAttr()
 
+    _tile_matrices_idx: Dict[int, int] = PrivateAttr()
+
     def __init__(self, **data):
         """Set private attributes."""
         super().__init__(**data)
+
+        self._tile_matrices_idx = {
+            int(mat.id): idx for idx, mat in enumerate(self.tileMatrices)
+        }
 
         try:
             self._to_geographic = pyproj.Transformer.from_crs(
@@ -765,9 +771,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
-        for m in self.tileMatrices:
-            if m.id == str(zoom):
-                return m
+        if (idx := self._tile_matrices_idx.get(zoom, None)) is not None:
+            return self.tileMatrices[idx]
 
         #######################################################################
         # If user wants a deeper matrix we calculate it
@@ -1093,8 +1098,23 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         t = _parse_tile_arg(*tile)
 
-        left, top = self._ul(t)
-        right, bottom = self._lr(t)
+        matrix = self.matrix(t.z)
+        origin_x, origin_y = self._matrix_origin(matrix)
+
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
+
+        left = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
+        top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+        right = (
+            origin_x
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+
         return BoundingBox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
@@ -1146,10 +1166,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         BoundingBox: The bounding box of the input tile.
 
         """
-        t = _parse_tile_arg(*tile)
+        _left, _bottom, _right, _top = self.xy_bounds(*tile)
+        left, top = self.lnglat(_left, _top)
+        right, bottom = self.lnglat(_right, _bottom)
 
-        left, top = self.ul(t)
-        right, bottom = self.lr(t)
         return BoundingBox(left, bottom, right, top)
 
     @property

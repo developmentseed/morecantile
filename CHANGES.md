@@ -1,4 +1,9 @@
 
+## 6.1.0 (TBD)
+
+* add `_tile_matrices_idx: Dict[str, int]` private attribute to improve `matrices` lookup
+* change `xy_bounds()` and `bounds()` methods to avoid calculation duplication
+
 ## 6.0.0 (2024-10-16)
 
 * remove `_geographic_crs` private attribute in `TileMatrixSet` model **breaking change**
