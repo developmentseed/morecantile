@@ -36,6 +36,10 @@ test = [
     "pytest-cov",
     "rasterio>=1.2.1",
 ]
+benchmark = [
+    "pytest",
+    "pytest-benchmark",
+]
 dev = [
     "pre-commit",
     "bump-my-version",
