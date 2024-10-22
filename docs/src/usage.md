@@ -103,8 +103,6 @@ Here are the available options:
 
 - **id** (*str, defaults to `Custom`*): Tile Matrix Set identifier
 
-- **geographic_crs** (*pyproj.CRS, defaults to `EPSG:4326`*): Geographic (lat,lon) coordinate reference system
-
 - **ordered_axes** (*list of str, Optional*): Override Axis order (e.g `["N", "S"]`) else default to CRS's metadata
 
 - **screen_pixel_size** (*float, optional*): Rendering pixel size. `0.28` mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.

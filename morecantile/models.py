@@ -40,7 +40,6 @@ from morecantile.utils import (
 NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
-WGS84_CRS = pyproj.CRS.from_epsg(4326)
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
 
 
@@ -499,24 +498,25 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
-    _geographic_crs: pyproj.CRS = PrivateAttr(default=WGS84_CRS)
     _to_geographic: pyproj.Transformer = PrivateAttr()
     _from_geographic: pyproj.Transformer = PrivateAttr()
+
+    _tile_matrices_idx: Dict[int, int] = PrivateAttr()
 
     def __init__(self, **data):
         """Set private attributes."""
         super().__init__(**data)
 
-        self._geographic_crs = pyproj.CRS.from_user_input(
-            data.get("_geographic_crs", WGS84_CRS)
-        )
+        self._tile_matrices_idx = {
+            int(mat.id): idx for idx, mat in enumerate(self.tileMatrices)
+        }
 
         try:
             self._to_geographic = pyproj.Transformer.from_crs(
-                self.crs._pyproj_crs, self._geographic_crs, always_xy=True
+                self.crs._pyproj_crs, self.crs._pyproj_crs.geodetic_crs, always_xy=True
             )
             self._from_geographic = pyproj.Transformer.from_crs(
-                self._geographic_crs, self.crs._pyproj_crs, always_xy=True
+                self.crs._pyproj_crs.geodetic_crs, self.crs._pyproj_crs, always_xy=True
             )
         except ProjError:
             warnings.warn(
@@ -568,7 +568,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     @cached_property
     def geographic_crs(self) -> pyproj.CRS:
         """Return the TMS's geographic CRS."""
-        return self._geographic_crs
+        return self.crs._pyproj_crs.geodetic_crs
 
     @cached_property
     def rasterio_crs(self):
@@ -578,7 +578,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     @cached_property
     def rasterio_geographic_crs(self):
         """Return the geographic CRS as a rasterio CRS."""
-        return to_rasterio_crs(self._geographic_crs)
+        return to_rasterio_crs(self.crs._pyproj_crs.geodetic_crs)
 
     @property
     def minzoom(self) -> int:
@@ -669,7 +669,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         title: Optional[str] = None,
         id: Optional[str] = None,
         ordered_axes: Optional[List[str]] = None,
-        geographic_crs: pyproj.CRS = WGS84_CRS,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
         **kwargs: Any,
@@ -702,8 +701,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             Tile Matrix Set title
         id: str, optional
             Tile Matrix Set identifier
-        geographic_crs: pyproj.CRS
-            Geographic (lat,lon) coordinate reference system (default is EPSG:4326)
         ordered_axes: list of str, optional
             Override Axis order (e.g `["N", "S"]`) else default to CRS's metadata
         screen_pixel_size: float, optional
@@ -782,15 +779,13 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             tileMatrices=tile_matrices,
             id=id,
             title=title,
-            _geographic_crs=geographic_crs,
             **kwargs,
         )
 
     def matrix(self, zoom: int) -> TileMatrix:
         """Return the TileMatrix for a specific zoom."""
-        for m in self.tileMatrices:
-            if m.id == str(zoom):
-                return m
+        if (idx := self._tile_matrices_idx.get(zoom, None)) is not None:
+            return self.tileMatrices[idx]
 
         #######################################################################
         # If user wants a deeper matrix we calculate it
@@ -1116,8 +1111,23 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         t = _parse_tile_arg(*tile)
 
-        left, top = self._ul(t)
-        right, bottom = self._lr(t)
+        matrix = self.matrix(t.z)
+        origin_x, origin_y = self._matrix_origin(matrix)
+
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
+
+        left = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
+        top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+        right = (
+            origin_x
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+
         return BoundingBox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
@@ -1169,10 +1179,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         BoundingBox: The bounding box of the input tile.
 
         """
-        t = _parse_tile_arg(*tile)
+        _left, _bottom, _right, _top = self.xy_bounds(*tile)
+        left, top = self.lnglat(_left, _top)
+        right, bottom = self.lnglat(_right, _bottom)
 
-        left, top = self.ul(t)
-        right, bottom = self.lr(t)
         return BoundingBox(left, bottom, right, top)
 
     @property

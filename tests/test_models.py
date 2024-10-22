@@ -30,7 +30,22 @@ def test_tile_matrix_set(tileset):
         ts = TileMatrixSet.model_validate_json(f.read())
     # This would fail if `crs` isn't supported by PROJ
     assert isinstance(ts.crs._pyproj_crs, pyproj.CRS)
+    assert isinstance(ts.geographic_crs, pyproj.CRS)
     assert repr(ts)
+
+
+@pytest.mark.parametrize("tileset", tilesets)
+def test_geographic_crs_bbox(tileset):
+    """check that geographic bounds are correct."""
+    with open(tileset, "r") as f:
+        ts = TileMatrixSet.model_validate_json(f.read())
+
+    if not pyproj.CRS.from_epsg(4326) == ts.geographic_crs:
+        _to_geographic = pyproj.Transformer.from_crs(
+            ts.crs._pyproj_crs, pyproj.CRS.from_epsg(4326), always_xy=True
+        )
+        bbox = _to_geographic.transform_bounds(*ts.xy_bbox, densify_pts=21)
+        assert bbox == ts.bbox
 
 
 def test_tile_matrix_iter():
@@ -163,17 +178,13 @@ def test_Custom():
     assert round(wmMat.pointOfOrigin[0], 6) == round(cusMat.pointOfOrigin[0], 6)
 
     extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
-    custom_tms = TileMatrixSet.custom(
-        extent, pyproj.CRS.from_epsg(3857), geographic_crs="epsg:4326"
-    )
-    assert isinstance(custom_tms._geographic_crs, pyproj.CRS)
-    assert custom_tms._geographic_crs == pyproj.CRS.from_epsg(4326)
+    custom_tms = TileMatrixSet.custom(extent, pyproj.CRS.from_epsg(3857))
+    assert isinstance(custom_tms.geographic_crs, pyproj.CRS)
+    assert custom_tms.geographic_crs == pyproj.CRS.from_epsg(4326)
 
     extent = (-20037508.3427892, -20037508.3427892, 20037508.3427892, 20037508.3427892)
-    custom_tms = TileMatrixSet.custom(
-        extent, pyproj.CRS.from_epsg(3857), geographic_crs=pyproj.CRS.from_epsg(4326)
-    )
-    assert isinstance(custom_tms._geographic_crs, pyproj.CRS)
+    custom_tms = TileMatrixSet.custom(extent, pyproj.CRS.from_epsg(3857))
+    assert isinstance(custom_tms.geographic_crs, pyproj.CRS)
 
 
 def test_custom_tms_bounds_epsg4326():
@@ -300,8 +311,7 @@ def test_schema():
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
-    with pytest.warns(UserWarning):
-        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
+    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     assert tms.model_json_schema()
     assert tms.model_dump(exclude_none=True)
     json_doc = json.loads(tms.model_dump_json(exclude_none=True))
@@ -316,13 +326,12 @@ def test_schema():
     assert json_doc["crs"] == "http://www.opengis.net/def/crs/EPSG/0/3031"
 
 
-MARS2000_SPHERE = pyproj.CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
-
-
 def test_mars_tms():
     """The Mars global mercator scheme should broadly align with the Earth
     Web Mercator CRS, despite the different planetary radius and scale.
     """
+    MARS2000_SPHERE = pyproj.CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
+
     MARS_MERCATOR = pyproj.CRS.from_proj4(
         "+proj=merc +R=3396190 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +no_defs"
     )
@@ -338,8 +347,8 @@ def test_mars_tms():
         MARS_MERCATOR,
         extent_crs=MARS2000_SPHERE,
         title="Web Mercator Mars",
-        geographic_crs=MARS2000_SPHERE,
     )
+    assert mars_tms.geographic_crs == MARS2000_SPHERE
 
     pos = (35, 40, 3)
     mars_tile = mars_tms.tile(*pos)
@@ -350,9 +359,17 @@ def test_mars_tms():
     assert mars_tile.y == earth_tile.y
     assert mars_tile.z == earth_tile.z == 3
 
+    _to_geographic = pyproj.Transformer.from_crs(
+        mars_tms.crs._pyproj_crs, MARS2000_SPHERE, always_xy=True
+    )
+    bbox = _to_geographic.transform_bounds(*mars_tms.xy_bbox, densify_pts=21)
+    assert bbox == mars_tms.bbox
+
 
 def test_mars_local_tms():
     """Local TMS using Mars CRS"""
+    MARS2000_SPHERE = pyproj.CRS.from_proj4("+proj=longlat +R=3396190 +no_defs")
+
     # A transverse mercator projection for the landing site of the Perseverance rover.
     SYRTIS_TM = pyproj.CRS.from_proj4(
         "+proj=tmerc +lat_0=17 +lon_0=76.5 +k=0.9996 +x_0=0 +y_0=0 +a=3396190 +b=3376200 +units=m +no_defs"
@@ -362,14 +379,76 @@ def test_mars_local_tms():
         [-5e5, -5e5, 5e5, 5e5],
         SYRTIS_TM,
         title="Web Mercator Mars",
-        geographic_crs=MARS2000_SPHERE,
     )
     assert SYRTIS_TM == syrtis_tms.crs._pyproj_crs
+    assert syrtis_tms.geographic_crs
     assert syrtis_tms.model_dump(mode="json")
 
     center = syrtis_tms.ul(1, 1, 1)
     assert round(center.x, 6) == 76.5
     assert round(center.y, 6) == 17
+
+    _to_geographic = pyproj.Transformer.from_crs(
+        syrtis_tms.crs._pyproj_crs, MARS2000_SPHERE, always_xy=True
+    )
+    bbox = _to_geographic.transform_bounds(*syrtis_tms.xy_bbox, densify_pts=21)
+    assert bbox == syrtis_tms.bbox
+
+
+def test_mars_tms_construction():
+    mars_sphere_crs = pyproj.CRS.from_user_input("IAU_2015:49900")
+    extent = [-180.0, -90.0, 180.0, 90.0]
+    mars_tms = morecantile.TileMatrixSet.custom(
+        extent,
+        crs=mars_sphere_crs,
+        id="MarsGeographicCRS",
+        matrix_scale=[2, 1],
+    )
+    assert "4326" not in mars_tms.geographic_crs.to_wkt()
+    assert "4326" not in mars_tms.rasterio_geographic_crs.to_wkt()
+    assert mars_tms.xy_bbox.left == pytest.approx(-180.0)
+    assert mars_tms.xy_bbox.bottom == pytest.approx(-90.0)
+    assert mars_tms.xy_bbox.right == pytest.approx(180.0)
+    assert mars_tms.xy_bbox.top == pytest.approx(90.0)
+
+
+def test_mars_web_mercator_long_lat():
+    wkt_mars_web_mercator = 'PROJCRS["Mars (2015) - Sphere XY / Pseudo-Mercator",BASEGEOGCRS["Mars (2015) - Sphere",DATUM["Mars (2015) - Sphere",ELLIPSOID["Mars (2015) - Sphere",3396190,0,LENGTHUNIT["metre",1,ID["EPSG",9001]]],ANCHOR["Viking 1 lander : 47.95137 W"]],PRIMEM["Reference Meridian",0,ANGLEUNIT["degree",0.0174532925199433,ID["EPSG",9122]]]],CONVERSION["Popular Visualisation Pseudo-Mercator",METHOD["Popular Visualisation Pseudo Mercator",ID["EPSG",1024]],PARAMETER["Latitude of natural origin",0,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8801]],PARAMETER["Longitude of natural origin",0,ANGLEUNIT["degree",0.0174532925199433],ID["EPSG",8802]],PARAMETER["False easting",0,LENGTHUNIT["metre",1],ID["EPSG",8806]],PARAMETER["False northing",0,LENGTHUNIT["metre",1],ID["EPSG",8807]]],CS[Cartesian,2],AXIS["easting (X)",east,ORDER[1],LENGTHUNIT["metre",1,ID["EPSG",9001]]],AXIS["northing (Y)",north,ORDER[2],LENGTHUNIT["metre",1,ID["EPSG",9001]]],USAGE[SCOPE["Web mapping and visualisation."],AREA["World between 85.06 S and 85.06 N."],BBOX[-85.050511287,-180,85.050511287,180]],REMARK["Use semi-major radius as sphere radius for interoperability. Source of IAU Coordinate systems: doi:10.1007/s10569-017-9805-5"]]'
+    crs_mars_web_mercator = pyproj.CRS.from_wkt(wkt_mars_web_mercator)
+    extent_wm = [
+        -10669445.554195119,
+        -10669445.554195119,
+        10669445.554195119,
+        10669445.554195119,
+    ]
+    mars_tms_wm = morecantile.TileMatrixSet.custom(
+        extent_wm,
+        crs=crs_mars_web_mercator,
+        id="MarsWebMercator",
+    )
+    assert "4326" not in mars_tms_wm.geographic_crs.to_wkt()
+    assert "4326" not in mars_tms_wm.rasterio_geographic_crs.to_wkt()
+    assert mars_tms_wm.bbox.left == pytest.approx(-180.0)
+    assert mars_tms_wm.bbox.bottom == pytest.approx(-85.0511287)
+    assert mars_tms_wm.bbox.right == pytest.approx(180.0)
+    assert mars_tms_wm.bbox.top == pytest.approx(85.0511287)
+    extent_wm_geog = [
+        -179.9999999999996,
+        -85.05112877980656,
+        179.9999999999996,
+        85.05112877980656,
+    ]
+    mars_sphere_crs = pyproj.CRS.from_user_input("IAU_2015:49900")
+    mars_tms_wm_geog_ext = morecantile.TileMatrixSet.custom(
+        extent_wm_geog,
+        extent_crs=mars_sphere_crs,
+        crs=crs_mars_web_mercator,
+        id="MarsWebMercator",
+    )
+    assert mars_tms_wm_geog_ext.bbox.left == pytest.approx(-180.0)
+    assert mars_tms_wm_geog_ext.bbox.bottom == pytest.approx(-85.0511287)
+    assert mars_tms_wm_geog_ext.bbox.right == pytest.approx(180.0)
+    assert mars_tms_wm_geog_ext.bbox.top == pytest.approx(85.0511287)
 
 
 @pytest.mark.parametrize(
@@ -558,7 +637,6 @@ def test_boundingbox():
 def test_private_attr():
     """Check private attr."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert "_geographic_crs" in tms.__private_attributes__
     assert "_to_geographic" in tms.__private_attributes__
     assert "_from_geographic" in tms.__private_attributes__
 
