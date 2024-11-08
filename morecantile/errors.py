@@ -35,3 +35,7 @@ class InvalidZoomError(MorecantileError):
 
 class DeprecationError(MorecantileError):
     """Raised when TMS version is not 2.0"""
+
+
+class NonWGS84GeographicCRS(UserWarning):
+    """Geographic CRS is not EPSG:4326."""

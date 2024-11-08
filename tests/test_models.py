@@ -12,7 +12,7 @@ from rasterio.crs import CRS as rioCRS
 
 import morecantile
 from morecantile.commons import Tile
-from morecantile.errors import InvalidIdentifier
+from morecantile.errors import InvalidIdentifier, NonWGS84GeographicCRS
 from morecantile.models import CRS, CRSWKT, CRSUri, TileMatrix, TileMatrixSet
 
 data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
@@ -214,11 +214,12 @@ def test_custom_tms_decimation():
     extent = (238170, 4334121, 377264, 4473215)
     left, bottom, right, top = extent
     for decimation_base in [2, 3, 4, 5]:
-        custom_tms = TileMatrixSet.custom(
-            extent,
-            pyproj.CRS.from_epsg(6342),
-            decimation_base=decimation_base,
-        )
+        with pytest.warns(NonWGS84GeographicCRS):
+            custom_tms = TileMatrixSet.custom(
+                extent,
+                pyproj.CRS.from_epsg(6342),
+                decimation_base=decimation_base,
+            )
 
         if decimation_base == 2:
             assert custom_tms.is_quadtree
@@ -311,7 +312,8 @@ def test_schema():
         "+proj=stere +lat_0=90 +lon_0=0 +k=2 +x_0=0 +y_0=0 +R=3396190 +units=m +no_defs"
     )
     extent = [-13584760.000, -13585240.000, 13585240.000, 13584760.000]
-    tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
+    with pytest.warns(NonWGS84GeographicCRS):
+        tms = morecantile.TileMatrixSet.custom(extent, crs, id="MarsNPolek2MOLA5k")
     assert tms.model_json_schema()
     assert tms.model_dump(exclude_none=True)
     json_doc = json.loads(tms.model_dump_json(exclude_none=True))
@@ -336,18 +338,19 @@ def test_mars_tms():
         "+proj=merc +R=3396190 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +no_defs"
     )
 
-    # same boundaries as Earth mercator
-    mars_tms = TileMatrixSet.custom(
-        [
-            -179.9999999999996,
-            -85.05112877980656,
-            179.9999999999996,
-            85.05112877980656,
-        ],
-        MARS_MERCATOR,
-        extent_crs=MARS2000_SPHERE,
-        title="Web Mercator Mars",
-    )
+    with pytest.warns(NonWGS84GeographicCRS):
+        # same boundaries as Earth mercator
+        mars_tms = TileMatrixSet.custom(
+            [
+                -179.9999999999996,
+                -85.05112877980656,
+                179.9999999999996,
+                85.05112877980656,
+            ],
+            MARS_MERCATOR,
+            extent_crs=MARS2000_SPHERE,
+            title="Web Mercator Mars",
+        )
     assert mars_tms.geographic_crs == MARS2000_SPHERE
 
     pos = (35, 40, 3)
@@ -374,12 +377,15 @@ def test_mars_local_tms():
     SYRTIS_TM = pyproj.CRS.from_proj4(
         "+proj=tmerc +lat_0=17 +lon_0=76.5 +k=0.9996 +x_0=0 +y_0=0 +a=3396190 +b=3376200 +units=m +no_defs"
     )
-    # 100km grid centered on 17N, 76.5E
-    syrtis_tms = TileMatrixSet.custom(
-        [-5e5, -5e5, 5e5, 5e5],
-        SYRTIS_TM,
-        title="Web Mercator Mars",
-    )
+
+    with pytest.warns(NonWGS84GeographicCRS):
+
+        # 100km grid centered on 17N, 76.5E
+        syrtis_tms = TileMatrixSet.custom(
+            [-5e5, -5e5, 5e5, 5e5],
+            SYRTIS_TM,
+            title="Web Mercator Mars",
+        )
     assert SYRTIS_TM == syrtis_tms.crs._pyproj_crs
     assert syrtis_tms.geographic_crs
     assert syrtis_tms.model_dump(mode="json")
@@ -398,12 +404,13 @@ def test_mars_local_tms():
 def test_mars_tms_construction():
     mars_sphere_crs = pyproj.CRS.from_user_input("IAU_2015:49900")
     extent = [-180.0, -90.0, 180.0, 90.0]
-    mars_tms = morecantile.TileMatrixSet.custom(
-        extent,
-        crs=mars_sphere_crs,
-        id="MarsGeographicCRS",
-        matrix_scale=[2, 1],
-    )
+    with pytest.warns(NonWGS84GeographicCRS):
+        mars_tms = morecantile.TileMatrixSet.custom(
+            extent,
+            crs=mars_sphere_crs,
+            id="MarsGeographicCRS",
+            matrix_scale=[2, 1],
+        )
     assert "4326" not in mars_tms.geographic_crs.to_wkt()
     assert "4326" not in mars_tms.rasterio_geographic_crs.to_wkt()
     assert mars_tms.xy_bbox.left == pytest.approx(-180.0)
@@ -421,11 +428,12 @@ def test_mars_web_mercator_long_lat():
         10669445.554195119,
         10669445.554195119,
     ]
-    mars_tms_wm = morecantile.TileMatrixSet.custom(
-        extent_wm,
-        crs=crs_mars_web_mercator,
-        id="MarsWebMercator",
-    )
+    with pytest.warns(NonWGS84GeographicCRS):
+        mars_tms_wm = morecantile.TileMatrixSet.custom(
+            extent_wm,
+            crs=crs_mars_web_mercator,
+            id="MarsWebMercator",
+        )
     assert "4326" not in mars_tms_wm.geographic_crs.to_wkt()
     assert "4326" not in mars_tms_wm.rasterio_geographic_crs.to_wkt()
     assert mars_tms_wm.bbox.left == pytest.approx(-180.0)
@@ -439,12 +447,13 @@ def test_mars_web_mercator_long_lat():
         85.05112877980656,
     ]
     mars_sphere_crs = pyproj.CRS.from_user_input("IAU_2015:49900")
-    mars_tms_wm_geog_ext = morecantile.TileMatrixSet.custom(
-        extent_wm_geog,
-        extent_crs=mars_sphere_crs,
-        crs=crs_mars_web_mercator,
-        id="MarsWebMercator",
-    )
+    with pytest.warns(NonWGS84GeographicCRS):
+        mars_tms_wm_geog_ext = morecantile.TileMatrixSet.custom(
+            extent_wm_geog,
+            extent_crs=mars_sphere_crs,
+            crs=crs_mars_web_mercator,
+            id="MarsWebMercator",
+        )
     assert mars_tms_wm_geog_ext.bbox.left == pytest.approx(-180.0)
     assert mars_tms_wm_geog_ext.bbox.bottom == pytest.approx(-85.0511287)
     assert mars_tms_wm_geog_ext.bbox.right == pytest.approx(180.0)

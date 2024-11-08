@@ -117,6 +117,12 @@ ignore = [
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore:You will likely lose important projection*:UserWarning",
+    "ignore:`CanadianNAD83_LCC`*:morecantile.errors.NonWGS84GeographicCRS",
+    "ignore:`EuropeanETRS89_LAEAQuad`*:morecantile.errors.NonWGS84GeographicCRS",
+    "ignore:`WorldCRS84Quad`*:morecantile.errors.NonWGS84GeographicCRS",
+    "ignore:`NZTM2000Quad`*:morecantile.errors.NonWGS84GeographicCRS",
+    "ignore:`LINZAntarticaMapTilegrid`*:morecantile.errors.NonWGS84GeographicCRS",
+    "ignore::morecantile.errors.PointOutsideTMSBounds",
 ]
 
 [tool.bumpversion]

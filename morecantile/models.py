@@ -1,6 +1,7 @@
 """Pydantic modules for OGC TileMatrixSets (https://www.ogc.org/standards/tms)"""
 
 import math
+import os
 import warnings
 from functools import cached_property
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
@@ -23,6 +24,7 @@ from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import (
     DeprecationError,
     InvalidZoomError,
+    NonWGS84GeographicCRS,
     NoQuadkeySupport,
     PointOutsideTMSBounds,
     QuadKeyError,
@@ -41,6 +43,14 @@ NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
+WGS84_CRS = pyproj.CRS.from_epsg(4326)
+
+IGNORE_NON_WGS84_GEOGRAPHIC = os.environ.get(
+    "MORECANTILE_IGNORE_NON_WGS84_GEOGRAPHIC", "false"
+).lower() in ["true", "on", "1", "yes"]
+DEFAULT_WGS84_GEOGRAPHIC = os.environ.get(
+    "MORECANTILE_WGS84_GEOGRAPHIC", "false"
+).lower() in ["true", "on", "1", "yes"]
 
 
 class CRSUri(BaseModel):
@@ -485,6 +495,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
+    _geographic_crs: pyproj.CRS = PrivateAttr()
     _to_geographic: pyproj.Transformer = PrivateAttr()
     _from_geographic: pyproj.Transformer = PrivateAttr()
 
@@ -499,11 +510,22 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         }
 
         try:
+            self._geographic_crs = (
+                WGS84_CRS
+                if DEFAULT_WGS84_GEOGRAPHIC
+                else self.crs._pyproj_crs.geodetic_crs
+            )
+            if not IGNORE_NON_WGS84_GEOGRAPHIC and self._geographic_crs != WGS84_CRS:
+                warnings.warn(
+                    f"`{self.id}` TMS's CRS doesn't use EPSG:4326 as geographic CRS but {self._geographic_crs}",
+                    NonWGS84GeographicCRS,
+                )
+
             self._to_geographic = pyproj.Transformer.from_crs(
-                self.crs._pyproj_crs, self.crs._pyproj_crs.geodetic_crs, always_xy=True
+                self.crs._pyproj_crs, self._geographic_crs, always_xy=True
             )
             self._from_geographic = pyproj.Transformer.from_crs(
-                self.crs._pyproj_crs.geodetic_crs, self.crs._pyproj_crs, always_xy=True
+                self._geographic_crs, self.crs._pyproj_crs, always_xy=True
             )
         except ProjError:
             warnings.warn(
@@ -555,7 +577,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     @cached_property
     def geographic_crs(self) -> pyproj.CRS:
         """Return the TMS's geographic CRS."""
-        return self.crs._pyproj_crs.geodetic_crs
+        return self._geographic_crs
 
     @cached_property
     def rasterio_crs(self):
@@ -565,7 +587,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     @cached_property
     def rasterio_geographic_crs(self):
         """Return the geographic CRS as a rasterio CRS."""
-        return to_rasterio_crs(self.crs._pyproj_crs.geodetic_crs)
+        return to_rasterio_crs(self._geographic_crs)
 
     @property
     def minzoom(self) -> int:
