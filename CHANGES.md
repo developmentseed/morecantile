@@ -1,4 +1,9 @@
 
+## 6.2.0 (2024-11-08)
+
+* use `WGS84` as default CRS for GeoJSON output (as per specification)
+* add `geographic_crs` option for `TileMatrixSet.feature` method
+
 ## 6.1.0 (2024-10-17)
 
 * add `_tile_matrices_idx: Dict[str, int]` private attribute to improve `matrices` lookup

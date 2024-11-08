@@ -183,10 +183,35 @@ def test_feature():
         feat = tms.feature(
             morecantile.Tile(1, 0, 1), projected=True, fid="1", props={"some": "thing"}
         )
+    assert feat["crs"]
     assert feat["bbox"]
     assert feat["id"] == "1"
     assert feat["geometry"]
     assert len(feat["properties"].keys()) == 4
+
+    # These extent coordinates are in EPSG:2056 (CH)
+    custom_tms = morecantile.TileMatrixSet.custom(
+        [2696082.04374708, 1289407.53195196, 2696210.04374708, 1289535.53195196],
+        CRS.from_epsg("2056"),
+    )
+    assert custom_tms.geographic_crs != CRS.from_epsg(4326)
+    # Warn when geographic CRS is not WGS84
+    with pytest.warns(UserWarning):
+        feat = custom_tms.feature(
+            morecantile.Tile(1, 0, 1),
+            projected=False,
+            geographic_crs=custom_tms.geographic_crs,
+        )
+        assert feat["crs"]
+
+    # By default we use WGS84 CRS (as per GeoJSON spec)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        feat = custom_tms.feature(
+            morecantile.Tile(1, 0, 1),
+            projected=False,
+        )
+        assert not feat.get("crs")
 
 
 ################################################################################
