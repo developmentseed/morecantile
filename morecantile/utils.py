@@ -118,12 +118,10 @@ def is_power_of_two(number: int) -> bool:
 def check_quadkey_support(tms: List) -> bool:
     """Check if a Tile Matrix Set supports quadkeys"""
     return all(
-        [
-            (t.matrixWidth == t.matrixHeight)
-            and is_power_of_two(t.matrixWidth)
-            and ((t.matrixWidth * 2) == tms[i + 1].matrixWidth)
-            for i, t in enumerate(tms[:-1])
-        ]
+        (t.matrixWidth == t.matrixHeight)
+        and is_power_of_two(t.matrixWidth)
+        and ((t.matrixWidth * 2) == tms[i + 1].matrixWidth)
+        for i, t in enumerate(tms[:-1])
     )
 
 
