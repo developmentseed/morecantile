@@ -1,6 +1,8 @@
 
 ## Unreleased
 
+* remove python 3.8 support
+
 ## 6.2.0 (2024-12-19)
 
 * add python 3.13 support
