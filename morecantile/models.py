@@ -1377,8 +1377,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             "geometry": geom,
             "properties": {
                 "title": f"XYZ tile {xyz}",
-                "grid_name": self.id,
-                "grid_crs": CRS_to_uri(self.crs._pyproj_crs),
+                "tms": self.id,
+                "tms_crs": CRS_to_uri(self.crs._pyproj_crs),
             },
         }
 
