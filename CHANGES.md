@@ -1,6 +1,8 @@
 
 ## Unreleased
 
+## 6.2.0 (2024-12-19)
+
 * add python 3.13 support
 * update pyproj dependency version to `>=3.1,<4.0`
 
