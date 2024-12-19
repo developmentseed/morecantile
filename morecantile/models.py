@@ -510,6 +510,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 "Could not create coordinate Transformer from input CRS to the given geographic CRS"
                 "some methods might not be available.",
                 UserWarning,
+                stacklevel=1,
             )
             self._to_geographic = None
             self._from_geographic = None
@@ -537,10 +538,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     def is_variable(self) -> bool:
         """Check if TMS has variable width matrix."""
         return any(
-            [
-                True if matrix.variableMatrixWidths is not None else False
-                for matrix in self.tileMatrices
-            ]
+            True if matrix.variableMatrixWidths is not None else False
+            for matrix in self.tileMatrices
         )
 
     def __iter__(self):
@@ -800,6 +799,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         warnings.warn(
             f"TileMatrix not found for level: {zoom} - Creating values from TMS Scale.",
             UserWarning,
+            stacklevel=1,
         )
 
         # TODO: what if we want to construct a matrix for a level up ?
@@ -894,6 +894,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             warnings.warn(
                 f"Point ({x}, {y}) is outside TMS bounds {list(self.xy_bbox)}.",
                 PointOutsideTMSBounds,
+                stacklevel=1,
             )
 
         lng, lat = self._to_geographic.transform(x, y)
@@ -913,6 +914,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             warnings.warn(
                 f"Point ({lng}, {lat}) is outside TMS bounds {list(self.bbox)}.",
                 PointOutsideTMSBounds,
+                stacklevel=1,
             )
 
         x, y = self._from_geographic.transform(lng, lat)
@@ -1372,6 +1374,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 "CRS is no longer part of the GeoJSON specification."
                 "Other projection than EPSG:4326 might not be supported.",
                 UserWarning,
+                stacklevel=1,
             )
             feat.update(
                 {

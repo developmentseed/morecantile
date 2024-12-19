@@ -55,7 +55,7 @@ class TileMatrixSets:
         """Register TileMatrixSet(s)."""
         for identifier in custom_tms.keys():
             if identifier in self.tms and not overwrite:
-                raise Exception(f"{identifier} is already a registered TMS.")
+                raise InvalidIdentifier(f"{identifier} is already a registered TMS.")
 
         return TileMatrixSets({**self.tms, **custom_tms})
 
