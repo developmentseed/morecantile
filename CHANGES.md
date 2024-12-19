@@ -1,8 +1,14 @@
 
-## 6.2.0 (2024-11-08)
+## Unreleased
 
 * use `WGS84` as default CRS for GeoJSON output (as per specification)
 * add `geographic_crs` option for `TileMatrixSet.feature` method
+* remove python 3.8 support
+
+## 6.2.0 (2024-12-19)
+
+* add python 3.13 support
+* update pyproj dependency version to `>=3.1,<4.0`
 
 ## 6.1.0 (2024-10-17)
 
