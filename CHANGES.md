@@ -1,7 +1,6 @@
 
 ## Unreleased
 
-* remove python 3.8 support
 * add python 3.13 support
 * update pyproj dependency version to `>=3.1,<4.0`
 
