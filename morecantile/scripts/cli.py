@@ -189,6 +189,11 @@ def cli(ctx, verbose, quiet):
     help="Path to TileMatrixSet JSON file.",
     type=click.Path(),
 )
+@click.option(
+    "--crs",
+    help="Geographic CRS. Default to WGS84.",
+    type=str,
+)
 @click.pass_context
 def shapes(  # noqa: C901
     ctx,
@@ -204,6 +209,7 @@ def shapes(  # noqa: C901
     extents,
     buffer,
     tms,
+    crs,
 ):
     """
     Reads one or more Web Mercator tile descriptions
@@ -223,6 +229,10 @@ def shapes(  # noqa: C901
     the properties object of the output feature.
 
     """
+    geographic_crs = None
+    if crs:
+        geographic_crs = CRS.from_user_input(crs)
+
     tilematrixset = morecantile.tms.get(identifier)
     if tms:
         with open(tms, "r") as f:
@@ -259,6 +269,7 @@ def shapes(  # noqa: C901
             projected=projected,
             buffer=buffer,
             precision=precision,
+            geographic_crs=geographic_crs,
         )
         bbox = feature["bbox"]
         w, s, e, n = bbox
@@ -526,6 +537,11 @@ def custom(
     default=None,
     help="Shift shape x and y values by a constant number",
 )
+@click.option(
+    "--crs",
+    help="Geographic CRS. Default to WGS84.",
+    type=str,
+)
 def tms_to_geojson(  # noqa: C901
     input,
     level,
@@ -538,8 +554,13 @@ def tms_to_geojson(  # noqa: C901
     collect,
     extents,
     buffer,
+    crs,
 ):
     """Print TMS document as GeoJSON."""
+    geographic_crs = None
+    if crs:
+        geographic_crs = CRS.from_user_input(crs)
+
     tms = morecantile.TileMatrixSet(**json.load(input))
     matrix = tms.matrix(level)
 
@@ -568,6 +589,7 @@ def tms_to_geojson(  # noqa: C901
                 projected=projected,
                 buffer=buffer,
                 precision=precision,
+                geographic_crs=geographic_crs,
             )
             bbox = feature["bbox"]
             w, s, e, n = bbox
