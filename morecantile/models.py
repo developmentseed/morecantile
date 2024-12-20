@@ -1389,12 +1389,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 UserWarning,
                 stacklevel=1,
             )
-            if epsg := feature_crs.to_epsg():
+            if authority_code := feature_crs.to_authority(min_confidence=20):
+                authority, code = authority_code
                 feat.update(
                     {
                         "crs": {
-                            "type": "EPSG",
-                            "properties": {"code": epsg},
+                            "type": "name",
+                            "properties": {
+                                "name": f"urn:ogc:def:crs:{authority}:0:{code}"
+                            },
                         }
                     }
                 )
@@ -1402,8 +1405,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 feat.update(
                     {
                         "crs": {
-                            "type": "name",
-                            "properties": {"name": CRS_to_uri(feature_crs)},
+                            "type": "wkt",
+                            "properties": {"wkt": feature_crs.to_wkt()},
                         }
                     }
                 )
