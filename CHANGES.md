@@ -18,7 +18,7 @@
     "properties": {
         "crs": {
             "type": "name",
-            "properties": {"name": f"urn:ogc:def:crs:EPSG:0:3857"},
+            "properties": {"name": "http://www.opengis.net/def/crs/EPSG/0/3857"},
         }
         # or
         "crs": {
