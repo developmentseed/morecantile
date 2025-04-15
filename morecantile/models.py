@@ -390,6 +390,21 @@ class TileMatrix(BaseModel, extra="forbid"):
 
         return 1
 
+    def translate_cornerOfOrigin_Tile(self, tile: Tile):
+        """
+        Translates the cornerOfOrigin of a tile between topLeft and bottomLeft
+
+        Parameters
+        ----------
+        tile: Tile
+            Tile we want to translate
+
+        Returns
+        -------
+        The tile translated. Should have the exact same TMS bounds and geographic bounds as the input tile
+        """
+        return Tile(tile.x, self.matrixHeight - tile.y - 1, tile.z)
+
 
 class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     """Tile Matrix Set Definition
@@ -657,6 +672,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         ordered_axes: Optional[List[str]] = None,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
+        corner_of_origin: str = 'topLeft',
+        point_of_origin: List[float] = None,
         **kwargs: Any,
     ):
         """
@@ -718,8 +735,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             )
 
         bbox = BoundingBox(*extent)
-        x_origin = bbox.left if not is_inverted else bbox.top
-        y_origin = bbox.top if not is_inverted else bbox.left
+        if not point_of_origin:
+            x_origin = bbox.left if not is_inverted else bbox.top
+            y_origin = bbox.top if not is_inverted else bbox.left
+            point_of_origin = [x_origin, y_origin]
         width = abs(bbox.right - bbox.left)
         height = abs(bbox.top - bbox.bottom)
         mpu = meters_per_unit(crs)
@@ -738,7 +757,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                         "id": str(zoom),
                         "scaleDenominator": res * mpu / screen_pixel_size,
                         "cellSize": res,
-                        "pointOfOrigin": [x_origin, y_origin],
+                        "pointOfOrigin": point_of_origin,
+                        "cornerOfOrigin": corner_of_origin,
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
                         "matrixWidth": matrix_scale[0] * decimation_base**zoom,
@@ -964,17 +984,19 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         matrix = self.matrix(zoom)
         origin_x, origin_y = self._matrix_origin(matrix)
-
         xtile = (
             math.floor((xcoord - origin_x) / float(matrix.cellSize * matrix.tileWidth))
             if not math.isinf(xcoord)
             else 0
         )
-        ytile = (
-            math.floor((origin_y - ycoord) / float(matrix.cellSize * matrix.tileHeight))
-            if not math.isinf(ycoord)
-            else 0
-        )
+
+        ytile = (origin_y - ycoord) / float(matrix.cellSize * matrix.tileHeight)
+        if math.isinf(ytile):
+            ytile = 0
+        elif matrix.cornerOfOrigin == 'bottomLeft':
+            ytile = -math.ceil(ytile)
+        else:
+            ytile = math.floor(ytile)
 
         # avoid out-of-range tiles
         if ytile < 0:
@@ -1051,10 +1073,13 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        return Coords(
-            origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth,
-            origin_y - t.y * matrix.cellSize * matrix.tileHeight,
-        )
+
+        x_coord = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            y_coord = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        else:
+            y_coord = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+        return Coords(x_coord, y_coord)
 
     def _lr(self, *tile: Tile) -> Coords:
         """
@@ -1079,11 +1104,72 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        return Coords(
-            origin_x
-            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth,
-            origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight,
+        x_coords = origin_x + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            y_coords = origin_y + t.y * matrix.cellSize * matrix.tileHeight
+        else:
+            y_coords = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        return Coords(x_coords, y_coords)
+
+    def _ll(self, *tile: Tile) -> Coords:
+        """
+        Return the lower left coordinate of the tile in TMS coordinate reference system.
+
+        Attributes
+        ----------
+        tile: (x, y, z) tile coordinates or a Tile object we want the lower left coordinates of.
+
+        Returns
+        -------
+        Coords: The lower left coordinates of the input tile.
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
+        origin_x, origin_y = self._matrix_origin(matrix)
+
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
         )
+        x_coords = origin_x + (math.floor(t.x / cf)) * matrix.cellSize * cf * matrix.tileWidth
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            y_coords = origin_y + t.y * matrix.cellSize * matrix.tileHeight
+        else:
+            y_coords = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        return Coords(x_coords, y_coords)
+
+    def _ur(self, *tile: Tile) -> Coords:
+        """
+        Return the upper right coordinate of the tile in TMS coordinate reference system.
+
+        Attributes
+        ----------
+        tile: (x, y, z) tile coordinates or a Tile object we want the upper right coordinates of.
+
+        Returns
+        -------
+        Coords: The upper right coordinates of the input tile.
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        matrix = self.matrix(t.z)
+        origin_x, origin_y = self._matrix_origin(matrix)
+
+        cf = (
+            matrix.get_coalesce_factor(t.y)
+            if matrix.variableMatrixWidths is not None
+            else 1
+        )
+        x_coords = origin_x + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            y_coords = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        else:
+            y_coords = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+        return Coords(x_coords, y_coords)
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
         """
@@ -1110,13 +1196,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         )
 
         left = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
-        top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
         right = (
             origin_x
             + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
         )
-        bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
-
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            # In this case top and bottom math are swapped around along with our direction
+            bottom = origin_y + t.y * matrix.cellSize * matrix.tileHeight
+            top = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        else:
+            top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+            bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
         return BoundingBox(left, bottom, right, top)
 
     def ul(self, *tile: Tile) -> Coords:
@@ -1155,6 +1245,42 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         x, y = self._lr(t)
         return Coords(*self.lnglat(x, y))
 
+    def ll(self, *tile: Tile) -> Coords:
+        """
+        Return the lower left coordinates of the tile in geographic coordinate reference system.
+
+        Attributes
+        ----------
+        tile (tuple or Tile): (x, y, z) tile coordinates or a Tile object we want the lower left geographic coordinates of.
+
+        Returns
+        -------
+        Coords: The lower left geographic coordinates of the input tile.
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._ll(t)
+        return Coords(*self.lnglat(x, y))
+
+    def ur(self, *tile: Tile) -> Coords:
+        """
+        Return the upper right coordinates of the tile in geographic coordinate reference system.
+
+        Attributes
+        ----------
+        tile (tuple or Tile): (x, y, z) tile coordinates or a Tile object we want the upper right geographic coordinates of.
+
+        Returns
+        -------
+        Coords: The upper right geographic coordinates of the input tile.
+
+        """
+        t = _parse_tile_arg(*tile)
+
+        x, y = self._ur(t)
+        return Coords(*self.lnglat(x, y))
+
     def bounds(self, *tile: Tile) -> BoundingBox:
         """
         Return the bounding box of the tile in geographic coordinate reference system.
@@ -1184,7 +1310,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         right, bottom = self._lr(
             Tile(matrix.matrixWidth - 1, matrix.matrixHeight - 1, zoom)
         )
-        return BoundingBox(left, bottom, right, top)
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            # Swap around top and bottom since we're starting from the bottomLeft
+            bbox = BoundingBox(left, top, right, bottom)
+        else:
+            bbox = BoundingBox(left, bottom, right, top)
+        return bbox
 
     @cached_property
     def bbox(self):
@@ -1585,11 +1716,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         target_zoom = t.z - 1 if zoom is None else zoom
 
+        matrix = self.matrix(t.z)
         # buffer value to apply on bbox
-        res = self.matrix(t.z).cellSize / 10.0
+        res = matrix.cellSize / 10.0
         bbox = self.xy_bounds(t)
-        ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
-        lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            # actually ll and ur tile
+            ul_tile = self._tile(bbox.left + res, bbox.bottom + res, target_zoom)
+            lr_tile = self._tile(bbox.right - res, bbox.top - res, target_zoom)
+        else:
+            ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
+            lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
 
         tiles = []
         matrix = self.matrix(target_zoom)
@@ -1632,11 +1769,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         target_zoom = t.z + 1 if zoom is None else zoom
 
         # buffer value to apply on bbox
-        res = self.matrix(t.z).cellSize / 10.0
-
+        matrix = self.matrix(t.z)
+        res = matrix.cellSize / 10.0
         bbox = self.xy_bounds(t)
-        ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
-        lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            # actually ll and ur tile
+            ul_tile = self._tile(bbox.left + res, bbox.bottom + res, target_zoom)
+            lr_tile = self._tile(bbox.right - res, bbox.top - res, target_zoom)
+        else:
+            ul_tile = self._tile(bbox.left + res, bbox.top - res, target_zoom)
+            lr_tile = self._tile(bbox.right - res, bbox.bottom + res, target_zoom)
 
         tiles = []
         matrix = self.matrix(target_zoom)
@@ -1652,3 +1794,41 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
                 tiles.append(Tile(i, j, target_zoom))
 
         return tiles
+
+    def origin_coords(self, *tile: Tile) -> Coords:
+        """
+        Return the geographic coordinates of the tile from the cornerOfOrigin point
+        """
+        t = _parse_tile_arg(*tile)
+        x, y = self._origin_coords(t)
+        return Coords(*self.lnglat(x, y))
+
+    def origin_coords_across(self, *tile: Tile) -> Coords:
+        """
+        Return the geographic coordinates of the tile from the across from cornerOfOrigin point
+        """
+        t = _parse_tile_arg(*tile)
+        x, y = self._origin_coords_across(t)
+        return Coords(*self.lnglat(x, y))
+
+    def _origin_coords(self, *tile: Tile) -> Coords:
+        """
+        Return the TMS coordinates of the tile from the cornerOfOrigin point
+        """
+        t = _parse_tile_arg(*tile)
+        matrix = self.matrix(t.z)
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            return self._ll(*tile)
+        else:
+            return self._ul(*tile)
+
+    def _origin_coords_across(self, *tile: Tile) -> Coords:
+        """
+        Return the TMS coordinates of the tile from the across from cornerOfOrigin point
+        """
+        t = _parse_tile_arg(*tile)
+        matrix = self.matrix(t.z)
+        if matrix.cornerOfOrigin == 'bottomLeft':
+            return self._ur(*tile)
+        else:
+            return self._lr(*tile)
