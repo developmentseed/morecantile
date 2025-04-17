@@ -111,11 +111,9 @@ def test_bounds(args):
     [
         ((486, 332, 10), "WebMercatorQuad"),
         (morecantile.Tile(486, 332, 10), "WebMercatorQuad"),
-
         # bottomLeft tests. y should be matrixWidth-topLeft-1 to produce the same value as topLeft
         ((486, 1023 - 332, 10), "WebMercatorQuadBottomLeft"),
         (morecantile.Tile(486, 1023 - 332, 10), "WebMercatorQuadBottomLeft"),
-
     ],
 )
 def test_xy_bounds(tile_args, identifier):
@@ -140,10 +138,17 @@ def test_xy_bounds(tile_args, identifier):
     ("tile_args", "identifier", "expected"),
     [
         ((486, 332, 10), "WebMercatorQuad", (-9.140625, 53.33087298301705)),
-        (morecantile.Tile(486, 332, 10), "WebMercatorQuad", (-9.140625, 53.33087298301705)),
-
+        (
+            morecantile.Tile(486, 332, 10),
+            "WebMercatorQuad",
+            (-9.140625, 53.33087298301705),
+        ),
         ((486, 691, 10), "WebMercatorQuadBottomLeft", (-9.140625, 53.33087298301705)),
-        (morecantile.Tile(486, 691, 10), "WebMercatorQuadBottomLeft", (-9.140625, 53.33087298301705)),
+        (
+            morecantile.Tile(486, 691, 10),
+            "WebMercatorQuadBottomLeft",
+            (-9.140625, 53.33087298301705),
+        ),
     ],
 )
 def test_ul_tile(tile_args, identifier, expected):
@@ -175,10 +180,10 @@ def test_projul_tile():
 @pytest.mark.parametrize(
     ("x", "y", "zoom", "identifier", "expected_tile"),
     [
-        (1000, 1000, 1, 'WebMercatorQuad', morecantile.Tile(1, 0, 1)),
-        (1000, 1000, 1, 'WebMercatorQuadBottomLeft', morecantile.Tile(1, 1, 1))
-
-    ])
+        (1000, 1000, 1, "WebMercatorQuad", morecantile.Tile(1, 0, 1)),
+        (1000, 1000, 1, "WebMercatorQuadBottomLeft", morecantile.Tile(1, 1, 1)),
+    ],
+)
 def test_projtile(x, y, zoom, identifier, expected_tile):
     """TileSchema._tile should return the correct tile."""
     tms = morecantile.tms.get(identifier)
@@ -222,16 +227,24 @@ def test_feature():
 @pytest.mark.parametrize(
     ("tile_args", "identifier", "expected"),
     [
-
         ((486, 332, 10), "WebMercatorQuad", (-9.140625, 53.33087298301705)),
-        (morecantile.Tile(486, 332, 10), "WebMercatorQuad", (-9.140625, 53.33087298301705)),
-
+        (
+            morecantile.Tile(486, 332, 10),
+            "WebMercatorQuad",
+            (-9.140625, 53.33087298301705),
+        ),
         ((486, 691, 10), "WebMercatorQuadBottomLeft", (-9.140625, 53.33087298301705)),
-        (morecantile.Tile(486, 691, 10), "WebMercatorQuadBottomLeft", (-9.140625, 53.33087298301705)),
-
+        (
+            morecantile.Tile(486, 691, 10),
+            "WebMercatorQuadBottomLeft",
+            (-9.140625, 53.33087298301705),
+        ),
         (morecantile.Tile(0, 0, 0), "WebMercatorQuad", (-180, 85.0511287798066)),
-        (morecantile.Tile(0, 0, 0), "WebMercatorQuadBottomLeft", (-180, 85.0511287798066)),
-
+        (
+            morecantile.Tile(0, 0, 0),
+            "WebMercatorQuadBottomLeft",
+            (-180, 85.0511287798066),
+        ),
     ],
 )
 def test_ul(tile_args, identifier, expected):
@@ -249,25 +262,23 @@ def test_ul(tile_args, identifier, expected):
     [
         (morecantile.Tile(10, 10, 10), morecantile.Tile(10, 1013, 10)),
         (morecantile.Tile(10, 1013, 10), morecantile.Tile(10, 10, 10)),
-
         # Check the Origin points
         (morecantile.Tile(0, 0, 10), morecantile.Tile(0, 1023, 10)),
         (morecantile.Tile(0, 1023, 10), morecantile.Tile(0, 0, 10)),
-
         # Check the end points
         (morecantile.Tile(1023, 0, 10), morecantile.Tile(1023, 1023, 10)),
         (morecantile.Tile(1023, 1023, 10), morecantile.Tile(1023, 0, 10)),
-
         # Zoom=0
         (morecantile.Tile(0, 0, 0), morecantile.Tile(0, 0, 0)),
-
         # zoom=1 on both edges of the zoom level
         (morecantile.Tile(0, 0, 1), morecantile.Tile(0, 1, 1)),
         (morecantile.Tile(0, 1, 1), morecantile.Tile(0, 0, 1)),
-
         # zoom=14 near the middle
-        (morecantile.Tile(x=3413, y=6202, z=14), morecantile.Tile(x=3413, y=10181, z=14))
-    ]
+        (
+            morecantile.Tile(x=3413, y=6202, z=14),
+            morecantile.Tile(x=3413, y=10181, z=14),
+        ),
+    ],
 )
 def test_topLeft_BottomLeft_bounds_equal_bounds(topLeft_Tile, bottomLeft_Tile):
     tmsTop = morecantile.tms.get("WebMercatorQuad")
@@ -284,20 +295,19 @@ def test_topLeft_BottomLeft_bounds_equal_bounds(topLeft_Tile, bottomLeft_Tile):
     [
         (morecantile.Tile(10, 10, 10), morecantile.Tile(10, 1013, 10)),
         (morecantile.Tile(0, 0, 10), morecantile.Tile(0, 1023, 10)),
-
         # Check the oring tile with zoom=0
         (morecantile.Tile(0, 0, 0), morecantile.Tile(0, 0, 0)),
-
         # Origin tile of zoom=1
         (morecantile.Tile(0, 0, 1), morecantile.Tile(0, 1, 1)),
         # last tile of zoom=1
         (morecantile.Tile(1, 1, 1), morecantile.Tile(1, 0, 1)),
         (morecantile.Tile(1, 1, 1), morecantile.Tile(1, 0, 1)),
-
         # zoom=14 near the middle
-        (morecantile.Tile(x=3413, y=6202, z=14), morecantile.Tile(x=3413, y=10181, z=14))
-
-    ]
+        (
+            morecantile.Tile(x=3413, y=6202, z=14),
+            morecantile.Tile(x=3413, y=10181, z=14),
+        ),
+    ],
 )
 @pytest.mark.parametrize("identifier", ["WebMercatorQuad", "WebMercatorQuadBottomLeft"])
 def test_translate_cornerOfOrigin_Tile(topLeft_Tile, bottomLeft_Tile, identifier):
@@ -314,13 +324,26 @@ def test_translate_cornerOfOrigin_Tile(topLeft_Tile, bottomLeft_Tile, identifier
 @pytest.mark.parametrize(
     ("tile_args", "identifier", "expected"),
     [
-        ((486, 332, 10), "WebMercatorQuad", (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705)),
-        (morecantile.Tile(486, 332, 10), "WebMercatorQuad",
-         (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705)),
-
-        ((486, 691, 10), "WebMercatorQuadBottomLeft", (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705)),
-        (morecantile.Tile(486, 691, 10), "WebMercatorQuadBottomLeft",
-         (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705)),
+        (
+            (486, 332, 10),
+            "WebMercatorQuad",
+            (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705),
+        ),
+        (
+            morecantile.Tile(486, 332, 10),
+            "WebMercatorQuad",
+            (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705),
+        ),
+        (
+            (486, 691, 10),
+            "WebMercatorQuadBottomLeft",
+            (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705),
+        ),
+        (
+            morecantile.Tile(486, 691, 10),
+            "WebMercatorQuadBottomLeft",
+            (-9.140625, 53.12040528310657, -8.7890625, 53.33087298301705),
+        ),
     ],
 )
 def test_bbox(tile_args, identifier, expected):
@@ -346,7 +369,8 @@ def test_bbox(tile_args, identifier, expected):
         # Check final tiles
         (morecantile.Tile(1, 1, 1), "WebMercatorQuad"),
         (morecantile.Tile(1, 1, 1), "WebMercatorQuadBottomLeft"),
-    ])
+    ],
+)
 def test_bounding_box_ulurlllr(tile, identifier):
     """Test that bounds and georeference functions return the same values"""
     tms = morecantile.tms.get(identifier)
@@ -373,7 +397,8 @@ def test_bounding_box_ulurlllr(tile, identifier):
         # Check final tiles
         (morecantile.Tile(1, 1, 1), "WebMercatorQuad"),
         (morecantile.Tile(1, 1, 1), "WebMercatorQuadBottomLeft"),
-    ])
+    ],
+)
 def test_tms_bounding_box_ulurlllr(tile, identifier):
     """Test that xy_bounds and tms functions return the same values"""
     tms = morecantile.tms.get(identifier)
@@ -400,17 +425,18 @@ def test_tms_bounding_box_ulurlllr(tile, identifier):
         # Check final tiles
         (morecantile.Tile(1, 1, 1), "WebMercatorQuad"),
         (morecantile.Tile(1, 1, 1), "WebMercatorQuadBottomLeft"),
-    ])
+    ],
+)
 def test_origin_coords(tile, identifier):
     tms = morecantile.tms.get(identifier)
     matrix = tms.matrix(tile.z)
     origin = tms.origin_coords(*tile)
     across = tms.origin_coords_across(*tile)
 
-    if matrix.cornerOfOrigin == 'topLeft':
+    if matrix.cornerOfOrigin == "topLeft":
         assert origin == tms.ul(*tile)
         assert across == tms.lr(*tile)
-    elif matrix.cornerOfOrigin == 'bottomLeft':
+    elif matrix.cornerOfOrigin == "bottomLeft":
         assert origin == tms.ll(*tile)
         assert across == tms.ur(*tile)
     else:
@@ -420,11 +446,22 @@ def test_origin_coords(tile, identifier):
 @pytest.mark.parametrize(
     ("tile_args", "identifier", "expected"),
     [
-        (morecantile.Tile(486, 332, 10), "WebMercatorQuad", (-1017529.7205322663, 7044436.526761846)),
-        (morecantile.Tile(10, 10, 10), "WebMercatorQuad", (-19646150.757969137, 19646150.757969007)),
-        (morecantile.Tile(10, 1013, 10), "WebMercatorQuadBottomLeft", (-19646150.757969137, 19646150.757969007)),
-
-    ]
+        (
+            morecantile.Tile(486, 332, 10),
+            "WebMercatorQuad",
+            (-1017529.7205322663, 7044436.526761846),
+        ),
+        (
+            morecantile.Tile(10, 10, 10),
+            "WebMercatorQuad",
+            (-19646150.757969137, 19646150.757969007),
+        ),
+        (
+            morecantile.Tile(10, 1013, 10),
+            "WebMercatorQuadBottomLeft",
+            (-19646150.757969137, 19646150.757969007),
+        ),
+    ],
 )
 def test_xy_tile(tile_args, identifier, expected):
     """x, y for the 486-332-10 tile is correctly calculated."""
@@ -550,11 +587,9 @@ def test_xy_bounds_mercantile(args):
 @pytest.mark.parametrize(
     ("identifier", "expected_tile"),
     (
-
-            (["WebMercatorQuad", morecantile.Tile(285, 193, 9)]),
-            (["WebMercatorQuadBottomLeft", morecantile.Tile(285, 318, 9)])
-
-    )
+        (["WebMercatorQuad", morecantile.Tile(285, 193, 9)]),
+        (["WebMercatorQuadBottomLeft", morecantile.Tile(285, 318, 9)]),
+    ),
 )
 def test_tile_not_truncated(identifier, expected_tile):
     """test tile."""

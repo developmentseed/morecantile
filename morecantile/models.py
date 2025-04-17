@@ -672,7 +672,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         ordered_axes: Optional[List[str]] = None,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
-        corner_of_origin: str = 'topLeft',
+        corner_of_origin: str = "topLeft",
         point_of_origin: List[float] = None,
         **kwargs: Any,
     ):
@@ -993,7 +993,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         ytile = (origin_y - ycoord) / float(matrix.cellSize * matrix.tileHeight)
         if math.isinf(ytile):
             ytile = 0
-        elif matrix.cornerOfOrigin == 'bottomLeft':
+        elif matrix.cornerOfOrigin == "bottomLeft":
             ytile = -math.ceil(ytile)
         else:
             ytile = math.floor(ytile)
@@ -1074,8 +1074,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             else 1
         )
 
-        x_coord = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        x_coord = (
+            origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        if matrix.cornerOfOrigin == "bottomLeft":
             y_coord = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
         else:
             y_coord = origin_y - t.y * matrix.cellSize * matrix.tileHeight
@@ -1104,8 +1106,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        x_coords = origin_x + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        x_coords = (
+            origin_x
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        if matrix.cornerOfOrigin == "bottomLeft":
             y_coords = origin_y + t.y * matrix.cellSize * matrix.tileHeight
         else:
             y_coords = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
@@ -1134,8 +1139,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        x_coords = origin_x + (math.floor(t.x / cf)) * matrix.cellSize * cf * matrix.tileWidth
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        x_coords = (
+            origin_x + (math.floor(t.x / cf)) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        if matrix.cornerOfOrigin == "bottomLeft":
             y_coords = origin_y + t.y * matrix.cellSize * matrix.tileHeight
         else:
             y_coords = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
@@ -1164,8 +1171,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        x_coords = origin_x + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        x_coords = (
+            origin_x
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
+        )
+        if matrix.cornerOfOrigin == "bottomLeft":
             y_coords = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
         else:
             y_coords = origin_y - t.y * matrix.cellSize * matrix.tileHeight
@@ -1200,7 +1210,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             origin_x
             + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
         )
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        if matrix.cornerOfOrigin == "bottomLeft":
             # In this case top and bottom math are swapped around along with our direction
             bottom = origin_y + t.y * matrix.cellSize * matrix.tileHeight
             top = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
@@ -1310,7 +1320,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         right, bottom = self._lr(
             Tile(matrix.matrixWidth - 1, matrix.matrixHeight - 1, zoom)
         )
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        if matrix.cornerOfOrigin == "bottomLeft":
             # Swap around top and bottom since we're starting from the bottomLeft
             bbox = BoundingBox(left, top, right, bottom)
         else:
@@ -1720,7 +1730,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         # buffer value to apply on bbox
         res = matrix.cellSize / 10.0
         bbox = self.xy_bounds(t)
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        if matrix.cornerOfOrigin == "bottomLeft":
             # actually ll and ur tile
             ul_tile = self._tile(bbox.left + res, bbox.bottom + res, target_zoom)
             lr_tile = self._tile(bbox.right - res, bbox.top - res, target_zoom)
@@ -1772,7 +1782,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         matrix = self.matrix(t.z)
         res = matrix.cellSize / 10.0
         bbox = self.xy_bounds(t)
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        if matrix.cornerOfOrigin == "bottomLeft":
             # actually ll and ur tile
             ul_tile = self._tile(bbox.left + res, bbox.bottom + res, target_zoom)
             lr_tile = self._tile(bbox.right - res, bbox.top - res, target_zoom)
@@ -1817,7 +1827,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         t = _parse_tile_arg(*tile)
         matrix = self.matrix(t.z)
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        if matrix.cornerOfOrigin == "bottomLeft":
             return self._ll(*tile)
         else:
             return self._ul(*tile)
@@ -1828,7 +1838,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """
         t = _parse_tile_arg(*tile)
         matrix = self.matrix(t.z)
-        if matrix.cornerOfOrigin == 'bottomLeft':
+        if matrix.cornerOfOrigin == "bottomLeft":
             return self._ur(*tile)
         else:
             return self._lr(*tile)
