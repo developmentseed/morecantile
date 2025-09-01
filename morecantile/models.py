@@ -1484,7 +1484,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         """Check if a tile is valid."""
         t = _parse_tile_arg(*tile)
 
-        if t.z < self.minzoom:
+        if t.z < self.minzoom or t.z > self.maxzoom:
             return False
 
         matrix = self.matrix(t.z)

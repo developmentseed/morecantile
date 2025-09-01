@@ -2,6 +2,19 @@
 ## Unreleased
 
 * remove python 3.8 support
+* check `maxzoom` in `TileMatrixSet.is_valid`
+
+    ```python
+    import morecantile
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    # before
+    assert tms.is_valid(0, 0, 25)
+
+    # now
+    assert tms.is_valid(0, 0, 25), "Tile(0, 0, 25) is not valid"
+    >> AssertionError: Tile(0, 0, 25) is not valid
+    ```
 
 ## 6.2.0 (2024-12-19)
 

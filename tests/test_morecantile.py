@@ -529,9 +529,18 @@ def test_is_power_of_two():
 @pytest.mark.parametrize(
     "t,res",
     [
+        #                 X  Y  Z
         (morecantile.Tile(0, 0, 0), True),
+        # zoom 0 has only tile 0,0,0 valid
         (morecantile.Tile(1, 0, 0), False),
+        # MinZoom is 0
         (morecantile.Tile(0, 0, -1), False),
+        # MaxZoom is 24
+        (morecantile.Tile(0, 0, 25), False),
+        # Negative X
+        (morecantile.Tile(-1, 0, 1), False),
+        # Negative Y
+        (morecantile.Tile(0, -1, 1), False),
     ],
 )
 def test_is_valid_tile(t, res):
