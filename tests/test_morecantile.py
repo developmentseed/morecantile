@@ -44,7 +44,7 @@ def test_register():
     assert "MyCustomGrid3031" in defaults.list()
 
     # Check it will raise an exception if TMS is already registered
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidIdentifier):
         defaults = defaults.register({"MyCustomGrid3031": tms})
 
     # Do not raise is overwrite=True

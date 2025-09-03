@@ -1,4 +1,13 @@
 
+## Unreleased
+
+* remove python 3.8 support
+
+## 6.2.0 (2024-12-19)
+
+* add python 3.13 support
+* update pyproj dependency version to `>=3.1,<4.0`
+
 ## 6.1.0 (2024-10-17)
 
 * add `_tile_matrices_idx: Dict[str, int]` private attribute to improve `matrices` lookup
