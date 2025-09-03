@@ -11,6 +11,8 @@ import morecantile
 
 logger = logging.getLogger(__name__)
 
+WGS84_CRS = CRS.from_epsg(4326)
+
 
 def configure_logging(verbosity):
     """Configure log verbosity.
@@ -229,10 +231,6 @@ def shapes(  # noqa: C901
     the properties object of the output feature.
 
     """
-    geographic_crs = None
-    if crs:
-        geographic_crs = CRS.from_user_input(crs)
-
     tilematrixset = morecantile.tms.get(identifier)
     if tms:
         with open(tms, "r") as f:
@@ -269,7 +267,7 @@ def shapes(  # noqa: C901
             projected=projected,
             buffer=buffer,
             precision=precision,
-            geographic_crs=geographic_crs,
+            geographic_crs=CRS.from_user_input(crs) if crs else WGS84_CRS,
         )
         bbox = feature["bbox"]
         w, s, e, n = bbox
@@ -456,8 +454,6 @@ def custom(
     epsg, extent, name, minzoom, maxzoom, tile_width, tile_height, extent_epsg, title
 ):
     """Create Custom TMS."""
-    extent_crs = CRS.from_epsg(extent_epsg) if extent_epsg else None
-
     tms = morecantile.TileMatrixSet.custom(
         extent,
         CRS.from_epsg(epsg),
@@ -466,7 +462,7 @@ def custom(
         maxzoom=maxzoom,
         tile_width=tile_width,
         tile_height=tile_height,
-        extent_crs=extent_crs,
+        extent_crs=CRS.from_epsg(extent_epsg) if extent_epsg else None,
         title=title or "Custom TileMatrixSet",
     )
     click.echo(tms.json(exclude_none=True))
@@ -557,10 +553,6 @@ def tms_to_geojson(  # noqa: C901
     crs,
 ):
     """Print TMS document as GeoJSON."""
-    geographic_crs = None
-    if crs:
-        geographic_crs = CRS.from_user_input(crs)
-
     tms = morecantile.TileMatrixSet(**json.load(input))
     matrix = tms.matrix(level)
 
@@ -589,7 +581,7 @@ def tms_to_geojson(  # noqa: C901
                 projected=projected,
                 buffer=buffer,
                 precision=precision,
-                geographic_crs=geographic_crs,
+                geographic_crs=CRS.from_user_input(crs) if crs else WGS84_CRS,
             )
             bbox = feature["bbox"]
             w, s, e, n = bbox
