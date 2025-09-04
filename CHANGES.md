@@ -30,6 +30,23 @@
 
 * rename `grid_name -> tms` and `grid_crs -> tms_crs` property names in `TileMatrixSet.feature` GeoJSON response
 * remove python 3.8 support
+* check tile's zoom against TMS's `maxzoom` in `TileMatrixSet.is_valid` and add `strict=True|False` options
+
+    ```python
+    import morecantile
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    # before
+    assert tms.is_valid(0, 0, 25)
+    >> UserWarning: TileMatrix not found for level: 25 - Creating values from TMS Scale.
+
+    # now
+    assert tms.is_valid(0, 0, 25), "Tile(0, 0, 25) is not valid"
+    >> AssertionError: Tile(0, 0, 25) is not valid
+
+    assert tms.is_valid(0, 0, 25, strict=False)
+    >> UserWarning: TileMatrix not found for level: 25 - Creating values from TMS Scale.
+    ```
 
 ## 6.2.0 (2024-12-19)
 
