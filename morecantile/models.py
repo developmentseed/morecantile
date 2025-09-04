@@ -41,6 +41,7 @@ NumType = Union[float, int]
 BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
+WGS84_CRS = pyproj.CRS.from_epsg(4326)
 
 
 class CRSUri(BaseModel):
@@ -1308,6 +1309,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         buffer: Optional[NumType] = None,
         precision: Optional[int] = None,
         projected: bool = False,
+        geographic_crs: Optional[CRS] = None,
     ) -> Dict:
         """
         Get the GeoJSON feature corresponding to a tile.
@@ -1329,16 +1331,27 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             otherwise original coordinate values will be preserved (default).
         projected : bool, optional
             Return coordinates in TMS projection. Default is false.
+        geographic_crs: pyproj.CRS, optional
+            Geographic CRS to use when `projected=False`. Default to 'EPSG:4326' as per GeoJSON specification.
+            .
 
         Returns
         -------
         dict
 
         """
+        geographic_crs = geographic_crs or WGS84_CRS
+
+        feature_crs = self.crs._pyproj_crs
         west, south, east, north = self.xy_bounds(tile)
 
         if not projected:
-            west, south, east, north = self._to_geographic.transform_bounds(
+            feature_crs = geographic_crs
+            tr = pyproj.Transformer.from_crs(
+                self.crs._pyproj_crs, geographic_crs, always_xy=True
+            )
+
+            west, south, east, north = tr.transform_bounds(
                 west, south, east, north, densify_pts=21
             )
 
@@ -1364,26 +1377,38 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             "geometry": geom,
             "properties": {
                 "title": f"XYZ tile {xyz}",
-                "grid_name": self.id,
-                "grid_crs": CRS_to_uri(self.crs._pyproj_crs),
+                "tms": self.id,
+                "tms_crs": CRS_to_uri(self.crs._pyproj_crs),
             },
         }
 
-        if projected:
+        if feature_crs != WGS84_CRS:
             warnings.warn(
                 "CRS is no longer part of the GeoJSON specification."
                 "Other projection than EPSG:4326 might not be supported.",
                 UserWarning,
                 stacklevel=1,
             )
-            feat.update(
-                {
-                    "crs": {
-                        "type": "EPSG",
-                        "properties": {"code": self.crs.to_epsg()},
+
+            if authority_code := feature_crs.to_authority(min_confidence=20):
+                authority, code = authority_code
+                feat.update(
+                    {
+                        "crs": {
+                            "type": "name",
+                            "properties": {"name": CRS_to_uri(feature_crs)},
+                        }
                     }
-                }
-            )
+                )
+            else:
+                feat.update(
+                    {
+                        "crs": {
+                            "type": "wkt",
+                            "properties": {"wkt": feature_crs.to_wkt()},
+                        }
+                    }
+                )
 
         if props:
             feat["properties"].update(props)
