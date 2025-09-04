@@ -2,7 +2,7 @@
 ## Unreleased
 
 * remove python 3.8 support
-* check `maxzoom` in `TileMatrixSet.is_valid`
+* check tile's zoom against TMS's `maxzoom` in `TileMatrixSet.is_valid` and add `strict=True|False` options
 
     ```python
     import morecantile
