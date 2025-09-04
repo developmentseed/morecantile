@@ -10,10 +10,14 @@
 
     # before
     assert tms.is_valid(0, 0, 25)
+    >> UserWarning: TileMatrix not found for level: 25 - Creating values from TMS Scale.
 
     # now
     assert tms.is_valid(0, 0, 25), "Tile(0, 0, 25) is not valid"
     >> AssertionError: Tile(0, 0, 25) is not valid
+
+    assert tms.is_valid(0, 0, 25, strict=False)
+    >> UserWarning: TileMatrix not found for level: 25 - Creating values from TMS Scale.
     ```
 
 ## 6.2.0 (2024-12-19)
