@@ -1480,11 +1480,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             "y": {"min": 0, "max": m.matrixHeight - 1},
         }
 
-    def is_valid(self, *tile: Tile) -> bool:
+    def is_valid(self, *tile: Tile, strict: bool = True) -> bool:
         """Check if a tile is valid."""
         t = _parse_tile_arg(*tile)
 
-        if t.z < self.minzoom:
+        disable_overzoom = self.is_variable or strict
+        if t.z < self.minzoom or (disable_overzoom and t.z > self.maxzoom):
             return False
 
         matrix = self.matrix(t.z)

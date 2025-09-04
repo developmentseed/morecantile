@@ -24,6 +24,7 @@ dependencies = [
     "attrs",
     "pyproj>=3.1,<4.0",
     "pydantic~=2.0",
+    "click",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +36,8 @@ test = [
     "pytest",
     "pytest-cov",
     "rasterio>=1.2.1",
+    # ref: https://github.com/pallets/click/issues/2939
+    "click!=8.2.1,!=8.2.2",
 ]
 benchmark = [
     "pytest",

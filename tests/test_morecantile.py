@@ -529,15 +529,44 @@ def test_is_power_of_two():
 @pytest.mark.parametrize(
     "t,res",
     [
+        #                 X  Y  Z
         (morecantile.Tile(0, 0, 0), True),
+        # zoom 0 has only tile 0,0,0 valid
         (morecantile.Tile(1, 0, 0), False),
+        # MinZoom is 0
         (morecantile.Tile(0, 0, -1), False),
+        # MaxZoom is 24
+        (morecantile.Tile(0, 0, 24), True),
+        (morecantile.Tile(0, 0, 25), False),
+        # Negative X
+        (morecantile.Tile(-1, 0, 1), False),
+        # Negative Y
+        (morecantile.Tile(0, -1, 1), False),
     ],
 )
 def test_is_valid_tile(t, res):
     """test if tile are valid."""
     tms = morecantile.tms.get("WebMercatorQuad")
     assert tms.is_valid(t) == res
+
+
+def test_is_valid_overzoom():
+    """test if tile are valid."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    t = morecantile.Tile(0, 0, 25)
+    assert tms.is_valid(t, strict=False)
+    assert not tms.is_valid(t, strict=True)
+
+    tms = morecantile.tms.get("GNOSISGlobalGrid")
+    t = morecantile.Tile(0, 0, 28)
+    assert tms.is_valid(t, strict=False)
+
+    t = morecantile.Tile(0, 0, 29)
+    assert not tms.is_valid(t, strict=False)
+
+    # We can't overzoom VariableMatrixWidth TMS
+    t = morecantile.Tile(0, 0, 29)
+    assert not tms.is_valid(t)
 
 
 def test_neighbors():
