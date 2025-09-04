@@ -184,10 +184,35 @@ def test_feature():
         feat = tms.feature(
             morecantile.Tile(1, 0, 1), projected=True, fid="1", props={"some": "thing"}
         )
+    assert feat["crs"]
     assert feat["bbox"]
     assert feat["id"] == "1"
     assert feat["geometry"]
     assert len(feat["properties"].keys()) == 4
+
+    # These extent coordinates are in EPSG:2056 (CH)
+    custom_tms = morecantile.TileMatrixSet.custom(
+        [2696082.04374708, 1289407.53195196, 2696210.04374708, 1289535.53195196],
+        CRS.from_epsg("2056"),
+    )
+    assert custom_tms.geographic_crs != CRS.from_epsg(4326)
+    # Warn when geographic CRS is not WGS84
+    with pytest.warns(UserWarning):
+        feat = custom_tms.feature(
+            morecantile.Tile(1, 0, 1),
+            projected=False,
+            geographic_crs=custom_tms.geographic_crs,
+        )
+        assert feat["crs"]
+
+    # By default we use WGS84 CRS (as per GeoJSON spec)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        feat = custom_tms.feature(
+            morecantile.Tile(1, 0, 1),
+            projected=False,
+        )
+        assert not feat.get("crs")
 
 
 ################################################################################
@@ -531,15 +556,44 @@ def test_is_power_of_two():
 @pytest.mark.parametrize(
     "t,res",
     [
+        #                 X  Y  Z
         (morecantile.Tile(0, 0, 0), True),
+        # zoom 0 has only tile 0,0,0 valid
         (morecantile.Tile(1, 0, 0), False),
+        # MinZoom is 0
         (morecantile.Tile(0, 0, -1), False),
+        # MaxZoom is 24
+        (morecantile.Tile(0, 0, 24), True),
+        (morecantile.Tile(0, 0, 25), False),
+        # Negative X
+        (morecantile.Tile(-1, 0, 1), False),
+        # Negative Y
+        (morecantile.Tile(0, -1, 1), False),
     ],
 )
 def test_is_valid_tile(t, res):
     """test if tile are valid."""
     tms = morecantile.tms.get("WebMercatorQuad")
     assert tms.is_valid(t) == res
+
+
+def test_is_valid_overzoom():
+    """test if tile are valid."""
+    tms = morecantile.tms.get("WebMercatorQuad")
+    t = morecantile.Tile(0, 0, 25)
+    assert tms.is_valid(t, strict=False)
+    assert not tms.is_valid(t, strict=True)
+
+    tms = morecantile.tms.get("GNOSISGlobalGrid")
+    t = morecantile.Tile(0, 0, 28)
+    assert tms.is_valid(t, strict=False)
+
+    t = morecantile.Tile(0, 0, 29)
+    assert not tms.is_valid(t, strict=False)
+
+    # We can't overzoom VariableMatrixWidth TMS
+    t = morecantile.Tile(0, 0, 29)
+    assert not tms.is_valid(t)
 
 
 def test_neighbors():

@@ -134,5 +134,4 @@ dmypy.json
 # VSCode
 .vscode
 .vscode/
-
 .notebooks/

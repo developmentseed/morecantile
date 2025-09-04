@@ -379,7 +379,6 @@ def test_mars_local_tms():
     )
 
     with pytest.warns(NonWGS84GeographicCRS):
-
         # 100km grid centered on 17N, 76.5E
         syrtis_tms = TileMatrixSet.custom(
             [-5e5, -5e5, 5e5, 5e5],
