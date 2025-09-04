@@ -2,7 +2,7 @@
 
 import math
 import warnings
-from functools import cached_property
+from functools import cached_property, lru_cache
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
 
 import pyproj
@@ -35,6 +35,7 @@ from morecantile.utils import (
     meters_per_unit,
     point_in_bbox,
     to_rasterio_crs,
+    truncate_coordinates,
 )
 
 NumType = Union[float, int]
@@ -42,6 +43,11 @@ BoundsType = Tuple[NumType, NumType]
 LL_EPSILON = 1e-11
 axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
 WGS84_CRS = pyproj.CRS.from_epsg(4326)
+
+
+@lru_cache
+def _get_transformer(crs_from: pyproj.CRS, crs_to: pyproj.CRS) -> pyproj.Transformer:
+    return pyproj.Transformer.from_crs(crs_from, crs_to, always_xy=True)
 
 
 class CRSUri(BaseModel):
@@ -888,7 +894,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         return zoom_level
 
-    def lnglat(self, x: float, y: float, truncate=False) -> Coords:
+    def intersect_tms(self, bbox: BoundingBox) -> bool:
+        """Check if a bounds intersects with the TMS bounds."""
+        tms_bounds = self.xy_bbox
+        return (
+            (bbox[0] < tms_bounds[2])
+            and (bbox[2] > tms_bounds[0])
+            and (bbox[3] > tms_bounds[1])
+            and (bbox[1] < tms_bounds[3])
+        )
+
+    def lnglat(self, x: float, y: float, truncate: bool = False) -> Coords:
         """Transform point(x,y) to geographic longitude and latitude."""
         inside = point_in_bbox(Coords(x, y), self.xy_bbox)
         if not inside:
@@ -901,14 +917,14 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         lng, lat = self._to_geographic.transform(x, y)
 
         if truncate:
-            lng, lat = self.truncate_lnglat(lng, lat)
+            lng, lat = truncate_coordinates(lng, lat, self.bbox)
 
         return Coords(lng, lat)
 
-    def xy(self, lng: float, lat: float, truncate=False) -> Coords:
+    def xy(self, lng: float, lat: float, truncate: bool = False) -> Coords:
         """Transform geographic longitude and latitude coordinates to TMS CRS."""
         if truncate:
-            lng, lat = self.truncate_lnglat(lng, lat)
+            lng, lat = truncate_coordinates(lng, lat, self.bbox)
 
         inside = point_in_bbox(Coords(lng, lat), self.bbox)
         if not inside:
@@ -921,25 +937,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         x, y = self._from_geographic.transform(lng, lat)
 
         return Coords(x, y)
-
-    def truncate_lnglat(self, lng: float, lat: float) -> Tuple[float, float]:
-        """
-        Truncate geographic coordinates to TMS geographic bbox.
-
-        Adapted from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py
-
-        """
-        if lng > self.bbox.right:
-            lng = self.bbox.right
-        elif lng < self.bbox.left:
-            lng = self.bbox.left
-
-        if lat > self.bbox.top:
-            lat = self.bbox.top
-        elif lat < self.bbox.bottom:
-            lat = self.bbox.bottom
-
-        return lng, lat
 
     def _tile(
         self,
@@ -1008,6 +1005,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         zoom: int,
         truncate=False,
         ignore_coalescence: bool = False,
+        geographic_crs: Optional[CRS] = None,
     ) -> Tile:
         """
         Get the tile for a given geographic longitude and latitude pair.
@@ -1020,13 +1018,36 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             The zoom level.
         truncate : bool
             Whether or not to truncate inputs to limits of TMS geographic bounds.
+        ignore_coalescence : bool
+            Whether or not to ignore coalescence factor for TMS with variable matrix width.
+        geographic_crs: pyproj.CRS, optional
+            Geographic CRS of the given coordinates. Default to TMS's Geographic CRS.
 
         Returns
         -------
         Tile
 
         """
-        x, y = self.xy(lng, lat, truncate=truncate)
+        geographic_crs = (
+            geographic_crs or self.crs._pyproj_crs.geodetic_crs or WGS84_CRS
+        )
+        _from_geographic = _get_transformer(geographic_crs, self.crs._pyproj_crs)
+        _to_geographic = _get_transformer(self.crs._pyproj_crs, geographic_crs)
+
+        if truncate:
+            bbox = BoundingBox(
+                *_to_geographic.transform_bounds(*self.xy_bbox, densify_pts=21),
+            )
+            lng, lat = truncate_coordinates(lng, lat, bbox)
+
+        x, y = _from_geographic.transform(lng, lat)
+        if not point_in_bbox(Coords(x, y), self.xy_bbox):
+            warnings.warn(
+                f"Point ({lng}, {lat}) is outside TMS bounds.",
+                PointOutsideTMSBounds,
+                stacklevel=1,
+            )
+
         return self._tile(x, y, zoom, ignore_coalescence=ignore_coalescence)
 
     def _ul(self, *tile: Tile) -> Coords:
@@ -1175,7 +1196,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
         return BoundingBox(left, bottom, right, top)
 
-    @property
+    @cached_property
     def xy_bbox(self):
         """Return TMS bounding box in TileMatrixSet's CRS."""
         zoom = self.minzoom
@@ -1201,16 +1222,6 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             )
         )
 
-    def intersect_tms(self, bbox: BoundingBox) -> bool:
-        """Check if a bounds intersects with the TMS bounds."""
-        tms_bounds = self.xy_bbox
-        return (
-            (bbox[0] < tms_bounds[2])
-            and (bbox[2] > tms_bounds[0])
-            and (bbox[3] > tms_bounds[1])
-            and (bbox[1] < tms_bounds[3])
-        )
-
     def tiles(  # noqa: C901
         self,
         west: float,
@@ -1219,6 +1230,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         north: float,
         zooms: Sequence[int],
         truncate: bool = False,
+        geographic_crs: Optional[CRS] = None,
     ) -> Iterator[Tile]:
         """
         Get the tiles overlapped by a geographic bounding box
@@ -1233,6 +1245,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             One or more zoom levels.
         truncate : bool, optional
             Whether or not to truncate inputs to TMS limits.
+        geographic_crs: pyproj.CRS, optional
+            Geographic CRS of the given coordinates. Default to TMS's Geographic CRS
 
         Yields
         ------
@@ -1250,39 +1264,41 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         if isinstance(zooms, int):
             zooms = (zooms,)
 
+        geographic_crs = (
+            geographic_crs or self.crs._pyproj_crs.geodetic_crs or WGS84_CRS
+        )
+        _from_geographic = _get_transformer(geographic_crs, self.crs._pyproj_crs)
+        _to_geographic = _get_transformer(self.crs._pyproj_crs, geographic_crs)
+
+        # TMS bbox
+        bbox = BoundingBox(
+            *_to_geographic.transform_bounds(*self.xy_bbox, densify_pts=21),
+        )
+
         if truncate:
-            west, south = self.truncate_lnglat(west, south)
-            east, north = self.truncate_lnglat(east, north)
+            west, south = truncate_coordinates(west, south, bbox)
+            east, north = truncate_coordinates(east, north, bbox)
 
         if west > east:
-            bbox_west = (self.bbox.left, south, east, north)
-            bbox_east = (west, south, self.bbox.right, north)
+            bbox_west = (bbox.left, south, east, north)
+            bbox_east = (west, south, bbox.right, north)
             bboxes = [bbox_west, bbox_east]
         else:
             bboxes = [(west, south, east, north)]
 
         for w, s, e, n in bboxes:
             # Clamp bounding values.
-            es_contain_180th = lons_contain_antimeridian(e, self.bbox.right)
-            w = max(self.bbox.left, w)
-            s = max(self.bbox.bottom, s)
-            e = max(self.bbox.right, e) if es_contain_180th else min(self.bbox.right, e)
-            n = min(self.bbox.top, n)
+            es_contain_180th = lons_contain_antimeridian(e, bbox.right)
+            w = max(bbox.left, w)
+            s = max(bbox.bottom, s)
+            e = max(bbox.right, e) if es_contain_180th else min(bbox.right, e)
+            n = min(bbox.top, n)
 
+            w, n = _from_geographic.transform(w + LL_EPSILON, n - LL_EPSILON)
+            e, s = _from_geographic.transform(e - LL_EPSILON, s + LL_EPSILON)
             for z in zooms:
-                nw_tile = self.tile(
-                    w + LL_EPSILON,
-                    n - LL_EPSILON,
-                    z,
-                    ignore_coalescence=True,
-                )  # Not in mercantile
-                se_tile = self.tile(
-                    e - LL_EPSILON,
-                    s + LL_EPSILON,
-                    z,
-                    ignore_coalescence=True,
-                )
-
+                nw_tile = self._tile(w, n, z, ignore_coalescence=True)
+                se_tile = self._tile(e, s, z, ignore_coalescence=True)
                 minx = min(nw_tile.x, se_tile.x)
                 maxx = max(nw_tile.x, se_tile.x)
                 miny = min(nw_tile.y, se_tile.y)
