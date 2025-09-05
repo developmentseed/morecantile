@@ -1,8 +1,12 @@
 
 ## Unreleased
 
+## 7.0.0 (TBD)
+
 * use `WGS84` as default CRS for `TileMatrixSet.feature` GeoJSON response (as per specification)
+
 * add `geographic_crs` option for `TileMatrixSet.feature` method
+
 * update non-WGS84 CRS notation in `TileMatrixSet.feature` GeoJSON response
 
     ```python
@@ -48,8 +52,14 @@
     ```
 
 * remove `truncate_lnglat` from TileMatrixSet class **breaking change**
-* remove python 3.8 support
+
 * add `geographic_crs` option in `TileMatrixSet.tiles` and `TileMatrixSet.tile` methods
+
+* add deprecation warning for `ul`, `lr`, `xy`, `lnglat` amd `bounds` TileMatrixSet's methods **Deprecation Notice**
+
+* add deprecation warning for `bbox` TileMatrixSet's property **Deprecation Notice**
+
+* remove python 3.8, 3.9 and 3.10 support
 
 ## 6.2.0 (2024-12-19)
 
