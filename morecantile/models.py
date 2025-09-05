@@ -492,8 +492,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
     ]
 
     # Private attributes
-    _to_geographic: pyproj.Transformer = PrivateAttr()
-    _from_geographic: pyproj.Transformer = PrivateAttr()
+    _to_geographic: pyproj.Transformer = PrivateAttr()  # NOTE: Will be removed in 8.0
+    _from_geographic: pyproj.Transformer = PrivateAttr()  # NOTE: Will be removed in 8.0
 
     _tile_matrices_idx: Dict[int, int] = PrivateAttr()
 
@@ -505,6 +505,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
             int(mat.id): idx for idx, mat in enumerate(self.tileMatrices)
         }
 
+        # NOTE: Will be removed in 8.0
         try:
             self._to_geographic = pyproj.Transformer.from_crs(
                 self.crs._pyproj_crs, self.crs._pyproj_crs.geodetic_crs, always_xy=True
