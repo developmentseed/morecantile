@@ -906,6 +906,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
     def lnglat(self, x: float, y: float, truncate: bool = False) -> Coords:
         """Transform point(x,y) to geographic longitude and latitude."""
+        warnings.warn(
+            "`TileMatrixSet.lnglat` method is Deprecated and will be removed in morecantile 8.0",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
         inside = point_in_bbox(Coords(x, y), self.xy_bbox)
         if not inside:
             warnings.warn(
@@ -923,6 +929,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
 
     def xy(self, lng: float, lat: float, truncate: bool = False) -> Coords:
         """Transform geographic longitude and latitude coordinates to TMS CRS."""
+        warnings.warn(
+            "`TileMatrixSet.xy` method is Deprecated and will be removed in morecantile 8.0",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
         if truncate:
             lng, lat = truncate_coordinates(lng, lat, self.bbox)
 
@@ -1154,6 +1166,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         Coords: The upper left geographic coordinates of the input tile.
 
         """
+        warnings.warn(
+            "`TileMatrixSet.ul` method is Deprecated and will be removed in morecantile 8.0",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
         t = _parse_tile_arg(*tile)
 
         x, y = self._ul(t)
@@ -1172,6 +1190,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         Coords: The lower right geographic coordinates of the input tile.
 
         """
+        warnings.warn(
+            "`TileMatrixSet.lr` method is Deprecated and will be removed in morecantile 8.0",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
         t = _parse_tile_arg(*tile)
 
         x, y = self._lr(t)
@@ -1190,6 +1214,12 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         BoundingBox: The bounding box of the input tile.
 
         """
+        warnings.warn(
+            "`TileMatrixSet.bounds` method is Deprecated and will be removed in morecantile 8.0",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
         _left, _bottom, _right, _top = self.xy_bounds(*tile)
         left, top = self.lnglat(_left, _top)
         right, bottom = self.lnglat(_right, _bottom)
@@ -1208,9 +1238,15 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True):
         )
         return BoundingBox(left, bottom, right, top)
 
-    @cached_property
+    @property
     def bbox(self):
         """Return TMS bounding box in geographic coordinate reference system."""
+        warnings.warn(
+            "`TileMatrixSet.bbox` property is Deprecated and will be removed in morecantile 8.0",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+
         left, bottom, right, top = self.xy_bbox
         return BoundingBox(
             *self._to_geographic.transform_bounds(
