@@ -28,9 +28,8 @@
     }
     ```
 
-* rename `grid_name -> tms` and `grid_crs -> tms_crs` property names in `TileMatrixSet.feature` GeoJSON response
-* remove python 3.8 support
-* check tile's zoom against TMS's `maxzoom` in `TileMatrixSet.is_valid` and add `strict=True|False` options
+* rename `grid_name -> tms` and `grid_crs -> tms_crs` property names in `TileMatrixSet.feature` GeoJSON response **breaking change**
+* check tile's zoom against TMS's `maxzoom` in `TileMatrixSet.is_valid` and add `strict=True|False` options **breaking change**
 
     ```python
     import morecantile
@@ -47,6 +46,10 @@
     assert tms.is_valid(0, 0, 25, strict=False)
     >> UserWarning: TileMatrix not found for level: 25 - Creating values from TMS Scale.
     ```
+
+* remove `truncate_lnglat` from TileMatrixSet class **breaking change**
+* remove python 3.8 support
+* add `geographic_crs` option in `TileMatrixSet.tiles` and `TileMatrixSet.tile` methods
 
 ## 6.2.0 (2024-12-19)
 

@@ -1,7 +1,7 @@
 """morecantile utils."""
 
 import math
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from pyproj import CRS
 from pyproj.enums import WktVersion
@@ -108,6 +108,28 @@ def point_in_bbox(point: Coords, bbox: BoundingBox, precision: int = 5) -> bool:
         and round(point.y, precision) >= round(bbox.bottom, precision)
         and round(point.y, precision) <= round(bbox.top, precision)
     )
+
+
+def truncate_coordinates(
+    lng: float, lat: float, bbox: BoundingBox
+) -> Tuple[float, float]:
+    """
+    Truncate coordinates to a given bbox.
+
+    Adapted from https://github.com/mapbox/mercantile/blob/master/mercantile/__init__.py
+
+    """
+    if lng > bbox.right:
+        lng = bbox.right
+    elif lng < bbox.left:
+        lng = bbox.left
+
+    if lat > bbox.top:
+        lat = bbox.top
+    elif lat < bbox.bottom:
+        lat = bbox.bottom
+
+    return lng, lat
 
 
 def is_power_of_two(number: int) -> bool:
