@@ -48,8 +48,13 @@
     ```
 
 * remove `truncate_lnglat` from TileMatrixSet class **breaking change**
-* remove python 3.8 support
+* remove python 3.8, 3.9 and 3.10 support
 * add `geographic_crs` option in `TileMatrixSet.tiles` and `TileMatrixSet.tile` methods
+* make every `TileMatrixSet`'s attribute **frozen** 
+* rename `morecantile.defaults.TileMatrixSets.tms` attribute to `tilematrixsets` **breaking change**
+* make sure that `morecantile.defaults.TileMatrixSets.get(name)` returns a copy of the TMS object
+* add `MORECANTILE_DEFAULT_GEOGRAPHIC_CRS` environment variable to control the default Geographic CRS
+* add `TileMatrixSet.set_geographic_crs(crs: pyproj.CRS)` method to overwrite the geographic CRS
 
 ## 6.2.0 (2024-12-19)
 
