@@ -637,8 +637,8 @@ def test_boundingbox():
 def test_private_attr():
     """Check private attr."""
     tms = morecantile.tms.get("WebMercatorQuad")
-    assert "_to_geographic" in tms.__private_attributes__
-    assert "_from_geographic" in tms.__private_attributes__
+    assert "_geographic_crs" in tms.__private_attributes__
+    assert "_tile_matrices_idx" in tms.__private_attributes__
 
 
 def test_crs_type():
@@ -724,3 +724,51 @@ def test_crs_type_in_tms():
     )
     assert str(tms.crs.root.uri) == "http://www.opengis.net/def/crs/EPSG/0/3857"
     assert repr(tms)
+
+
+def test_geographic_issue164():
+    """
+    Check bbox in geographic CRS.
+
+    ref: https://github.com/developmentseed/morecantile/issues/164
+    """
+    extent = [2696082.04374708, 1289407.53195196, 2696210.04374708, 1289535.53195196]
+    crs = pyproj.CRS.from_epsg("2056")
+    tms = morecantile.TileMatrixSet.custom(extent, crs)
+    assert tms.geographic_crs != pyproj.CRS.from_epsg(4326)
+    assert round(tms.bbox.bottom, 5) == 47.74957
+
+    tms.set_geographic_crs(pyproj.CRS.from_epsg(4326))
+    assert tms.geographic_crs == pyproj.CRS.from_epsg(4326)
+    assert round(tms.bbox.bottom, 5) == 47.74817
+
+
+@pytest.mark.parametrize(
+    "name,is_wgs84",
+    [
+        ("LINZAntarticaMapTilegrid", False),
+        ("GNOSISGlobalGrid", True),
+        ("EuropeanETRS89_LAEAQuad", False),
+        ("CanadianNAD83_LCC", False),
+        ("UPSArcticWGS84Quad", True),
+        ("NZTM2000Quad", False),
+        ("UTM31WGS84Quad", True),
+        ("UPSAntarcticWGS84Quad", True),
+        ("WorldMercatorWGS84Quad", True),
+        ("WGS1984Quad", True),
+        ("WorldCRS84Quad", False),
+        ("WebMercatorQuad", True),
+        ("CDB1GlobalGrid", True),
+    ],
+)
+def test_geographic_crs(name, is_wgs84):
+    """Check Geographic CRS."""
+    tms = morecantile.tms.get(name)
+    assert (tms.geographic_crs == pyproj.CRS.from_epsg(4326)) == is_wgs84
+
+    tms.set_geographic_crs(pyproj.CRS.from_epsg(4326))
+    assert tms.geographic_crs == pyproj.CRS.from_epsg(4326)
+
+    # Confirm the original object wasn't updated
+    tms = morecantile.tms.get(name)
+    assert (tms.geographic_crs == pyproj.CRS.from_epsg(4326)) == is_wgs84

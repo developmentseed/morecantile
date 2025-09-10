@@ -2,7 +2,7 @@
 
 import os
 import pathlib
-from copy import copy
+from copy import copy, deepcopy
 from typing import Dict, List, Union
 
 import attr
@@ -26,26 +26,26 @@ default_tms: Dict[str, Union[TileMatrixSet, pathlib.Path]] = {
 class TileMatrixSets:
     """Default TileMatrixSets holder."""
 
-    tms: Dict = attr.ib()
+    tilematrixsets: Dict = attr.ib()
 
     def get(self, identifier: str) -> TileMatrixSet:
         """Fetch a TMS."""
-        if identifier not in self.tms:
+        if identifier not in self.tilematrixsets:
             raise InvalidIdentifier(f"Invalid identifier: {identifier}")
 
-        tms = self.tms[identifier]
+        tilematrix = self.tilematrixsets[identifier]
 
         # We lazyload the TMS document only when called
-        if isinstance(tms, pathlib.Path):
-            with tms.open() as f:
-                tms = TileMatrixSet.model_validate_json(f.read())
-                self.tms[identifier] = tms
+        if isinstance(tilematrix, pathlib.Path):
+            with tilematrix.open() as f:
+                tilematrix = TileMatrixSet.model_validate_json(f.read())
+                self.tilematrixsets[identifier] = tilematrix
 
-        return tms
+        return deepcopy(tilematrix)
 
     def list(self) -> List[str]:
         """List registered TMS."""
-        return list(self.tms.keys())
+        return list(self.tilematrixsets.keys())
 
     def register(
         self,
@@ -54,10 +54,10 @@ class TileMatrixSets:
     ) -> "TileMatrixSets":
         """Register TileMatrixSet(s)."""
         for identifier in custom_tms.keys():
-            if identifier in self.tms and not overwrite:
+            if identifier in self.tilematrixsets and not overwrite:
                 raise InvalidIdentifier(f"{identifier} is already a registered TMS.")
 
-        return TileMatrixSets({**self.tms, **custom_tms})
+        return TileMatrixSets({**self.tilematrixsets, **custom_tms})
 
 
 tms = TileMatrixSets(copy(default_tms))  # noqa

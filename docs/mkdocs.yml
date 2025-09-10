@@ -23,6 +23,8 @@ extra:
 nav:
   - Home: 'index.md'
   - Usage: 'usage.md'
+  - Advanced:
+    - Geographic Transformations: advanced/geographic.md
   - TMS v2: 'tms-v2.md'
   - API:
     - morecantile.commons: api/morecantile/commons.md
