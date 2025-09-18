@@ -59,7 +59,7 @@ def test_register():
     assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT
 
     # Update internal TMS dict
-    morecantile.tms.tms["MyCustomGrid3031"] = tms
+    morecantile.tms.tilematrixsets["MyCustomGrid3031"] = tms
     assert len(morecantile.tms.list()) == DEFAULT_GRID_COUNT + 1
 
     # make sure it doesn't propagate to the default dict
