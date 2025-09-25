@@ -1,6 +1,7 @@
 
 ## Unreleased
 
+* docs: add example of how to enumerate tiles for a bounding box and zoom level(s)
 * use `WGS84` as default CRS for `TileMatrixSet.feature` GeoJSON response (as per specification)
 * add `geographic_crs` option for `TileMatrixSet.feature` method
 * update non-WGS84 CRS notation in `TileMatrixSet.feature` GeoJSON response
