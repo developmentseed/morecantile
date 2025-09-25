@@ -41,6 +41,30 @@ tms._tile(x, y, 4)
 >>> Tile(x=15, y=10, z=4)
 ```
 
+### Find all tiles for a bounding box and zoom level(s)
+
+```python
+import morecantile
+
+tms = morecantile.tms.get("WebMercatorQuad")
+
+tiles = tms.tiles(
+    west=-93,
+    south=46,
+    east=-92,
+    north=47,
+    zooms=[8],
+)
+
+for tile in tiles:
+    print(tile)
+
+>>> Tile(x=61, y=90, z=8)
+>>> Tile(x=62, y=90, z=8)
+>>> Tile(x=61, y=91, z=8)
+>>> Tile(x=62, y=91, z=8)
+```
+
 ### Get Geojson Feature
 
 ```python
