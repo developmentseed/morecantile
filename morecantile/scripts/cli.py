@@ -411,7 +411,7 @@ def tiles(ctx, zoom, input, identifier, seq, tms):  # noqa: C901
 def tms(identifier):
     """Print TMS JSON."""
     tms = morecantile.tms.get(identifier)
-    click.echo(tms.json(exclude_none=True))
+    click.echo(tms.model_dump_json(exclude_none=True))
 
 
 ################################################################################
@@ -465,7 +465,7 @@ def custom(
         extent_crs=CRS.from_epsg(extent_epsg) if extent_epsg else None,
         title=title or "Custom TileMatrixSet",
     )
-    click.echo(tms.json(exclude_none=True))
+    click.echo(tms.model_dump_json(exclude_none=True))
 
 
 ################################################################################
