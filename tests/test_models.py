@@ -803,9 +803,8 @@ def test_bottomleft_origin():
         -20037508.342789244,
         -20037508.342789244,
     )
-    assert tms.xy_bounds(0, 0, 0).left == wmTopLeft.xy_bounds(0, 0, 0).left
-    assert tms.xy_bounds(0, 0, 0).top == wmTopLeft.xy_bounds(0, 0, 0).top
-    assert tms.xy_bounds(0, 0, 0).bottom == -20037508.342789244
+    assert tms.xy_bounds(0, 0, 0) == wmTopLeft.xy_bounds(0, 0, 0)
+    assert tms.bounds(0, 0, 0) == wmTopLeft.bounds(0, 0, 0)
 
     assert tms.xy_bounds(0, 0, 1).left == -20037508.342789244
     assert tms.xy_bounds(0, 0, 1).bottom == -20037508.342789244
@@ -815,6 +814,58 @@ def test_bottomleft_origin():
     assert tms.tile(-180, -85, 0) == morecantile.Tile(x=0, y=0, z=0)
     assert tms.tile(-180, -85, 1) == morecantile.Tile(x=0, y=0, z=1)
     assert tms.tile(-180, 85, 1) == morecantile.Tile(x=0, y=1, z=1)
+
+    bounds = tms.xy_bounds(486, tms.matrix(10).matrixHeight - 1 - 332, 10)
+    expected = wmTopLeft.xy_bounds(486, 332, 10)
+    for a, b in zip(expected, bounds):
+        assert round(a - b, 6) == pytest.approx(0)
+
+
+@pytest.mark.parametrize(
+    ("topLeft_Tile", "bottomLeft_Tile"),
+    [
+        (morecantile.Tile(10, 10, 10), morecantile.Tile(10, 1013, 10)),
+        (morecantile.Tile(10, 1013, 10), morecantile.Tile(10, 10, 10)),
+        # Check the Origin points
+        (morecantile.Tile(0, 0, 10), morecantile.Tile(0, 1023, 10)),
+        (morecantile.Tile(0, 1023, 10), morecantile.Tile(0, 0, 10)),
+        # Check the end points
+        (morecantile.Tile(1023, 0, 10), morecantile.Tile(1023, 1023, 10)),
+        (morecantile.Tile(1023, 1023, 10), morecantile.Tile(1023, 0, 10)),
+        # Zoom=0
+        (morecantile.Tile(0, 0, 0), morecantile.Tile(0, 0, 0)),
+        # zoom=1 on both edges of the zoom level
+        (morecantile.Tile(0, 0, 1), morecantile.Tile(0, 1, 1)),
+        (morecantile.Tile(0, 1, 1), morecantile.Tile(0, 0, 1)),
+        # zoom=14 near the middle
+        (
+            morecantile.Tile(x=3413, y=6202, z=14),
+            morecantile.Tile(x=3413, y=10181, z=14),
+        ),
+    ],
+)
+def test_topLeft_BottomLeft_bounds_equal_bounds(topLeft_Tile, bottomLeft_Tile):
+    tmsTop = morecantile.tms.get("WebMercatorQuad")
+    tmsBottom = TileMatrixSet.custom(
+        (
+            -20037508.342789244,
+            -20037508.342789244,
+            20037508.342789244,
+            20037508.342789244,
+        ),
+        pyproj.CRS.from_epsg(3857),
+        matrix_scale=[1, 1],
+        minzoom=0,
+        maxzoom=24,
+        id="WebMercatorQuadBottomLeft",
+        ordered_axes=["X", "Y"],
+        corner_of_origin="bottomLeft",
+    )
+
+    bounds = tmsTop.xy_bounds(topLeft_Tile)
+    bounds2 = tmsBottom.xy_bounds(bottomLeft_Tile)
+    for a, b in zip(bounds, bounds2):
+        assert round(a - b, 6) == 0
 
 
 def test_webmercator_bounds():
