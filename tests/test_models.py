@@ -773,3 +773,45 @@ def test_geographic_crs(name, is_wgs84):
     # Confirm the original object wasn't updated
     tms = morecantile.tms.get(name)
     assert (tms.geographic_crs == pyproj.CRS.from_epsg(4326)) == is_wgs84
+
+
+def test_bottomleft_origin():
+    """Create TMS with BottomLeft Origin."""
+    wmTopLeft = morecantile.tms.get("WebMercatorQuad")
+
+    crs = pyproj.CRS.from_epsg(3857)
+    extent = (
+        -20037508.342789244,
+        -20037508.342789244,
+        20037508.342789244,
+        20037508.342789244,
+    )
+    corner_of_origin = "bottomLeft"
+
+    tms = TileMatrixSet.custom(
+        extent,
+        crs,
+        matrix_scale=[1, 1],
+        minzoom=0,
+        maxzoom=24,
+        id="WebMercatorQuadBottomLeft",
+        ordered_axes=["X", "Y"],
+        corner_of_origin=corner_of_origin,
+    )
+    assert tms.matrix(0).pointOfOrigin == (-20037508.342789244, -20037508.342789244)
+    assert tms._matrix_origin(tms.matrix(0)) == (
+        -20037508.342789244,
+        -20037508.342789244,
+    )
+    assert tms.xy_bounds(0, 0, 0).left == wmTopLeft.xy_bounds(0, 0, 0).left
+    assert tms.xy_bounds(0, 0, 0).top == wmTopLeft.xy_bounds(0, 0, 0).top
+    assert tms.xy_bounds(0, 0, 0).bottom == -20037508.342789244
+
+    assert tms.xy_bounds(0, 0, 1).left == -20037508.342789244
+    assert tms.xy_bounds(0, 0, 1).bottom == -20037508.342789244
+    assert tms.xy_bounds(1, 1, 1).top == 20037508.342789244
+    assert tms.xy_bounds(1, 1, 1).right == 20037508.342789244
+
+    assert tms.tile(-180, -85, 0) == morecantile.Tile(x=0, y=0, z=0)
+    assert tms.tile(-180, -85, 1) == morecantile.Tile(x=0, y=0, z=1)
+    assert tms.tile(-180, 85, 1) == morecantile.Tile(x=0, y=1, z=1)
