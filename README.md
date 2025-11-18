@@ -44,12 +44,12 @@ Morecantile is like [mercantile](https://github.com/mapbox/mercantile) (the best
 ## Install
 
 ```bash
-$ python -m pip install -U pip
-$ python -m pip install morecantile
+python -m pip install -U pip
+python -m pip install morecantile
 
 # Or install from source:
-$ python -m pip install -U pip
-$ python -m pip install git+https://github.com/developmentseed/morecantile.git
+python -m pip install -U pip
+python -m pip install git+https://github.com/developmentseed/morecantile.git
 ```
 
 ## Usage

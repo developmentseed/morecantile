@@ -15,6 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: GIS",
 ]
 dynamic = ["version"]
@@ -29,28 +30,32 @@ dependencies = [
 rasterio = [
     "rasterio>=1.2.1",
 ]
-test = [
+
+[dependency-groups]
+dev = [
     "mercantile",
     "pytest",
     "pytest-cov",
-    "rasterio>=1.2.1",
     # ref: https://github.com/pallets/click/issues/2939
     "click!=8.2.1,!=8.2.2",
-]
-benchmark = [
-    "pytest",
-    "pytest-benchmark",
-]
-dev = [
     "pre-commit",
     "bump-my-version",
 ]
+
 docs = [
     "mkdocs>=1.4.3",
     "mkdocs-material[imaging]>=9.5",
     "griffe-inherited-docstrings>=1.0.0",
     "mkdocstrings[python]>=0.25.1",
     "pygments",
+]
+
+benchmark = [
+    "pytest-benchmark",
+]
+
+deploy = [
+    "hatch",
 ]
 
 [project.urls]
@@ -61,20 +66,17 @@ Documentation = "https://developmentseed.org/morecantile/"
 morecantile = "morecantile.scripts.cli:cli"
 
 [build-system]
-requires = ["flit_core>=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.flit.module]
-name = "morecantile"
+[tool.hatch.version]
+path = "morecantile/__init__.py"
 
-[tool.flit.sdist]
-exclude = [
-    "tests/",
-    "docs/",
-    ".github/",
-    "CHANGES.md",
-    "CONTRIBUTING.md",
-]
+[tool.hatch.build.targets.sdist]
+only-include = ["morecantile/"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["morecantile/"]
 
 [tool.coverage.run]
 branch = true
@@ -113,7 +115,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["D1"]
-
 
 [tool.pytest.ini_options]
 filterwarnings = [
