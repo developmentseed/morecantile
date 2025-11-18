@@ -815,3 +815,21 @@ def test_bottomleft_origin():
     assert tms.tile(-180, -85, 0) == morecantile.Tile(x=0, y=0, z=0)
     assert tms.tile(-180, -85, 1) == morecantile.Tile(x=0, y=0, z=1)
     assert tms.tile(-180, 85, 1) == morecantile.Tile(x=0, y=1, z=1)
+
+
+def test_webmercator_bounds():
+    """Test WebMercatorQuad bounds.
+
+    ref: https://github.com/developmentseed/morecantile/issues/175
+    """
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert tms.bounds(0, 0, 0).left == -180.0
+    assert tms.bounds(0, 0, 0).right == 180.0
+    assert tuple(tms.xy_bounds(0, 0, 0)) == (
+        -20037508.342789244,
+        -20037508.342789244,
+        20037508.342789244,
+        20037508.342789244,
+    )
+    assert tms.bounds(0, 0, 1).left == -180.0
+    assert tms.bounds(1, 0, 1).right == 180.0

@@ -1,6 +1,24 @@
 
 ## Unreleased
 
+* update the `WebMercatorQuad` definition to avoid rounding errors for bounds **breaking change**
+    ```python
+    import morecantile
+    tms = morecantile.tms.get("WebMercatorQuad")
+
+    # before
+    print(tms.bounds(0, 0, 0))
+    >> BoundingBox(left=-180.0, bottom=-85.0511287798066, right=180.00000000000009, top=85.0511287798066)
+    print(tms.xy_bounds(0, 0, 0))
+    >> BoundingBox(left=-20037508.342789244, bottom=-20037508.34278925, right=20037508.34278925, top=20037508.342789244)
+
+    # now
+    print(tms.bounds(0, 0, 0))
+    >> BoundingBox(left=-180.0, bottom=-85.0511287798066, right=180.0, top=85.0511287798066)
+    print(tms.xy_bounds(0, 0, 0))
+    >> BoundingBox(left=-20037508.342789244, bottom=-20037508.342789244, right=20037508.342789244, top=20037508.342789244)
+    ```
+
 * docs: add example of how to enumerate tiles for a bounding box and zoom level(s)
 * use `WGS84` as default CRS for `TileMatrixSet.feature` GeoJSON response (as per specification)
 * add `geographic_crs` option for `TileMatrixSet.feature` method
@@ -57,6 +75,7 @@
 * add `MORECANTILE_DEFAULT_GEOGRAPHIC_CRS` environment variable to control the default Geographic CRS
 * add `TileMatrixSet.set_geographic_crs(crs: pyproj.CRS)` method to overwrite the geographic CRS
 * add support for `BottomLeft` cornerOfOrigin TileMatrices
+* add python 3.14 support
 
 ## 6.2.0 (2024-12-19)
 
