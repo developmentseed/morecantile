@@ -773,3 +773,21 @@ def test_geographic_crs(name, is_wgs84):
     # Confirm the original object wasn't updated
     tms = morecantile.tms.get(name)
     assert (tms.geographic_crs == pyproj.CRS.from_epsg(4326)) == is_wgs84
+
+
+def test_webmercator_bounds():
+    """Test WebMercatorQuad bounds.
+
+    ref: https://github.com/developmentseed/morecantile/issues/175
+    """
+    tms = morecantile.tms.get("WebMercatorQuad")
+    assert tms.bounds(0, 0, 0).left == -180.0
+    assert tms.bounds(0, 0, 0).right == 180.0
+    assert tuple(tms.xy_bounds(0, 0, 0)) == (
+        -20037508.342789244,
+        -20037508.342789244,
+        20037508.342789244,
+        20037508.342789244,
+    )
+    assert tms.bounds(0, 0, 1).left == -180.0
+    assert tms.bounds(1, 0, 1).right == 180.0
