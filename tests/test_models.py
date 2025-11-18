@@ -8,7 +8,6 @@ from collections.abc import Iterable
 import pyproj
 import pytest
 from pydantic import ValidationError
-from rasterio.crs import CRS as rioCRS
 
 import morecantile
 from morecantile.commons import Tile
@@ -405,7 +404,6 @@ def test_mars_tms_construction():
         matrix_scale=[2, 1],
     )
     assert "4326" not in mars_tms.geographic_crs.to_wkt()
-    assert "4326" not in mars_tms.rasterio_geographic_crs.to_wkt()
     assert mars_tms.xy_bbox.left == pytest.approx(-180.0)
     assert mars_tms.xy_bbox.bottom == pytest.approx(-90.0)
     assert mars_tms.xy_bbox.right == pytest.approx(180.0)
@@ -427,7 +425,6 @@ def test_mars_web_mercator_long_lat():
         id="MarsWebMercator",
     )
     assert "4326" not in mars_tms_wm.geographic_crs.to_wkt()
-    assert "4326" not in mars_tms_wm.rasterio_geographic_crs.to_wkt()
     assert mars_tms_wm.bbox.left == pytest.approx(-180.0)
     assert mars_tms_wm.bbox.bottom == pytest.approx(-85.0511287)
     assert mars_tms_wm.bbox.right == pytest.approx(180.0)
@@ -549,6 +546,10 @@ def test_crs_uris_for_defaults(tilematrixset):
 
 def test_rasterio_crs():
     """Check rasterio CRS methods."""
+    _ = pytest.importorskip("rasterio")
+
+    from rasterio.crs import CRS as rioCRS
+
     tms = morecantile.tms.get("WebMercatorQuad")
     assert isinstance(tms.rasterio_crs, rioCRS)
     assert isinstance(tms.rasterio_geographic_crs, rioCRS)
