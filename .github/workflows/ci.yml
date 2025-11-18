@@ -37,7 +37,7 @@ jobs:
           uv run pre-commit run --all-files
 
       - name: Run tests
-        run: python -m pytest --cov morecantile --cov-report term-missing --cov-report xml
+        run: uv run pytest --cov morecantile --cov-report term-missing --cov-report xml
 
       - name: Upload Results
         if: ${{ matrix.python-version == env.LATEST_PY_VERSION }}
@@ -70,7 +70,7 @@ jobs:
           uv sync --extra rasterio
 
       - name: Run tests
-        run: python -m pytest --cov morecantile --cov-report term-missing --cov-report xml
+        run: uv run pytest --cov morecantile --cov-report term-missing --cov-report xml
 
   benchmark:
     needs: [tests, tests-rasterio]
