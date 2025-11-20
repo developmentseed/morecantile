@@ -39,7 +39,7 @@ dev = [
     # ref: https://github.com/pallets/click/issues/2939
     "click!=8.2.1,!=8.2.2",
     "pre-commit",
-    "bump-my-version",
+    "bump-my-version==1.2.4",
 ]
 
 docs = [
