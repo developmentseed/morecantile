@@ -677,6 +677,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ordered_axes: Optional[List[str]] = None,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
+        corner_of_origin: Literal["topLeft", "bottomLeft"] = "topLeft",
+        point_of_origin: List[float] = None,
         **kwargs: Any,
     ):
         """
@@ -684,10 +686,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
 
         Attributes
         ----------
-        crs: pyproj.CRS
-            Tile Matrix Set coordinate reference system
         extent: list
             Bounding box of the Tile Matrix Set, (left, bottom, right, top).
+        crs: pyproj.CRS
+            Tile Matrix Set coordinate reference system
         tile_width: int
             Width of each tile of this tile matrix in pixels (default is 256).
         tile_height: int
@@ -713,6 +715,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
             Rendering pixel size. 0.28 mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.
         decimation_base: int, optional
             How tiles are divided at each zoom level (default is 2). Must be greater than 1.
+        corner_of_origin: str, optional
+            Corner of origin for the TMS, either 'topLeft' or 'bottomLeft'
+        point_of_origin: list, optional
+            Point of origin for the TMS, (x, y) coordinates in the TMS CRS.
         kwargs: Any
             Attributes to forward to the TileMatrixSet
 
@@ -738,8 +744,20 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
             )
 
         bbox = BoundingBox(*extent)
-        x_origin = bbox.left if not is_inverted else bbox.top
-        y_origin = bbox.top if not is_inverted else bbox.left
+        if not point_of_origin:
+            if corner_of_origin == "topLeft":
+                x_origin = bbox.left if not is_inverted else bbox.top
+                y_origin = bbox.top if not is_inverted else bbox.left
+                point_of_origin = [x_origin, y_origin]
+            elif corner_of_origin == "bottomLeft":
+                x_origin = bbox.left if not is_inverted else bbox.bottom
+                y_origin = bbox.bottom if not is_inverted else bbox.left
+                point_of_origin = [x_origin, y_origin]
+            else:
+                raise ValueError(
+                    f"Invalid `corner_of_origin` value: {corner_of_origin},  must be either 'topLeft' or 'bottomLeft'"
+                )
+
         width = abs(bbox.right - bbox.left)
         height = abs(bbox.top - bbox.bottom)
         mpu = meters_per_unit(crs)
@@ -758,7 +776,8 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
                         "id": str(zoom),
                         "scaleDenominator": res * mpu / screen_pixel_size,
                         "cellSize": res,
-                        "pointOfOrigin": [x_origin, y_origin],
+                        "cornerOfOrigin": corner_of_origin,
+                        "pointOfOrigin": point_of_origin,
                         "tileWidth": tile_width,
                         "tileHeight": tile_height,
                         "matrixWidth": matrix_scale[0] * decimation_base**zoom,
@@ -830,6 +849,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
                 id=str(int(tile_matrix.id) + 1),
                 scaleDenominator=tile_matrix.scaleDenominator / factor,
                 cellSize=tile_matrix.cellSize / factor,
+                cornerOfOrigin=tile_matrix.cornerOfOrigin,
                 pointOfOrigin=tile_matrix.pointOfOrigin,
                 tileWidth=tile_matrix.tileWidth,
                 tileHeight=tile_matrix.tileHeight,
@@ -981,8 +1001,14 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
             if not math.isinf(xcoord)
             else 0
         )
+
+        coord = (
+            (origin_y - ycoord)
+            if matrix.cornerOfOrigin == "topLeft"
+            else (ycoord - origin_y)
+        )
         ytile = (
-            math.floor((origin_y - ycoord) / float(matrix.cellSize * matrix.tileHeight))
+            math.floor(coord / float(matrix.cellSize * matrix.tileHeight))
             if not math.isinf(ycoord)
             else 0
         )
@@ -1088,10 +1114,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        return Coords(
-            origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth,
-            origin_y - t.y * matrix.cellSize * matrix.tileHeight,
+        x_coord = (
+            origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
         )
+        y_coord = (
+            origin_y - t.y * matrix.cellSize * matrix.tileHeight
+            if matrix.cornerOfOrigin == "topLeft"
+            else origin_y + t.y * matrix.cellSize * matrix.tileHeight
+        )
+
+        return Coords(x_coord, y_coord)
 
     def _lr(self, *tile: Tile) -> Coords:
         """
@@ -1116,11 +1148,17 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
             if matrix.variableMatrixWidths is not None
             else 1
         )
-        return Coords(
+        x_coord = (
             origin_x
-            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth,
-            origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight,
+            + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
         )
+        y_coord = (
+            origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+            if matrix.cornerOfOrigin == "topLeft"
+            else origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        )
+
+        return Coords(x_coord, y_coord)
 
     def xy_bounds(self, *tile: Tile) -> BoundingBox:
         """
@@ -1147,12 +1185,16 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         )
 
         left = origin_x + math.floor(t.x / cf) * matrix.cellSize * cf * matrix.tileWidth
-        top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
         right = (
             origin_x
             + (math.floor(t.x / cf) + 1) * matrix.cellSize * cf * matrix.tileWidth
         )
-        bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        if matrix.cornerOfOrigin == "topLeft":
+            top = origin_y - t.y * matrix.cellSize * matrix.tileHeight
+            bottom = origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
+        else:
+            bottom = origin_y + t.y * matrix.cellSize * matrix.tileHeight
+            top = origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
 
         return BoundingBox(left, bottom, right, top)
 

@@ -74,6 +74,7 @@
 * make sure that `morecantile.defaults.TileMatrixSets.get(name)` returns a copy of the TMS object
 * add `MORECANTILE_DEFAULT_GEOGRAPHIC_CRS` environment variable to control the default Geographic CRS
 * add `TileMatrixSet.set_geographic_crs(crs: pyproj.CRS)` method to overwrite the geographic CRS
+* add support for `BottomLeft` cornerOfOrigin TileMatrices
 * add python 3.14 support
 
 ## 6.2.0 (2024-12-19)
