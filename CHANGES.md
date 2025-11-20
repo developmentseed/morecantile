@@ -1,6 +1,8 @@
 
 ## Unreleased
 
+## 7.0.0 (2025-11-20)
+
 * update the `WebMercatorQuad` definition to avoid rounding errors for bounds **breaking change**
     ```python
     import morecantile
