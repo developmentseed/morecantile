@@ -4,6 +4,7 @@
 ## 7.0.1 (2025-12-19)
 
 * fix and improve type hints
+* remove `bump-my-version` from dev dependencies
 
 ## 7.0.0 (2025-11-20)
 
