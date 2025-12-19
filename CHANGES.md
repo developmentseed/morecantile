@@ -1,6 +1,10 @@
 
 ## Unreleased
 
+## 7.0.1 (2025-12-19)
+
+* fix and improve type hints
+
 ## 7.0.0 (2025-11-20)
 
 * update the `WebMercatorQuad` definition to avoid rounding errors for bounds **breaking change**
