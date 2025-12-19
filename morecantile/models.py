@@ -1080,7 +1080,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         )
 
         if truncate:
-            left, bottom, right, top = self.bbox
+            left, bottom, right, top = self.xy_bbox
             bbox = BoundingBox(
                 *_to_geographic.transform_bounds(
                     left, bottom, right, top, densify_pts=21
@@ -1337,7 +1337,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         )
 
         # TMS bbox
-        left, bottom, right, top = self.bbox
+        left, bottom, right, top = self.xy_bbox
         bbox = BoundingBox(
             *_to_geographic.transform_bounds(left, bottom, right, top, densify_pts=21),
         )
