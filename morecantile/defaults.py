@@ -3,7 +3,6 @@
 import os
 import pathlib
 from copy import copy, deepcopy
-from typing import Dict, List, Union
 
 import attr
 
@@ -17,7 +16,7 @@ user_tms_dir = os.environ.get("TILEMATRIXSET_DIRECTORY", None)
 if user_tms_dir:
     tms_paths.extend(list(pathlib.Path(user_tms_dir).glob("*.json")))
 
-default_tms: Dict[str, Union[TileMatrixSet, pathlib.Path]] = {
+default_tms: dict[str, TileMatrixSet | pathlib.Path] = {
     tms.stem: tms for tms in sorted(tms_paths)
 }
 
@@ -26,7 +25,7 @@ default_tms: Dict[str, Union[TileMatrixSet, pathlib.Path]] = {
 class TileMatrixSets:
     """Default TileMatrixSets holder."""
 
-    tilematrixsets: Dict = attr.ib()
+    tilematrixsets: dict = attr.ib()
 
     def get(self, identifier: str) -> TileMatrixSet:
         """Fetch a TMS."""
@@ -43,13 +42,13 @@ class TileMatrixSets:
 
         return deepcopy(tilematrix)
 
-    def list(self) -> List[str]:
+    def list(self) -> list[str]:
         """List registered TMS."""
         return list(self.tilematrixsets.keys())
 
     def register(
         self,
-        custom_tms: Dict[str, TileMatrixSet],
+        custom_tms: dict[str, TileMatrixSet],
         overwrite: bool = False,
     ) -> "TileMatrixSets":
         """Register TileMatrixSet(s)."""

@@ -3,8 +3,9 @@
 import math
 import os
 import warnings
+from collections.abc import Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Literal
 
 import pyproj
 from pydantic import (
@@ -39,10 +40,10 @@ from morecantile.utils import (
     truncate_coordinates,
 )
 
-NumType = Union[float, int]
-BoundsType = Tuple[NumType, NumType]
+NumType = float | int
+BoundsType = tuple[NumType, NumType]
 LL_EPSILON = 1e-11
-axesInfo = Annotated[List[str], Field(min_length=2, max_length=2)]
+axesInfo = Annotated[list[str], Field(min_length=2, max_length=2)]
 WGS84_CRS = pyproj.CRS.from_epsg(4326)
 DEFAULT_GEOGRAPHIC_CRS = os.environ.get("MORECANTILE_DEFAULT_GEOGRAPHIC_CRS")
 
@@ -70,7 +71,7 @@ class CRSWKT(BaseModel):
     """Coordinate Reference System (CRS) from WKT encoded as PROJJSON Object."""
 
     wkt: Annotated[
-        Dict,
+        dict,
         Field(
             json_schema_extra={
                 "description": "An object defining the CRS using the JSON encoding for Well-known text representation of coordinate reference systems 2.0",
@@ -83,7 +84,7 @@ class CRSRef(BaseModel):
     """CRS from referenceSystem."""
 
     referenceSystem: Annotated[
-        Dict[str, Any],
+        dict[str, Any],
         Field(
             json_schema_extra={
                 "description": "A reference system data structure as defined in the MD_ReferenceSystem of the ISO 19115",
@@ -92,7 +93,7 @@ class CRSRef(BaseModel):
     ]
 
 
-class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
+class CRS(RootModel[str | CRSUri | CRSWKT | CRSRef]):
     """CRS model.
 
     Ref: https://github.com/opengeospatial/ogcapi-tiles/blob/master/openapi/schemas/common-geodata/crs.yaml
@@ -125,7 +126,7 @@ class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
         """return the string form of the user input used to create the CRS."""
         return self._pyproj_crs.srs
 
-    def to_epsg(self, *args: Any, **kwargs: Any) -> Optional[int]:
+    def to_epsg(self, *args: Any, **kwargs: Any) -> int | None:
         """return EPSG number of the CRS."""
         return self._pyproj_crs.to_epsg(*args, **kwargs)
 
@@ -137,7 +138,7 @@ class CRS(RootModel[Union[str, Union[CRSUri, CRSWKT, CRSRef]]]):
         """return PROJ4 version of the CRS."""
         return self._pyproj_crs.to_proj4(*args, **kwargs)
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """return DICT version of the CRS."""
         return self._pyproj_crs.to_dict()
 
@@ -171,7 +172,7 @@ def crs_axis_inverted(crs: pyproj.CRS) -> bool:
     return crs.axis_info[0].abbrev.upper() in ["Y", "LAT", "N"]
 
 
-def ordered_axis_inverted(ordered_axes: List[str]) -> bool:
+def ordered_axis_inverted(ordered_axes: list[str]) -> bool:
     """Check if ordered axes have inverted AXIS (lat,lon) instead of (lon,lat)."""
     return ordered_axes[0].upper() in ["Y", "LAT", "N"]
 
@@ -200,7 +201,7 @@ class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
         ),
     ]
     crs: Annotated[
-        Optional[CRS],
+        CRS | None,
         Field(
             json_schema_extra={
                 "description": "Coordinate Reference System (CRS)",
@@ -208,7 +209,7 @@ class TMSBoundingBox(BaseModel, arbitrary_types_allowed=True):
         ),
     ] = None
     orderedAxes: Annotated[
-        Optional[axesInfo],
+        axesInfo | None,
         Field(
             json_schema_extra={
                 "description": "Ordered list of names of the dimensions defined in the CRS",
@@ -264,7 +265,7 @@ class TileMatrix(BaseModel, extra="forbid"):
     """
 
     title: Annotated[
-        Optional[str],
+        str | None,
         Field(
             json_schema_extra={
                 "description": "Title of this tile matrix, normally used for display to a human",
@@ -272,7 +273,7 @@ class TileMatrix(BaseModel, extra="forbid"):
         ),
     ] = None
     description: Annotated[
-        Optional[str],
+        str | None,
         Field(
             json_schema_extra={
                 "description": "Brief narrative description of this tile matrix set, normally available for display to a human",
@@ -280,7 +281,7 @@ class TileMatrix(BaseModel, extra="forbid"):
         ),
     ] = None
     keywords: Annotated[
-        Optional[List[str]],
+        list[str] | None,
         Field(
             json_schema_extra={
                 "description": "Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this dataset",
@@ -369,7 +370,7 @@ class TileMatrix(BaseModel, extra="forbid"):
         ),
     ]
     variableMatrixWidths: Annotated[
-        Optional[List[variableMatrixWidth]],
+        list[variableMatrixWidth] | None,
         Field(
             json_schema_extra={
                 "description": "Describes the rows that has variable matrix width",
@@ -409,7 +410,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
     """
 
     title: Annotated[
-        Optional[str],
+        str | None,
         Field(
             json_schema_extra={
                 "description": "Title of this tile matrix set, normally used for display to a human",
@@ -418,7 +419,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     description: Annotated[
-        Optional[str],
+        str | None,
         Field(
             json_schema_extra={
                 "description": "Brief narrative description of this tile matrix set, normally available for display to a human",
@@ -427,7 +428,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     keywords: Annotated[
-        Optional[List[str]],
+        list[str] | None,
         Field(
             json_schema_extra={
                 "description": "Unordered list of one or more commonly used or formalized word(s) or phrase(s) used to describe this tile matrix set",
@@ -436,7 +437,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     id: Annotated[
-        Optional[str],
+        str | None,
         Field(
             pattern=r"^[\w\d_\-]+$",
             json_schema_extra={
@@ -446,7 +447,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     uri: Annotated[
-        Optional[str],
+        str | None,
         Field(
             json_schema_extra={
                 "description": "Reference to an official source for this tileMatrixSet",
@@ -455,7 +456,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     orderedAxes: Annotated[
-        Optional[axesInfo],
+        axesInfo | None,
         Field(
             json_schema_extra={
                 "description": "Ordered list of names of the dimensions defined in the CRS",
@@ -473,7 +474,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ]
     wellKnownScaleSet: Annotated[
-        Optional[AnyHttpUrl],
+        AnyHttpUrl | None,
         Field(
             json_schema_extra={
                 "description": "Reference to a well-known scale set",
@@ -482,7 +483,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     boundingBox: Annotated[
-        Optional[TMSBoundingBox],
+        TMSBoundingBox | None,
         Field(
             json_schema_extra={
                 "description": "Minimum bounding rectangle surrounding the tile matrix set, in the supported CRS",
@@ -491,7 +492,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         ),
     ] = None
     tileMatrices: Annotated[
-        List[TileMatrix],
+        list[TileMatrix],
         Field(
             json_schema_extra={
                 "description": "Describes scale levels and its tile matrices",
@@ -502,7 +503,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
 
     # Private attributes
     _geographic_crs: pyproj.CRS = PrivateAttr()
-    _tile_matrices_idx: Dict[int, int] = PrivateAttr()
+    _tile_matrices_idx: dict[int, int] = PrivateAttr()
 
     def __init__(self, **data):
         """Set private attributes."""
@@ -560,7 +561,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         """Return rasterio CRS."""
         return to_rasterio_crs(self.crs._pyproj_crs)
 
-    def set_geographic_crs(self, crs: CRS) -> None:
+    def set_geographic_crs(self, crs: pyproj.CRS) -> None:
         """Overwrite Geographic CRS for the TMS."""
         self._geographic_crs = crs
 
@@ -606,7 +607,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         )
 
     @classmethod
-    def from_v1(cls, tms: Dict) -> "TileMatrixSet":
+    def from_v1(cls, tms: dict) -> "TileMatrixSet":
         """
         Makes a TMS from a v1 TMS definition
 
@@ -626,7 +627,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
             WKSS URL
         boundingBox: TMSBoundingBox (optional)
             Bounding box of TMS
-        tileMatrix: List[TileMatrix]
+        tileMatrix: list[TileMatrix]
             List of Tile Matrices
 
         Returns:
@@ -664,21 +665,21 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
     @classmethod
     def custom(
         cls,
-        extent: List[float],
+        extent: list[float],
         crs: pyproj.CRS,
         tile_width: int = 256,
         tile_height: int = 256,
-        matrix_scale: Optional[List] = None,
-        extent_crs: Optional[pyproj.CRS] = None,
+        matrix_scale: list | None = None,
+        extent_crs: pyproj.CRS | None = None,
         minzoom: int = 0,
         maxzoom: int = 24,
-        title: Optional[str] = None,
-        id: Optional[str] = None,
-        ordered_axes: Optional[List[str]] = None,
+        title: str | None = None,
+        id: str | None = None,
+        ordered_axes: list[str] | None = None,
         screen_pixel_size: float = 0.28e-3,
         decimation_base: int = 2,
         corner_of_origin: Literal["topLeft", "bottomLeft"] = "topLeft",
-        point_of_origin: List[float] = None,
+        point_of_origin: list[float] = None,
         **kwargs: Any,
     ):
         """
@@ -736,7 +737,10 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
 
         if extent_crs:
             transform = pyproj.Transformer.from_crs(extent_crs, crs, always_xy=True)
-            extent = transform.transform_bounds(*extent, densify_pts=21)
+            left, bottom, right, top = extent
+            extent = list(
+                transform.transform_bounds(left, bottom, right, top, densify_pts=21)
+            )
 
         if decimation_base <= 1:
             raise ValueError(
@@ -762,7 +766,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         height = abs(bbox.top - bbox.bottom)
         mpu = meters_per_unit(crs)
 
-        tile_matrices: List[TileMatrix] = []
+        tile_matrices: list[TileMatrix] = []
         for zoom in range(minzoom, maxzoom + 1):
             res = max(
                 width / (tile_width * matrix_scale[0]) / float(decimation_base) ** zoom,
@@ -872,9 +876,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
     def zoom_for_res(
         self,
         res: float,
-        max_z: Optional[int] = None,
+        max_z: int | None = None,
         zoom_level_strategy: str = "auto",
-        min_z: Optional[int] = None,
+        min_z: int | None = None,
     ) -> int:
         """Get TMS zoom level corresponding to a specific resolution.
 
@@ -1044,7 +1048,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         zoom: int,
         truncate=False,
         ignore_coalescence: bool = False,
-        geographic_crs: Optional[CRS] = None,
+        geographic_crs: pyproj.CRS | None = None,
     ) -> Tile:
         """
         Get the tile for a given geographic longitude and latitude pair.
@@ -1076,8 +1080,11 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         )
 
         if truncate:
+            left, bottom, right, top = self.xy_bbox
             bbox = BoundingBox(
-                *_to_geographic.transform_bounds(*self.xy_bbox, densify_pts=21),
+                *_to_geographic.transform_bounds(
+                    left, bottom, right, top, densify_pts=21
+                ),
             )
             lng, lat = truncate_coordinates(lng, lat, bbox)
 
@@ -1287,7 +1294,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         north: float,
         zooms: Sequence[int],
         truncate: bool = False,
-        geographic_crs: Optional[CRS] = None,
+        geographic_crs: pyproj.CRS | None = None,
     ) -> Iterator[Tile]:
         """
         Get the tiles overlapped by a geographic bounding box
@@ -1330,8 +1337,9 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         )
 
         # TMS bbox
+        left, bottom, right, top = self.xy_bbox
         bbox = BoundingBox(
-            *_to_geographic.transform_bounds(*self.xy_bbox, densify_pts=21),
+            *_to_geographic.transform_bounds(left, bottom, right, top, densify_pts=21),
         )
 
         if truncate:
@@ -1379,13 +1387,13 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
     def feature(
         self,
         tile: Tile,
-        fid: Optional[str] = None,
-        props: Optional[Dict] = None,
-        buffer: Optional[NumType] = None,
-        precision: Optional[int] = None,
+        fid: str | None = None,
+        props: dict | None = None,
+        buffer: NumType | None = None,
+        precision: int | None = None,
         projected: bool = False,
-        geographic_crs: Optional[CRS] = None,
-    ) -> Dict:
+        geographic_crs: pyproj.CRS | None = None,
+    ) -> dict:
         """
         Get the GeoJSON feature corresponding to a tile.
 
@@ -1445,7 +1453,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         geom = bbox_to_feature(west, south, east, north)
 
         xyz = str(tile)
-        feat: Dict[str, Any] = {
+        feat: dict[str, Any] = {
             "type": "Feature",
             "bbox": bbox,
             "id": xyz,
@@ -1561,7 +1569,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
 
         return Tile(xtile, ytile, i + 1)
 
-    def minmax(self, zoom: int) -> Dict:
+    def minmax(self, zoom: int) -> dict:
         """Return TileMatrix Extrema.
 
         Parameters
@@ -1571,7 +1579,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
 
         Returns
         -------
-        Dict
+        dict
 
         """
         m = self.matrix(zoom)
@@ -1594,7 +1602,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
 
         return validx and validy
 
-    def neighbors(self, *tile: Tile) -> List[Tile]:
+    def neighbors(self, *tile: Tile) -> list[Tile]:
         """The neighbors of a tile
 
         The neighbors function makes no guarantees regarding neighbor tile

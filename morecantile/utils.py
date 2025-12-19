@@ -1,7 +1,6 @@
 """morecantile utils."""
 
 import math
-from typing import Dict, List, Tuple
 
 from pyproj import CRS
 from pyproj.enums import WktVersion
@@ -90,7 +89,7 @@ def meters_per_unit(crs: CRS) -> float:
         ) from e
 
 
-def bbox_to_feature(west: float, south: float, east: float, north: float) -> Dict:
+def bbox_to_feature(west: float, south: float, east: float, north: float) -> dict:
     """Create a GeoJSON feature from a bbox."""
     return {
         "type": "Polygon",
@@ -112,7 +111,7 @@ def point_in_bbox(point: Coords, bbox: BoundingBox, precision: int = 5) -> bool:
 
 def truncate_coordinates(
     lng: float, lat: float, bbox: BoundingBox
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Truncate coordinates to a given bbox.
 
@@ -137,7 +136,7 @@ def is_power_of_two(number: int) -> bool:
     return (number & (number - 1) == 0) and number != 0
 
 
-def check_quadkey_support(tms: List) -> bool:
+def check_quadkey_support(tms: list) -> bool:
     """Check if a Tile Matrix Set supports quadkeys"""
     return all(
         (t.matrixWidth == t.matrixHeight)
