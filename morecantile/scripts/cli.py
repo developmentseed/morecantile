@@ -436,7 +436,7 @@ def tms(identifier):
     help="Identifier of the custom TMS.",
     default="CustomTileMatrixSet",
 )
-@click.option("--minzoom", type=int, default=0, help="Minumum Zoom level.")
+@click.option("--minzoom", type=int, default=0, help="Minimum Zoom level.")
 @click.option("--maxzoom", type=int, default=24, help="Maximum Zoom level.")
 @click.option("--tile-width", type=int, default=256, help="Width of each tile.")
 @click.option("--tile-height", type=int, default=256, help="Height of each tile.")

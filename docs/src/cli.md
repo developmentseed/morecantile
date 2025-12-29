@@ -129,7 +129,7 @@ Options:
   --epsg INTEGER         EPSG number.  [required]
   --extent FLOAT...      left, bottom, right, top Bounding box of the Tile Matrix Set.  [required]
   --name TEXT            Identifier of the custom TMS.
-  --minzoom INTEGER      Minumum Zoom level.
+  --minzoom INTEGER      Minimum Zoom level.
   --maxzoom INTEGER      Maximum Zoom level.
   --tile-width INTEGER   Width of each tile.
   --tile-height INTEGER  Height of each tile.
