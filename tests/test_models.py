@@ -14,7 +14,7 @@ from morecantile.commons import Tile
 from morecantile.errors import InvalidIdentifier
 from morecantile.models import CRS, CRSWKT, CRSUri, TileMatrix, TileMatrixSet
 
-data_dir = os.path.join(os.path.dirname(__file__), "../morecantile/data")
+data_dir = os.path.join(os.path.dirname(morecantile.__file__), "data")
 tilesets = [
     os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(".json")
 ]
