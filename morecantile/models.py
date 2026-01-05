@@ -1127,7 +1127,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         y_coord = (
             origin_y - t.y * matrix.cellSize * matrix.tileHeight
             if matrix.cornerOfOrigin == "topLeft"
-            else origin_y + t.y * matrix.cellSize * matrix.tileHeight
+            else origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
         )
 
         return Coords(x_coord, y_coord)
@@ -1162,7 +1162,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
         y_coord = (
             origin_y - (t.y + 1) * matrix.cellSize * matrix.tileHeight
             if matrix.cornerOfOrigin == "topLeft"
-            else origin_y + (t.y + 1) * matrix.cellSize * matrix.tileHeight
+            else origin_y + t.y * matrix.cellSize * matrix.tileHeight
         )
 
         return Coords(x_coord, y_coord)
