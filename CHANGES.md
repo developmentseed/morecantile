@@ -1,7 +1,7 @@
 
 ## Unreleased
 
-## 7.0.1 (2026-01-05)
+## 7.0.2 (2026-01-05)
 
 * fix `_lr` and `_ul` methods for `bottomLeft` TMS
 
