@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 import morecantile
-from morecantile.commons import Tile
+from morecantile.commons import BoundingBox, Coords, Tile
 from morecantile.errors import InvalidIdentifier
 from morecantile.models import CRS, CRSWKT, CRSUri, TileMatrix, TileMatrixSet
 
@@ -804,6 +804,21 @@ def test_bottomleft_origin():
         -20037508.342789244,
     )
     assert tms.xy_bounds(0, 0, 0) == wmTopLeft.xy_bounds(0, 0, 0)
+
+    # bottomLeft corner can also be used as
+    # origin making TileRow increase towards the top
+    assert tms.xy_bounds(1, 1, 1) == wmTopLeft.xy_bounds(1, 0, 1)
+    assert tms.xy_bounds(1, 0, 1) == wmTopLeft.xy_bounds(1, 1, 1)
+
+    assert tms._ul(0, 0, 0) == wmTopLeft._ul(0, 0, 0)
+    assert tms._lr(0, 0, 0) == wmTopLeft._lr(0, 0, 0)
+
+    # TileRow is inverted
+    assert tms._ul(0, 0, 1).y == wmTopLeft._ul(0, 1, 1).y
+    assert tms._ul(0, 1, 1).y == wmTopLeft._ul(0, 0, 1).y
+    assert tms._lr(0, 0, 1).y == wmTopLeft._lr(0, 1, 1).y
+    assert tms._lr(0, 1, 1).y == wmTopLeft._lr(0, 0, 1).y
+
     assert tms.bounds(0, 0, 0) == wmTopLeft.bounds(0, 0, 0)
 
     assert tms.xy_bounds(0, 0, 1).left == -20037508.342789244
@@ -884,3 +899,43 @@ def test_webmercator_bounds():
     )
     assert tms.bounds(0, 0, 1).left == -180.0
     assert tms.bounds(1, 0, 1).right == 180.0
+
+
+def test_bbox_bottom_left():
+    """Ref: issue #193"""
+    extent = [-100_000, -100_000, 100_000, 100_000]
+    tms = TileMatrixSet.custom(
+        extent,
+        pyproj.CRS.from_epsg(3857),
+        minzoom=0,
+        maxzoom=2,
+        corner_of_origin="bottomLeft",
+    )
+    assert tms.xy_bbox == BoundingBox(
+        left=-100_000,
+        bottom=-100_000,
+        right=100_000,
+        top=100_000,
+    )
+
+    assert tms.xy_bounds(Tile(x=0, y=0, z=0)) == BoundingBox(
+        left=-100_000,
+        bottom=-100_000,
+        right=100_000,
+        top=100_000,
+    )
+
+    assert tms._ul(Tile(x=0, y=0, z=0)) == Coords(x=-100000.0, y=100000.0)
+    assert tms._lr(Tile(x=0, y=0, z=0)) == Coords(x=100000.0, y=-100000.0)
+
+    assert tms._ul(Tile(x=0, y=0, z=1)) == Coords(x=-100000.0, y=0.0)
+    assert tms._lr(Tile(x=0, y=0, z=1)) == Coords(x=0.0, y=-100000.0)
+
+    assert tms._ul(Tile(x=1, y=0, z=1)) == Coords(x=0.0, y=0.0)
+    assert tms._lr(Tile(x=1, y=0, z=1)) == Coords(x=100000.0, y=-100000.0)
+
+    assert tms._ul(Tile(x=0, y=1, z=1)) == Coords(x=-100000.0, y=100000.0)
+    assert tms._lr(Tile(x=0, y=1, z=1)) == Coords(x=0.0, y=0.0)
+
+    assert tms._ul(Tile(x=1, y=1, z=1)) == Coords(x=0.0, y=100000.0)
+    assert tms._lr(Tile(x=1, y=1, z=1)) == Coords(x=100000.0, y=0)

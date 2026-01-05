@@ -1,6 +1,10 @@
 
 ## Unreleased
 
+## 7.0.1 (2026-01-05)
+
+* fix `_lr` and `_ul` methods for `bottomLeft` TMS
+
 ## 7.0.1 (2025-12-19)
 
 * fix and improve type hints
