@@ -1,0 +1,1358 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Construct and use map tile grids (a.k.a TileMatrixSet / TMS).">
+      
+      
+      
+        <link rel="canonical" href="https://developmentseed.org/morecantile/usage/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../advanced/geographic/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Usage - morecantile</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,300i,400,400i,700,700i%7CFira+Code:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Nunito Sans";--md-code-font:"Fira Code"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="light-pink">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#load-one-tms-grid" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="morecantile" class="md-header__button md-logo" aria-label="morecantile" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            morecantile
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Usage
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/developmentseed/morecantile" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    developmentseed/morecantile
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="morecantile" class="md-nav__button md-logo" aria-label="morecantile" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+
+    </a>
+    morecantile
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/developmentseed/morecantile" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    developmentseed/morecantile
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#load-one-tms-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load one TMS grid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-tile-and-get-bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create tile and get bounds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#find-tile-for-latlon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find tile for lat/lon
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#find-all-tiles-for-a-bounding-box-and-zoom-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find all tiles for a bounding box and zoom level(s)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-geojson-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Geojson Feature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-custom-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define custom grid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-morecantile-tms-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use morecantile TMS store
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use morecantile TMS store">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-supported-grids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        List supported grids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-a-custom-tms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register a custom TMS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automatically-register-tms-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatically register TMS documents
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#morecantile-pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Morecantile + Pydantic
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/geographic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Geographic Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tms-v2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TMS v2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/morecantile/commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    morecantile.commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/morecantile/defaults/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    morecantile.defaults
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/morecantile/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    morecantile.errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/morecantile/models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    morecantile.models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/morecantile/utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    morecantile.utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmark.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development - Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#load-one-tms-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load one TMS grid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-tile-and-get-bounds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create tile and get bounds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#find-tile-for-latlon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find tile for lat/lon
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#find-all-tiles-for-a-bounding-box-and-zoom-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find all tiles for a bounding box and zoom level(s)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#get-geojson-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Get Geojson Feature
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#define-custom-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Define custom grid
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-morecantile-tms-store" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use morecantile TMS store
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use morecantile TMS store">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#list-supported-grids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        List supported grids
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#register-a-custom-tms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Register a custom TMS
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#automatically-register-tms-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Automatically register TMS documents
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#morecantile-pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Morecantile + Pydantic
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>Usage</h1>
+
+<h3 id="load-one-tms-grid">Load one TMS grid<a class="headerlink" href="#load-one-tms-grid" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WebMercatorQuad&quot;</span><span class="p">)</span>
+<span class="n">tms</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="o">&lt;</span><span class="n">TileMatrixSet</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Google Maps Compatible for the World&#39;</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;WebMercatorQuad&#39;</span> <span class="n">crs</span><span class="o">=</span><span class="s1">&#39;http://www.opengis.net/def/crs/EPSG/0/3857&gt;</span>
+</code></pre></div>
+<h3 id="create-tile-and-get-bounds">Create tile and get bounds<a class="headerlink" href="#create-tile-and-get-bounds" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WebMercatorQuad&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get the bounds for tile Z=4, X=10, Y=10 in the input projection</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">xy_bounds</span><span class="p">(</span><span class="n">morecantile</span><span class="o">.</span><span class="n">Tile</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">BoundingBox</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">5009377.085697308</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=-</span><span class="mf">7514065.628545959</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">7514065.628545959</span><span class="p">,</span> <span class="n">top</span><span class="o">=-</span><span class="mf">5009377.085697308</span><span class="p">)</span>
+
+<span class="c1"># Get the bounds for tile Z=4, X=10, Y=10 in LatLon (WGS84)</span>
+<span class="n">tms</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">morecantile</span><span class="o">.</span><span class="n">Tile</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">BoundingBox</span><span class="p">(</span><span class="n">left</span><span class="o">=</span><span class="mf">44.999999999999964</span><span class="p">,</span> <span class="n">bottom</span><span class="o">=-</span><span class="mf">55.776573018667634</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="mf">67.4999999999999</span><span class="p">,</span> <span class="n">top</span><span class="o">=-</span><span class="mf">40.97989806962009</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="find-tile-for-latlon">Find tile for lat/lon<a class="headerlink" href="#find-tile-for-latlon" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WebMercatorQuad&quot;</span><span class="p">)</span>
+
+<span class="n">tms</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="mf">159.31</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tile</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="c1"># Or using coordinates in input CRS</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">tms</span><span class="o">.</span><span class="n">xy</span><span class="p">(</span><span class="mf">159.31</span><span class="p">,</span> <span class="o">-</span><span class="mi">42</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">(</span><span class="mf">17734308.078276414</span><span class="p">,</span> <span class="o">-</span><span class="mf">5160979.444049781</span><span class="p">)</span>
+
+<span class="n">tms</span><span class="o">.</span><span class="n">_tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tile</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="find-all-tiles-for-a-bounding-box-and-zoom-levels">Find all tiles for a bounding box and zoom level(s)<a class="headerlink" href="#find-all-tiles-for-a-bounding-box-and-zoom-levels" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WebMercatorQuad&quot;</span><span class="p">)</span>
+
+<span class="n">tiles</span> <span class="o">=</span> <span class="n">tms</span><span class="o">.</span><span class="n">tiles</span><span class="p">(</span>
+    <span class="n">west</span><span class="o">=-</span><span class="mi">93</span><span class="p">,</span>
+    <span class="n">south</span><span class="o">=</span><span class="mi">46</span><span class="p">,</span>
+    <span class="n">east</span><span class="o">=-</span><span class="mi">92</span><span class="p">,</span>
+    <span class="n">north</span><span class="o">=</span><span class="mi">47</span><span class="p">,</span>
+    <span class="n">zooms</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tile</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">61</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tile</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">62</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tile</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">61</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Tile</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">62</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="get-geojson-feature">Get Geojson Feature<a class="headerlink" href="#get-geojson-feature" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WebMercatorQuad&quot;</span><span class="p">)</span>
+
+<span class="n">tms</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="n">morecantile</span><span class="o">.</span><span class="n">Tile</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="o">&gt;&gt;&gt;</span> <span class="p">{</span>
+    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Feature&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bbox&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="mf">44.999999999999964</span><span class="p">,</span>
+        <span class="o">-</span><span class="mf">55.776573018667634</span><span class="p">,</span>
+        <span class="mf">67.4999999999999</span><span class="p">,</span>
+        <span class="o">-</span><span class="mf">40.97989806962009</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;Tile(x=10, y=10, z=4)&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;geometry&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;Polygon&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;coordinates&#39;</span><span class="p">:</span> <span class="p">[[</span>
+            <span class="p">[</span><span class="mf">44.999999999999964</span><span class="p">,</span> <span class="o">-</span><span class="mf">55.776573018667634</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">44.999999999999964</span><span class="p">,</span> <span class="o">-</span><span class="mf">40.97989806962009</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">67.4999999999999</span><span class="p">,</span> <span class="o">-</span><span class="mf">40.97989806962009</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">67.4999999999999</span><span class="p">,</span> <span class="o">-</span><span class="mf">55.776573018667634</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">44.999999999999964</span><span class="p">,</span> <span class="o">-</span><span class="mf">55.776573018667634</span><span class="p">]</span>
+        <span class="p">]]</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;XYZ tile Tile(x=10, y=10, z=4)&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;grid_name&#39;</span><span class="p">:</span> <span class="s1">&#39;WebMercatorQuad&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;grid_crs&#39;</span><span class="p">:</span> <span class="s1">&#39;EPSG:3857&#39;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="define-custom-grid">Define custom grid<a class="headerlink" href="#define-custom-grid" title="Permanent link">&para;</a></h3>
+<p>You can create custom TMS grid using <code>morecantile.TileMatrixSet.custom</code> method.</p>
+<p>Here are the available options:</p>
+<ul>
+<li>
+<p><strong>extent</strong> (<em>list of float, REQUIRED</em>]: a list of coordinates in form of <code>[xmin, ymin, xmax, ymax]</code> describing the extend of the TMS</p>
+</li>
+<li>
+<p><strong>crs</strong> (<em>pyproj.CRS, REQUIRED</em>): Coordinate reference system of the grid</p>
+</li>
+<li>
+<p><strong>tile_width</strong> (<em>int, defaults to <code>256</code></em>): Width of each tile of this tile matrix in pixels (variable width is not supported)</p>
+</li>
+<li>
+<p><strong>tile_height</strong> (<em>int, defaults to <code>256</code></em>): Height of each tile of this tile matrix in pixels (variable height is not supported)</p>
+</li>
+<li>
+<p><strong>matrix_scale</strong> (<em>list of int, default to <code>[1, 1]</code></em>): Tiling schema coalescence coefficient (see <a href="http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#14">docs.opengeospatial.org/is/17-083r2/17-083r2.html#14</a>)</p>
+</li>
+<li>
+<p><strong>extent_crs</strong> (<em>pyproj.CRS, defaults to TMS CRS</em>): <code>extent</code>'s coordinate reference system</p>
+</li>
+<li>
+<p><strong>minzoom</strong> (<em>int, defaults to <code>0</code></em>): Tile Matrix Set minimum zoom level</p>
+</li>
+<li>
+<p><strong>maxzoom</strong> (<em>int, defaults to <code>24</code></em>): Tile Matrix Set maximum zoom level</p>
+</li>
+<li>
+<p><strong>title</strong> (<em>str, defaults to <code>Custom TileMatrixSet</code></em>): Tile Matrix Set title</p>
+</li>
+<li>
+<p><strong>id</strong> (<em>str, defaults to <code>Custom</code></em>): Tile Matrix Set identifier</p>
+</li>
+<li>
+<p><strong>ordered_axes</strong> (<em>list of str, Optional</em>): Override Axis order (e.g <code>["N", "S"]</code>) else default to CRS's metadata</p>
+</li>
+<li>
+<p><strong>screen_pixel_size</strong> (<em>float, optional</em>): Rendering pixel size. <code>0.28</code> mm was the actual pixel size of a common display from 2005 and considered as standard by OGC.</p>
+</li>
+<li>
+<p><strong>decimation_base</strong> (<em>int, optional</em>): How tiles are divided at each zoom level (default is 2). Must be greater than 1.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyproj</span><span class="w"> </span><span class="kn">import</span> <span class="n">CRS</span>
+
+<span class="n">crs</span> <span class="o">=</span> <span class="n">CRS</span><span class="o">.</span><span class="n">from_epsg</span><span class="p">(</span><span class="mi">3031</span><span class="p">)</span>
+<span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">948.75</span><span class="p">,</span> <span class="o">-</span><span class="mf">543592.47</span><span class="p">,</span> <span class="mf">5817.41</span><span class="p">,</span> <span class="o">-</span><span class="mf">3333128.95</span><span class="p">]</span>  <span class="c1"># From https:///epsg.io/3031</span>
+<span class="n">customEPGS3031</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">TileMatrixSet</span><span class="o">.</span><span class="n">custom</span><span class="p">(</span><span class="n">extent</span><span class="p">,</span> <span class="n">crs</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;MyCustomTmsEPSG3031&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">customEPGS3031</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">{</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TileMatrixType&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;scaleDenominator&quot;</span><span class="p">:</span> <span class="mf">38916524.55357144</span><span class="p">,</span>
+    <span class="s2">&quot;pointOfOrigin&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="o">-</span><span class="mf">948.75</span><span class="p">,</span>
+        <span class="o">-</span><span class="mf">3333128.95</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;tileWidth&quot;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+    <span class="s2">&quot;tileHeight&quot;</span><span class="p">:</span> <span class="mi">256</span><span class="p">,</span>
+    <span class="s2">&quot;matrixWidth&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;matrixHeight&quot;</span><span class="p">:</span> <span class="mi">1</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="use-morecantile-tms-store">Use morecantile TMS store<a class="headerlink" href="#use-morecantile-tms-store" title="Permanent link">&para;</a></h2>
+<p>morecantile provides a <code>TileMatrixSets</code> class to <em>store</em> Tile Matrix Set definition. This object can easily be extended to include your own custom TMS.</p>
+<h3 id="list-supported-grids">List supported grids<a class="headerlink" href="#list-supported-grids" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">list</span><span class="p">())</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[</span>
+    <span class="s1">&#39;LINZAntarticaMapTilegrid&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;EuropeanETRS89_LAEAQuad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CanadianNAD83_LCC&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UPSArcticWGS84Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NZTM2000Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UTM31WGS84Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;UPSAntarcticWGS84Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;WorldMercatorWGS84Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;WorldCRS84Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;WGS1984Quad&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;WebMercatorQuad&#39;</span>
+<span class="p">]</span>
+</code></pre></div>
+<h3 id="register-a-custom-tms">Register a custom TMS<a class="headerlink" href="#register-a-custom-tms" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">default_tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">tms</span><span class="o">.</span><span class="n">register</span><span class="p">({</span><span class="s2">&quot;MyCustomTmsEPSG3031&quot;</span><span class="p">:</span> <span class="n">customEPGS3031</span><span class="p">})</span>
+<span class="k">assert</span> <span class="s2">&quot;MyCustomTmsEPSG3031&quot;</span> <span class="ow">in</span> <span class="n">default_tms</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">default_tms</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MyCustomTmsEPSG3031&quot;</span><span class="p">)</span>
+<span class="n">tms</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="o">&lt;</span><span class="n">TileMatrixSet</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;None&#39;</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;MyCustomTmsEPSG3031&#39;</span> <span class="n">crs</span><span class="o">=</span><span class="s1">&#39;epsg:3031&gt;</span>
+</code></pre></div>
+<h3 id="automatically-register-tms-documents">Automatically register TMS documents<a class="headerlink" href="#automatically-register-tms-documents" title="Permanent link">&para;</a></h3>
+<p>Since the release of morecantile <code>1.3.1</code>, users can automatically extend morecantile's default TMS with their custom TMS JSON files stored in a directory, by setting <code>TILEMATRIXSET_DIRECTORY</code> environment.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>Morecantile will look for all <code>.json</code> files within the directory referenced by <code>TILEMATRIXSET_DIRECTORY</code>.</p>
+<ul>
+<li>filename HAVE TO be the same as the TMS id</li>
+<li>filename HAVE TO be <em>without special characters</em> <code>[a-zA-Z0-9_]</code></li>
+</ul>
+</div>
+<h2 id="morecantile-pydantic">Morecantile + Pydantic<a class="headerlink" href="#morecantile-pydantic" title="Permanent link">&para;</a></h2>
+<p>Morecantile uses <a href="https://pydantic-docs.helpmanual.io">Pydantic</a> to define and validate TileMatrixSet documents.</p>
+<p>From Pydantic docs:</p>
+<blockquote>
+<p>Define how data should be in pure, canonical python; validate it with pydantic.</p>
+</blockquote>
+<p>Pydantic model enforce the TileMatrixSet OGC specification for the whole project by validating each items.</p>
+<p>Because we use pydantic model to handle the TileMatrixSets you can uses pydantic's <a href="https://docs.pydantic.dev/2.0/usage/models/#model-methods-and-properties">methods</a> directly.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">morecantile</span>
+
+<span class="n">my_tms_doc</span> <span class="o">=</span> <span class="s2">&quot;~/a_tms_doc.json&quot;</span>
+
+<span class="n">tms</span> <span class="o">=</span> <span class="n">morecantile</span><span class="o">.</span><span class="n">TileMatrixSet</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="n">my_tms_doc</span><span class="p">)</span>
+
+<span class="c1"># print the TMS as json</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tms</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+<span class="c1"># print the TMS as dict</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tms</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/developmentseed" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://twitter.com/developmentseed" target="_blank" rel="noopener" title="twitter.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M459.4 151.7c.3 4.5.3 9.1.3 13.6 0 138.7-105.6 298.6-298.6 298.6-59.5 0-114.7-17.2-161.1-47.1 8.4 1 16.6 1.3 25.3 1.3 49.1 0 94.2-16.6 130.3-44.8-46.1-1-84.8-31.2-98.1-72.8 6.5 1 13 1.6 19.8 1.6 9.4 0 18.8-1.3 27.6-3.6-48.1-9.7-84.1-52-84.1-103v-1.3c14 7.8 30.2 12.7 47.4 13.3-28.3-18.8-46.8-51-46.8-87.4 0-19.5 5.2-37.4 14.3-53C87.4 130.8 165 172.4 252.1 176.9c-1.6-7.8-2.6-15.9-2.6-24C249.5 95.1 296.3 48 354.4 48c30.2 0 57.5 12.7 76.7 33.1 23.7-4.5 46.5-13.3 66.6-25.3-7.8 24.4-24.4 44.8-46.1 57.8 21.1-2.3 41.6-8.1 60.4-16.2-14.3 20.8-32.2 39.3-52.6 54.3"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.instant", "navigation.tracking", "search.suggest", "search.share"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
