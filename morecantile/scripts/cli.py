@@ -175,7 +175,7 @@ def cli(ctx, verbose, quiet):
 @click.option(
     "--extents/--no-extents",
     default=False,
-    help="Write shape extents as ws-separated strings (default is " "False).",
+    help="Write shape extents as ws-separated strings (default is False).",
 )
 # Optionally buffer the shapes by shifting the x and y values of each
 # vertex by a constant number of decimal degrees or meters (depending
@@ -522,7 +522,7 @@ def custom(
 @click.option(
     "--extents/--no-extents",
     default=False,
-    help="Write shape extents as ws-separated strings (default is " "False).",
+    help="Write shape extents as ws-separated strings (default is False).",
 )
 # Optionally buffer the shapes by shifting the x and y values of each
 # vertex by a constant number of decimal degrees or meters (depending
