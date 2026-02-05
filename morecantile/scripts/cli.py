@@ -2,12 +2,18 @@
 
 import json
 import logging
+import math
 import sys
+import uuid
+from typing import Any, List
 
 import click
 from pyproj import CRS
+from pyproj.exceptions import CRSError
 
 import morecantile
+from morecantile.models import CRS_to_uri
+from morecantile.utils import meters_per_unit
 
 logger = logging.getLogger(__name__)
 
@@ -608,3 +614,109 @@ def tms_to_geojson(  # noqa: C901
             "features": features,
         }
         click.echo(json.dumps(feature_collection, **dump_kwds))
+
+
+################################################################################
+# The `from_rasterio`` command.
+@cli.command(short_help="Create Custom TileMatrixSet from Rasterio Dataset")
+@click.argument("input", type=str)
+@click.option(
+    "--identifier",
+    type=str,
+    help="Identifier of the TMS.",
+)
+@click.option(
+    "--title",
+    type=str,
+    help="Tile Matrix Set title.",
+)
+def from_rasterio(input, identifier, title):
+    """Create TMS From Raster dataset."""
+    try:
+        import rasterio
+    except ImportError:  # pragma: nocover
+        rasterio = None  # type: ignore
+
+    assert rasterio, "'rasterio' needs to be installed in the python environemment to use `from_rasterio` command"
+
+    tile_matrices: List[morecantile.models.TileMatrix] = []
+
+    with rasterio.open(input) as src:
+        bounds = src.bounds
+        crs = src.crs
+        tr = src.transform
+        blockxsize, blockysize = src.block_shapes[0]
+
+        try:
+            ovr = src.overviews(1)
+        except Exception:
+            ovr = []
+
+    with rasterio.Env(OSR_WKT_FORMAT="WKT2_2018"):
+        proj_crs = CRS.from_wkt(crs.wkt)
+
+    mpu = meters_per_unit(proj_crs)
+    screen_pixel_size = 0.28e-3
+
+    tile_matrices.append(
+        morecantile.models.TileMatrix(
+            **{
+                "id": "0",
+                "scaleDenominator": tr.a * mpu / screen_pixel_size,
+                "cellSize": tr.a,
+                "pointOfOrigin": [tr.c, tr.f],
+                "tileWidth": blockxsize,
+                "tileHeight": blockysize,
+                "matrixWidth": math.ceil(src.width / blockxsize),
+                "matrixHeight": math.ceil(src.height / blockysize),
+            }
+        )
+    )
+
+    for ix, _ in enumerate(ovr):
+        with rasterio.open(input, OVERVIEW_LEVEL=ix) as ovr_src:
+            tr = ovr_src.transform
+            blockxsize, blockysize = ovr_src.block_shapes[0]
+            tile_matrices.append(
+                morecantile.models.TileMatrix(
+                    **{
+                        "id": f"{ix + 1}",
+                        "scaleDenominator": tr.a * mpu / screen_pixel_size,
+                        "cellSize": tr.a,
+                        "pointOfOrigin": [tr.c, tr.f],
+                        "tileWidth": blockxsize,
+                        "tileHeight": blockysize,
+                        "matrixWidth": math.ceil(ovr_src.width / blockxsize),
+                        "matrixHeight": math.ceil(ovr_src.height / blockysize),
+                    }
+                )
+            )
+
+    bbox = morecantile.commons.BoundingBox(*bounds)
+
+    if proj_crs.to_authority(min_confidence=20):
+        crs_data: Any = CRS_to_uri(proj_crs)
+
+        # Some old Proj version might not support URI
+        # so we fall back to wkt
+        try:
+            CRS.from_user_input(crs_data)
+        except CRSError:
+            crs_data = {"wkt": proj_crs.to_json_dict()}
+
+    else:
+        crs_data = {"wkt": proj_crs.to_json_dict()}
+
+    tms = morecantile.TileMatrixSet(
+        title=title or input,
+        id=identifier or str(uuid.uuid4()),
+        crs=crs_data,
+        boundingBox=morecantile.models.TMSBoundingBox(
+            lowerLeft=[bbox.left, bbox.bottom],
+            upperRight=[bbox.right, bbox.top],
+            crs=crs_data,
+        ),
+        tileMatrices=tile_matrices,
+    )
+
+    click.echo(tms.model_dump_json(exclude_none=True))
