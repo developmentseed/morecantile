@@ -2,6 +2,7 @@
 
 import json
 import logging
+import pathlib
 import sys
 
 import click
@@ -608,3 +609,58 @@ def tms_to_geojson(  # noqa: C901
             "features": features,
         }
         click.echo(json.dumps(feature_collection, **dump_kwds))
+
+
+################################################################################
+# The `viz`` command.
+@cli.command(short_help="Visualize a TMS")
+@click.argument("input", type=click.File(mode="r"), default="-", required=False)
+@click.option(
+    "--host",
+    type=str,
+    default="127.0.0.1",
+    help="Webserver host url (default: 127.0.0.1)",
+)
+@click.option("--port", type=int, default=8080, help="Webserver port (default: 8080)")
+def viz(input, host, port):
+    """Visualize A TMS."""
+    try:
+        import uvicorn
+        from fastapi import FastAPI
+        from fastapi.requests import Request
+        from fastapi.responses import HTMLResponse
+        from fastapi.templating import Jinja2Templates
+
+    except ImportError:  # pragma: nocover
+        FastAPI = None  # type: ignore
+        Request = None  # type: ignore
+        HTMLResponse = None  # type: ignore
+        Jinja2Templates = None  # type: ignore
+        uvicorn = None  # type: ignore
+
+    assert FastAPI, "'fastapi' needs to be installed in the python environemment to use `viz` command"
+    assert uvicorn, "'uvicorn' needs to be installed in the python environemment to use `viz` command"
+
+    template_dir = str(pathlib.Path(__file__).parent.joinpath("templates"))
+    templates = Jinja2Templates(directory=template_dir)
+
+    tms = morecantile.TileMatrixSet(**json.load(input))
+
+    app = FastAPI()
+
+    @app.get(
+        "/",
+        response_class=HTMLResponse,
+    )
+    async def viewer(request: Request):
+        """Handle /index.html."""
+        return templates.TemplateResponse(
+            name="index.html",
+            context={
+                "request": request,
+                "tms": tms,
+            },
+            media_type="text/html",
+        )
+
+    uvicorn.run(app=app, host=host, port=port, log_level="info")
