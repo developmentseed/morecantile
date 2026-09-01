@@ -445,6 +445,7 @@ tms._crs.to_epsg()
 By default, it is set to `auto`, meaning that it will select the closest zoom level. User can set the strategy to `lower` or `upper` to select below or above zoom levels.
 ```python
 import morecantile
+
 tms = morecantile.tms.get("WebMercatorQuad")
 
 # native resolution of zoom 7 is 1222.9924 m
@@ -528,9 +529,11 @@ with open("/tmp/mytms/MyCustomTmsEPSG3031.json", "w") as f:
 
 ```python
 import os
+
 os.environ["TILEMATRIXSET_DIRECTORY"] = "/tmp/mytms"
 
 from morecantile import tms
+
 assert "MyCustomTmsEPSG3031" in tms.list()
 ```
 
