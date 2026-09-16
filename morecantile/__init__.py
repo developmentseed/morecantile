@@ -8,7 +8,7 @@ Refs:
 
 """
 
-__version__ = "7.0.3"
+__version__ = "7.1.0"
 
 from .commons import BoundingBox, Coords, Tile
 from .defaults import TileMatrixSets, tms
