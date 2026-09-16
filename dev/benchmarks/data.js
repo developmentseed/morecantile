@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789561890601,
+  "lastUpdate": 1789572918216,
   "repoUrl": "https://github.com/developmentseed/morecantile",
   "entries": {
     "morecantile Benchmarks": [
@@ -5856,6 +5856,128 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.0000023021236134117477",
             "extra": "mean: 34.52169279828437 usec\nrounds: 7526"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vincent.sarago@gmail.com",
+            "name": "Vincent Sarago",
+            "username": "vincentsarago"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6c7c5823a2a56640f606de7a8ffd8ba8c9b891fd",
+          "message": "Merge pull request #249 from developmentseed/feat/add-matrix-to-geojson\n\nFeat/add matrix to geojson",
+          "timestamp": "2026-09-16T17:34:56+02:00",
+          "tree_id": "135889359765f5bc8d628396c3b8f35e9ce0fb13",
+          "url": "https://github.com/developmentseed/morecantile/commit/6c7c5823a2a56640f606de7a8ffd8ba8c9b891fd"
+        },
+        "date": 1789572917173,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "morecantile.bounds-Tile(x=0,y=0,z=0)",
+            "value": 13873.035098965289,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000131729542272152",
+            "extra": "mean: 72.08227996731475 usec\nrounds: 1218"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=1,y=0,z=1)",
+            "value": 14224.395590176347,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007578729121638889",
+            "extra": "mean: 70.30175684164887 usec\nrounds: 7966"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=1,y=1,z=1)",
+            "value": 14245.54513005429,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007941853937519304",
+            "extra": "mean: 70.19738387478534 usec\nrounds: 7479"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=1,y=40,z=7)",
+            "value": 13824.964017445282,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0001304681070344583",
+            "extra": "mean: 72.3329188226553 usec\nrounds: 7305"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=486,y=332,z=10)",
+            "value": 14143.214328017606,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007347595844190631",
+            "extra": "mean: 70.70528500858586 usec\nrounds: 7491"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=486,y=332,z=20)",
+            "value": 14166.732898914946,
+            "unit": "iter/sec",
+            "range": "stddev: 0.00000717061689152352",
+            "extra": "mean: 70.58790528030579 usec\nrounds: 6799"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=486,y=332,z=30)",
+            "value": 8506.153496514891,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000010119873356825215",
+            "extra": "mean: 117.5619509346635 usec\nrounds: 3424"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=0,y=0,z=0)",
+            "value": 313352.96974219347,
+            "unit": "iter/sec",
+            "range": "stddev: 7.843817550917355e-7",
+            "extra": "mean: 3.191289365544342 usec\nrounds: 72538"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=1,y=0,z=1)",
+            "value": 312690.80287743866,
+            "unit": "iter/sec",
+            "range": "stddev: 8.634927976209831e-7",
+            "extra": "mean: 3.198047370750322 usec\nrounds: 70191"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=1,y=1,z=1)",
+            "value": 312683.59495658235,
+            "unit": "iter/sec",
+            "range": "stddev: 7.623678123357935e-7",
+            "extra": "mean: 3.198121091510589 usec\nrounds: 72119"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=1,y=40,z=7)",
+            "value": 309375.42533792555,
+            "unit": "iter/sec",
+            "range": "stddev: 7.830579006093046e-7",
+            "extra": "mean: 3.2323187884354967 usec\nrounds: 76430"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=486,y=332,z=10)",
+            "value": 306977.14898167044,
+            "unit": "iter/sec",
+            "range": "stddev: 7.153213418191455e-7",
+            "extra": "mean: 3.257571461971294 usec\nrounds: 68456"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=486,y=332,z=20)",
+            "value": 309781.96070680727,
+            "unit": "iter/sec",
+            "range": "stddev: 7.085326100157276e-7",
+            "extra": "mean: 3.228076927779693 usec\nrounds: 48929"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=486,y=332,z=30)",
+            "value": 27895.744589297356,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000031043808917272884",
+            "extra": "mean: 35.84776153935916 usec\nrounds: 8861"
           }
         ]
       }
