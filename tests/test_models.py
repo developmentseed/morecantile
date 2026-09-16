@@ -939,3 +939,14 @@ def test_bbox_bottom_left():
 
     assert tms._ul(Tile(x=1, y=1, z=1)) == Coords(x=0.0, y=100000.0)
     assert tms._lr(Tile(x=1, y=1, z=1)) == Coords(x=100000.0, y=0)
+
+
+@pytest.mark.parametrize("tilematrixset", morecantile.tms.list())
+def test_to_geojson(tilematrixset):
+    """Test to_geojson method."""
+    t = morecantile.tms.get(tilematrixset)
+    geojson = list(t.matrix_to_geojson(level=t.minzoom))
+    assert geojson[0]["type"] == "Feature"
+
+    geojson = list(t.matrix_to_geojson(level=t.minzoom, geographic=False))
+    assert geojson[0]["type"] == "Feature"

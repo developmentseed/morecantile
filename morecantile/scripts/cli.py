@@ -3,6 +3,7 @@
 import json
 import logging
 import sys
+from typing import Any
 
 import click
 from pyproj import CRS
@@ -554,9 +555,8 @@ def tms_to_geojson(  # noqa: C901
 ):
     """Print TMS document as GeoJSON."""
     tms = morecantile.TileMatrixSet(**json.load(input))
-    matrix = tms.matrix(level)
 
-    dump_kwds = {"sort_keys": True}
+    dump_kwds: dict[str, Any] = {"sort_keys": True}
     if indent:
         dump_kwds["indent"] = indent
     if compact:
@@ -566,39 +566,31 @@ def tms_to_geojson(  # noqa: C901
     col_xs = []
     col_ys = []
 
-    for y in range(0, matrix.matrixHeight):
-        cf = (
-            matrix.get_coalesce_factor(y)
-            if matrix.variableMatrixWidths is not None
-            else 1
-        )
-        for x in range(0, matrix.matrixWidth):
-            if cf != 1 and x % cf:
-                continue
+    geographic_crs = CRS.from_user_input(crs) if crs else WGS84_CRS
 
-            feature = tms.feature(
-                (x, y, level),
-                projected=projected,
-                buffer=buffer,
-                precision=precision,
-                geographic_crs=CRS.from_user_input(crs) if crs else WGS84_CRS,
-            )
-            bbox = feature["bbox"]
-            w, s, e, n = bbox
-            col_xs.extend([w, e])
-            col_ys.extend([s, n])
+    for feature in tms.matrix_to_geojson(
+        level,
+        precision=precision,
+        buffer=buffer,
+        geographic=not projected,
+        geographic_crs=geographic_crs,
+    ):
+        bbox = feature["bbox"]
+        w, s, e, n = bbox
+        col_xs.extend([w, e])
+        col_ys.extend([s, n])
 
-            if collect:
-                features.append(feature)
-            elif extents:
-                click.echo(" ".join(map(str, bbox)))
-            else:
-                if seq:
-                    click.echo("\x1e")
-                if output_mode == "bbox":
-                    click.echo(json.dumps(bbox, **dump_kwds))
-                elif output_mode == "feature":
-                    click.echo(json.dumps(feature, **dump_kwds))
+        if collect:
+            features.append(feature)
+        elif extents:
+            click.echo(" ".join(map(str, bbox)))
+        else:
+            if seq:
+                click.echo("\x1e")
+            if output_mode == "bbox":
+                click.echo(json.dumps(bbox, **dump_kwds))
+            elif output_mode == "feature":
+                click.echo(json.dumps(feature, **dump_kwds))
 
     if collect and features:
         bbox = [min(col_xs), min(col_ys), max(col_xs), max(col_ys)]
