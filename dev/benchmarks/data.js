@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789560777420,
+  "lastUpdate": 1789561890601,
   "repoUrl": "https://github.com/developmentseed/morecantile",
   "entries": {
     "morecantile Benchmarks": [
@@ -5734,6 +5734,128 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.0000017604448915895159",
             "extra": "mean: 26.18705044973429 usec\nrounds: 9673"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vincent.sarago@gmail.com",
+            "name": "Vincent Sarago",
+            "username": "vincentsarago"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c78dd10ba2f7aaae710d64469797d057b2c5b917",
+          "message": "Merge pull request #248 from developmentseed/dependabot/github_actions/all-2514a98571\n\nBump astral-sh/setup-uv from 9.0.0 to 10.1.0 in the all group across 1 directory",
+          "timestamp": "2026-09-16T14:31:12+02:00",
+          "tree_id": "0a080d67bf208b0b4eec0e77d6841561109dc93d",
+          "url": "https://github.com/developmentseed/morecantile/commit/c78dd10ba2f7aaae710d64469797d057b2c5b917"
+        },
+        "date": 1789561889937,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "morecantile.bounds-Tile(x=0,y=0,z=0)",
+            "value": 15423.97535798295,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000072005702025662104",
+            "extra": "mean: 64.83412847793694 usec\nrounds: 1222"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=1,y=0,z=1)",
+            "value": 15184.89881260198,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000011093098006863078",
+            "extra": "mean: 65.85490047323187 usec\nrounds: 6762"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=1,y=1,z=1)",
+            "value": 15703.566514153088,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003356806781368207",
+            "extra": "mean: 63.67980159785576 usec\nrounds: 5257"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=1,y=40,z=7)",
+            "value": 15645.204693769107,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000003910037465183091",
+            "extra": "mean: 63.917348451072826 usec\nrounds: 4939"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=486,y=332,z=10)",
+            "value": 15584.108250965071,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000004062301599780042",
+            "extra": "mean: 64.1679320944189 usec\nrounds: 5758"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=486,y=332,z=20)",
+            "value": 15287.84998746217,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000072254527704094075",
+            "extra": "mean: 65.41142154195111 usec\nrounds: 6239"
+          },
+          {
+            "name": "morecantile.bounds-Tile(x=486,y=332,z=30)",
+            "value": 10255.846258166403,
+            "unit": "iter/sec",
+            "range": "stddev: 0.000007827002452617273",
+            "extra": "mean: 97.5053618031503 usec\nrounds: 3372"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=0,y=0,z=0)",
+            "value": 332464.90242774895,
+            "unit": "iter/sec",
+            "range": "stddev: 6.655038464909211e-7",
+            "extra": "mean: 3.007836293989918 usec\nrounds: 53254"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=1,y=0,z=1)",
+            "value": 332103.6631004273,
+            "unit": "iter/sec",
+            "range": "stddev: 6.974563545114027e-7",
+            "extra": "mean: 3.011108009662641 usec\nrounds: 51338"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=1,y=1,z=1)",
+            "value": 331351.804775249,
+            "unit": "iter/sec",
+            "range": "stddev: 6.231158562970589e-7",
+            "extra": "mean: 3.0179404052990906 usec\nrounds: 52555"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=1,y=40,z=7)",
+            "value": 332241.58190394705,
+            "unit": "iter/sec",
+            "range": "stddev: 7.243053652092044e-7",
+            "extra": "mean: 3.009858050486606 usec\nrounds: 50997"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=486,y=332,z=10)",
+            "value": 327663.0706027688,
+            "unit": "iter/sec",
+            "range": "stddev: 6.832414736471195e-7",
+            "extra": "mean: 3.051915487944371 usec\nrounds: 33723"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=486,y=332,z=20)",
+            "value": 328584.16794436576,
+            "unit": "iter/sec",
+            "range": "stddev: 6.411086013898406e-7",
+            "extra": "mean: 3.0433602636914476 usec\nrounds: 50971"
+          },
+          {
+            "name": "morecantile.xy_bounds-Tile(x=486,y=332,z=30)",
+            "value": 28967.293285504737,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0000023021236134117477",
+            "extra": "mean: 34.52169279828437 usec\nrounds: 7526"
           }
         ]
       }
