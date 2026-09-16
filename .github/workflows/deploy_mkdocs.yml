@@ -11,6 +11,10 @@ on:
       - 'CONTRIBUTING.md'
       - 'docs/**'
 
+concurrency:
+  group: docs-gh-pages
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Deploy docs
