@@ -1,6 +1,10 @@
 
 ## Unreleased
 
+## 7.1.0 (2026-09-16)
+
+* add `matrix_to_geojson` method to `TileMatrixSet` class
+
 ## 7.0.3 (2026-02-05)
 
 * add top-level export (`__all__`) (author @kylebarron, https://github.com/developmentseed/morecantile/pull/202)

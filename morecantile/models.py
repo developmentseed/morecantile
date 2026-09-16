@@ -1473,8 +1473,7 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
                 stacklevel=1,
             )
 
-            if authority_code := feature_crs.to_authority(min_confidence=20):
-                authority, code = authority_code
+            if feature_crs.to_authority(min_confidence=20):
                 feat.update(
                     {
                         "crs": {
@@ -1761,3 +1760,39 @@ class TileMatrixSet(BaseModel, arbitrary_types_allowed=True, extra="ignore"):
                 tiles.append(Tile(i, j, target_zoom))
 
         return tiles
+
+    def matrix_to_geojson(
+        self,
+        level: int,
+        precision: int | None = None,
+        buffer: NumType | None = None,
+        geographic: bool = True,
+        geographic_crs: pyproj.CRS | None = None,
+    ) -> Iterator[dict]:
+        """Yield GeoJSON representation of the tile matrix set."""
+        matrix = self.matrix(level)
+
+        for y in range(0, matrix.matrixHeight):
+            cf = (
+                matrix.get_coalesce_factor(y)
+                if matrix.variableMatrixWidths is not None
+                else 1
+            )
+            for x in range(0, matrix.matrixWidth):
+                if cf != 1 and x % cf:
+                    continue
+
+                feature = self.feature(
+                    Tile(x, y, level),
+                    projected=not geographic,
+                    buffer=buffer,
+                    precision=precision,
+                    geographic_crs=geographic_crs,
+                )
+                feature["properties"] = {
+                    "x": x,
+                    "y": y,
+                    "z": level,
+                }
+
+                yield feature
