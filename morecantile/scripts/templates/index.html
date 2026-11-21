@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset='utf-8' />
+        <title>TileMatrixSet viewer</title>
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+        <script src='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js'></script>
+        <link href='https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css' rel='stylesheet' />
+
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.19.10/proj4.min.js'></script>
+
+        <link href='https://api.mapbox.com/mapbox-assembly/v0.23.2/assembly.min.css' rel='stylesheet'>
+        <script src='https://api.mapbox.com/mapbox-assembly/v0.23.2/assembly.js'></script>
+
+        <style>
+            body { margin:0; padding:0; width:100%; height:100%;}
+            #map { position:absolute; top:0; bottom:0; width:100%; }
+            .loading-map {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                color: #FFF;
+                background-color: #000;
+                text-align: center;
+                opacity: 0.5;
+                font-size: 45px;
+            }
+            .loading-map.off{
+                opacity: 0;
+                -o-transition: all .5s ease;
+                -webkit-transition: all .5s ease;
+                -moz-transition: all .5s ease;
+                -ms-transition: all .5s ease;
+                transition: all ease .5s;
+                visibility:hidden;
+            }
+            .middle-center {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .middle-center * {
+                display: block;
+                padding: 5px;
+            }
+
+            #menu {
+              left: 0;
+              top: 0;
+              -o-transition: all .5s ease;
+              -webkit-transition: all .5s ease;
+              -moz-transition: all .5s ease;
+              -ms-transition: all .5s ease;
+              transition: all ease .5s;
+            }
+
+            @media(max-width: 767px) {
+              .mapboxgl-ctrl-attrib {
+                  font-size: 10px;
+              }
+            }
+
+        </style>
+    </head>
+
+    <body>
+
+    <div id='menu' class='px12 pt12 absolute z2 bg-white'>
+        <div class='txt-h5 mt6 mb6 color-black'>
+            TMS Level
+        </div>
+        <div class='select-container mb6'>
+            <select id='level-selector' class='select select--s select--stroke wmax-full color-black bg-white'>
+            </select>
+            <div class='select-arrow color-black'></div>
+        </div>
+    </div>
+
+    <div id='map'>
+      <div id='loader' class="loading-map z3">
+        <div class="middle-center">
+          <div class="round animation-spin animation--infinite animation--speed-1">
+            <svg class='icon icon--l inline-block'><use xlink:href='#icon-satellite'/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-info"><span id="zoom"></span></div>
+    </div>
+
+    <script>
+    const tileMatrixSet = {{ tms.model_dump_json() | safe }}
+    const transformer = proj4('{{ tms.crs.to_wkt() | safe }}', proj4.defs('EPSG:4326'));
+
+    var map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'basemap': {
+            type: 'raster',
+            tiles: [
+              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          }
+        },
+        layers: [
+          {
+            'id': 'basemap',
+            'type': 'raster',
+            'source': 'basemap',
+            'minzoom': 0,
+            'maxzoom': 20
+          }
+        ]
+      },
+      center: [0, 0],
+      zoom: 4
+    })
+
+    const bboxPolygon = (bounds) => {
+        var LL_EPSILON = 1e-6
+        return {
+            'type': 'Feature',
+            'geometry': {
+                'type': 'Polygon',
+                'coordinates': [[
+                    [bounds[0] + LL_EPSILON, bounds[1] + LL_EPSILON],
+                    [bounds[2] -  LL_EPSILON, bounds[1] + LL_EPSILON],
+                    [bounds[2] - LL_EPSILON, bounds[3] - LL_EPSILON],
+                    [bounds[0] + LL_EPSILON, bounds[3] - LL_EPSILON],
+                    [bounds[0] + LL_EPSILON, bounds[1] + LL_EPSILON]
+                ]]
+            },
+            'properties': {}
+        }
+    }
+
+    const add_tms_grid = (tileMatrix) => {
+        if (map.getLayer('tile-grid')) map.removeLayer('tile-grid')
+        if (map.getSource('tile-grid')) map.removeSource('tile-grid')
+
+        // pointOfOrigin is topLeft by default but could also be bottomLeft
+        const ul = transformer.forward([tileMatrix.pointOfOrigin[0], tileMatrix.pointOfOrigin[1]], true);
+        const lr = transformer.forward(
+            [
+                tileMatrix.pointOfOrigin[0] + tileMatrix.cellSize * tileMatrix.tileWidth * tileMatrix.matrixWidth,
+                tileMatrix.pointOfOrigin[1] - tileMatrix.cellSize * tileMatrix.tileHeight * tileMatrix.matrixHeight
+            ], 
+            true
+        );
+
+        const cellXSize = (lr[0] - ul[0]) / (tileMatrix.matrixWidth * tileMatrix.tileWidth);
+        const cellYSize = (ul[1] - lr[1]) / (tileMatrix.matrixHeight * tileMatrix.tileHeight);
+
+        let tiles = []
+        for (let y = 0; y < tileMatrix.matrixHeight; y++) {
+            for (let x = 0; x < tileMatrix.matrixWidth; x++) {
+                let west = ul[0] + x * cellXSize * tileMatrix.tileWidth;
+                let north = ul[1] - y * cellYSize * tileMatrix.tileHeight;
+                let east = ul[0]  + (x + 1) * cellXSize * tileMatrix.tileWidth;
+                let south = ul[1] - (y + 1) * cellYSize * tileMatrix.tileHeight;
+
+                tiles.push(
+                    bboxPolygon([west, south, east, north])
+                )
+            }
+            
+        }
+        map.addSource('tile-grid', {
+            'type': 'geojson',
+            'data': {"type": "FeatureCollection","features": tiles}
+        })
+        map.addLayer({
+            id: 'tile-grid',
+            type: 'line',
+            source: 'tile-grid',
+            layout: {
+                'line-cap': 'round',
+                'line-join': 'round'
+            },
+            paint: {
+                'line-color': '#e40b34',
+                'line-width': 0.5
+            }
+        })
+
+    }
+
+    const update_viz = () => {
+        const level = document.getElementById('level-selector').selectedOptions[0].getAttribute("idx")
+        const tileMatrix = tileMatrixSet.tileMatrices[level]
+        add_tms_grid(tileMatrix)
+    }
+
+    document.getElementById('level-selector').addEventListener('change', (e) => {
+        update_viz()
+    })
+
+
+    map.on('load', () => {
+        let crossing_dateline = false
+        let bounds = [{{ tms.bbox.left}} , {{ tms.bbox.bottom }}, {{ tms.bbox.right }}, {{ tms.bbox.top }}]
+        map.addSource('aoi', {
+            'type': 'geojson',
+            'data': bboxPolygon(...bounds)
+        })
+        map.addLayer({
+            id: 'aoi-polygon',
+            type: 'line',
+            source: 'aoi',
+            layout: {
+                'line-cap': 'round',
+                'line-join': 'round'
+            },
+            paint: {
+                'line-color': '#000000',
+                'line-dasharray': [3, 3],
+                'line-width': 1
+            }
+        })
+
+        // Bounds crossing dateline
+        if (bounds[0] > bounds[2]) {
+            crossing_dateline = true
+            bounds[0] = bounds[0] - 360
+        }
+        map.fitBounds(
+            [[bounds[0], bounds[1]], [bounds[2], bounds[3]]]
+        )
+
+        const levels = Object.keys(tileMatrixSet.tileMatrices)
+        levels.forEach((opt, idx) => {
+            const option = document.createElement('option')
+            option.setAttribute('idx', idx)
+            option.setAttribute('level', opt)
+            option.text = opt
+            if (idx === 0) option.selected = "selected"
+            document.getElementById('level-selector').appendChild(option);
+        });
+
+        update_viz()
+        document.getElementById('loader').classList.toggle('off')
+    })
+    </script>
+
+    </body>
+    </html>
